@@ -21,7 +21,7 @@ public class ConversationHistory {
 
     /**
      * Set the system prompt - tells Claude how to behave.
-     * Example: "You are a story teller who writes atmospheric scenes."
+     * Example: "You are a story-teller who writes atmospheric scenes."
      */
     public void setSystemPrompt(String prompt) {
         this.systemPrompt = prompt;

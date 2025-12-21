@@ -1,0 +1,113 @@
+package dev.laszlo;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * REST controller for Chat API
+ * <p>
+ * Endpoints:
+ * - POST /api/chat/send    -> Send a message, get response
+ * - POST /api/chat/reset   -> Clear conversation history
+ * - GET  /api/chat/status  -> Check if API is running
+ */
+@RestController
+@RequestMapping("/api/chat")
+public class ChatController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
+
+    // Our existing services
+    private final ChatService chatService;
+    private final ConversationHistory history;
+
+    /**
+     * Constructor - Spring automatically injects dependencies
+     */
+    public ChatController() {
+        // Load API key from environment
+        String apiKey = System.getenv("ANTHROPIC_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new RuntimeException("ANTHROPIC_API_KEY not set!");
+        }
+
+        this.chatService = new ChatService(apiKey);
+        this.history = new ConversationHistory();
+
+        // Set default system prompt
+        this.history.setSystemPrompt("You are a creative storyteller who specializes in atmospheric, " +
+                "immersive scenarios. You write vivid descriptions and engaging " +
+                "dialogue. Keep responses concise but evocative."
+        );
+
+        logger.info("ChatController initialized...");
+    }
+
+    /**
+     * Health check endpoint
+     * GET /api/chat/status
+     */
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> getStatus() {
+        Map<String, Object> status = new HashMap<>();
+        status.put("status", "running");
+        status.put("messageCount", history.getMessageCount());
+        return ResponseEntity.ok(status);
+    }
+
+    /**
+     * Send a message and get Claude's response
+     * POST /api/chat/send
+     * Body: { "message": "Your message here" }
+     */
+    @PostMapping("/send")
+    public ResponseEntity<Map<String, Object>> sendMessage(@RequestBody Map<String, String> request) {
+        String userMessage = request.get("message");
+
+        // Validate input
+        if (userMessage == null || userMessage.isBlank()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Message cannot be empty");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        logger.info("Received message: {}", userMessage);
+
+        // Add to history and send
+        history.addUserMessage(userMessage);
+        String response = chatService.sendMessage(history);
+
+        Map<String, Object> result = new HashMap<>();
+
+        if (response != null) {
+            // Save Claude's response to history
+            history.addAssistantMessage(response);
+
+            result.put("response", response);
+            result.put("messageCount", history.getMessageCount());
+            return ResponseEntity.ok(result);
+        } else {
+            result.put("error", "Failed to get response from Claude");
+            return ResponseEntity.internalServerError().body(result);
+        }
+    }
+
+    /**
+     * Reset conversation history
+     * POST /api/chat/reset
+     */
+    @PostMapping("/reset")
+    public ResponseEntity<Map<String, String>> resetChat() {
+        history.clear();
+        logger.info("Conversation history cleared");
+
+        Map<String, String> result = new HashMap<>();
+        result.put("status", "Conversation reset");
+        return ResponseEntity.ok(result);
+    }
+}
