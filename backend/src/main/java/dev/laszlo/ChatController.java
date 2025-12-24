@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,6 +28,7 @@ public class ChatController {
     private final ChatService chatService;
     private final ConversationHistory history;
     private final DatabaseService databaseService;
+    private int currentSessionId;
 
     /**
      * Constructor - Spring automatically injects dependencies
@@ -42,8 +44,16 @@ public class ChatController {
         this.history = new ConversationHistory();
         this.databaseService = new DatabaseService();
 
+        // Create a default session or use existing one
+        List<Session> sessions = databaseService.getAllSessions();
+        if (sessions.isEmpty()) {
+            this.currentSessionId = databaseService.createSession("Default Session");
+        } else {
+            this.currentSessionId = sessions.get(0).getId();  // Use most recent
+        }
+
         // Load existing messages from database
-        for (String[] msg : databaseService.loadAllMessages()) {
+        for (String[] msg : databaseService.loadMessages(currentSessionId)) {
             if (msg[0].equals("user")) {
                 history.addUserMessage(msg[1]);
             } else {
@@ -93,7 +103,7 @@ public class ChatController {
 
         // Add to history and send
         history.addUserMessage(userMessage);
-        databaseService.saveMessage("user", userMessage);
+        databaseService.saveMessage(currentSessionId,"user", userMessage);
         String response = chatService.sendMessage(history);
 
         Map<String, Object> result = new HashMap<>();
@@ -101,7 +111,7 @@ public class ChatController {
         if (response != null) {
             // Save Claude's response to history
             history.addAssistantMessage(response);
-            databaseService.saveMessage("assistant", response);
+            databaseService.saveMessage(currentSessionId,"assistant", response);
 
             result.put("response", response);
             result.put("messageCount", history.getMessageCount());
@@ -119,7 +129,7 @@ public class ChatController {
     @PostMapping("/reset")
     public ResponseEntity<Map<String, String>> resetChat() {
         history.clear();
-        databaseService.clearMessages();
+        databaseService.clearMessages(currentSessionId);
         logger.info("Conversation history cleared");
 
         Map<String, String> result = new HashMap<>();
