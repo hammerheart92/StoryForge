@@ -5,7 +5,7 @@ import '../models/session.dart';
 /// Handles communication with the Java backend
 class ChatService {
   // Your Java backend URL
-  static const String baseUrl = 'http://localhost:8080/api/chat';
+  static const String baseUrl = 'https://storyforge-production.up.railway.app/api/chat';
 
   /// Send a message and get Claude's response
   Future<String?> sendMessage(String message) async {
