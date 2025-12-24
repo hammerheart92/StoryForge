@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
+import '../models/session.dart';
 import '../services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -17,6 +18,212 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // Track if we're waiting for Claude
   bool _isLoading = false;
+
+  List<Session> _sessions = [];
+  Session? _currentSession;
+  bool _isLoadingSessions = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSessions();
+  }
+
+  /// Load sessions from backend
+  Future<void> _loadSessions() async {
+    setState(() {
+      _isLoadingSessions = true;
+    });
+
+    try {
+      final sessions = await _chatService.getSessions();
+      setState(() {
+        _sessions = sessions;
+        _isLoadingSessions = false;
+        // Set current session to first one if available and none selected
+        if (_currentSession == null && sessions.isNotEmpty) {
+          _currentSession = sessions.first;
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingSessions = false;
+      });
+      print('Failed to load sessions: $e');
+    }
+  }
+
+  /// Create a new chat session
+  Future<void> _createNewSession() async {
+    final name = 'Chat ${_sessions.length + 1}';
+    try {
+      final session = await _chatService.createNewSession(name);
+      setState(() {
+        _sessions.insert(0, session);
+        _currentSession = session;
+        _messages.clear();
+      });
+      Navigator.pop(context); // Close drawer
+    } catch (e) {
+      print('Failed to create session: $e');
+    }
+  }
+
+  /// Switch to a different session
+  Future<void> _switchToSession(Session session) async {
+    try {
+      final response = await _chatService.switchSession(session.id);
+
+      setState(() {
+        _currentSession = session;
+        _messages.clear();
+
+        // Load messages from backend response
+        if (response != null && response['messages'] != null) {
+          final List<dynamic> msgs = response['messages'];
+          for (var msg in msgs) {
+            _messages.add(ChatMessage(
+              content: msg['content'],
+              isUser: msg['role'] == 'user',
+            ));
+          }
+        }
+      });
+
+      Navigator.pop(context); // Close drawer
+    } catch (e) {
+      print('Error switching session: $e');
+    }
+  }
+
+  /// Format date for display
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+
+  /// Build the session drawer
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Container(
+        color: Colors.grey[900],
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+              color: Colors.deepPurple,
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '🎭 StoryForge',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_sessions.length} conversations',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // New Chat button
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _createNewSession,
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: const Text(
+                    'New Chat',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.greenAccent[700],
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ),
+
+            // Sessions list
+            Expanded(
+              child: _isLoadingSessions
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                  : _sessions.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No conversations yet',
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _sessions.length,
+                          itemBuilder: (context, index) {
+                            final session = _sessions[index];
+                            final isActive = _currentSession?.id == session.id;
+
+                            return ListTile(
+                              onTap: () => _switchToSession(session),
+                              selected: isActive,
+                              selectedTileColor:
+                                  Colors.deepPurple.withValues(alpha: 0.3),
+                              leading: Icon(
+                                Icons.chat_bubble_outline,
+                                color: isActive
+                                    ? Colors.deepPurple[200]
+                                    : Colors.grey[500],
+                              ),
+                              title: Text(
+                                session.name,
+                                style: TextStyle(
+                                  color: isActive
+                                      ? Colors.white
+                                      : Colors.grey[300],
+                                  fontWeight: isActive
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${session.messageCount} messages • ${_formatDate(session.createdAt)}',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   /// Send message to backend and get response
   Future<void> _sendMessage() async {
@@ -61,6 +268,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Session drawer
+      drawer: _buildDrawer(),
+
       // App Bar
       appBar: AppBar(
         title: const Text('🎭 ScenarioChat'),
@@ -122,7 +332,7 @@ class _ChatScreenState extends State<ChatScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
