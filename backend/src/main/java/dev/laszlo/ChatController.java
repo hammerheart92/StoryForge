@@ -112,6 +112,9 @@ public class ChatController {
         int newSessionId = databaseService.createSession(sessionName);
 
         if (newSessionId > 0) {
+
+            this.currentSessionId = newSessionId;
+
             Map<String, Object> result = new HashMap<>();
             result.put("id", newSessionId);
             result.put("name", sessionName);

@@ -73,7 +73,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _switchToSession(Session session) async {
     try {
       final response = await _chatService.switchSession(session.id);
-
       setState(() {
         _currentSession = session;
         _messages.clear();
@@ -82,10 +81,12 @@ class _ChatScreenState extends State<ChatScreen> {
         if (response != null && response['messages'] != null) {
           final List<dynamic> msgs = response['messages'];
           for (var msg in msgs) {
-            _messages.add(ChatMessage(
-              content: msg['content'],
-              isUser: msg['role'] == 'user',
-            ));
+            _messages.add(
+              ChatMessage(
+                content: msg['content'],
+                isUser: msg['role'] == 'user',
+              ),
+            );
           }
         }
       });
@@ -174,50 +175,49 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: CircularProgressIndicator(color: Colors.white),
                     )
                   : _sessions.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No conversations yet',
-                            style: TextStyle(color: Colors.grey[500]),
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _sessions.length,
-                          itemBuilder: (context, index) {
-                            final session = _sessions[index];
-                            final isActive = _currentSession?.id == session.id;
+                  ? Center(
+                      child: Text(
+                        'No conversations yet',
+                        style: TextStyle(color: Colors.grey[500]),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _sessions.length,
+                      itemBuilder: (context, index) {
+                        final session = _sessions[index];
+                        final isActive = _currentSession?.id == session.id;
 
-                            return ListTile(
-                              onTap: () => _switchToSession(session),
-                              selected: isActive,
-                              selectedTileColor:
-                                  Colors.deepPurple.withValues(alpha: 0.3),
-                              leading: Icon(
-                                Icons.chat_bubble_outline,
-                                color: isActive
-                                    ? Colors.deepPurple[200]
-                                    : Colors.grey[500],
-                              ),
-                              title: Text(
-                                session.name,
-                                style: TextStyle(
-                                  color: isActive
-                                      ? Colors.white
-                                      : Colors.grey[300],
-                                  fontWeight: isActive
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                              subtitle: Text(
-                                '${session.messageCount} messages • ${_formatDate(session.createdAt)}',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                        return ListTile(
+                          onTap: () => _switchToSession(session),
+                          selected: isActive,
+                          selectedTileColor: Colors.deepPurple.withValues(
+                            alpha: 0.3,
+                          ),
+                          leading: Icon(
+                            Icons.chat_bubble_outline,
+                            color: isActive
+                                ? Colors.deepPurple[200]
+                                : Colors.grey[500],
+                          ),
+                          title: Text(
+                            session.name,
+                            style: TextStyle(
+                              color: isActive ? Colors.white : Colors.grey[300],
+                              fontWeight: isActive
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${session.messageCount} messages • ${_formatDate(session.createdAt)}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -247,10 +247,12 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response != null) {
         _messages.add(ChatMessage(content: response, isUser: false));
       } else {
-        _messages.add(ChatMessage(
-          content: 'Error: Could not get response. Is the backend running?',
-          isUser: false,
-        ));
+        _messages.add(
+          ChatMessage(
+            content: 'Error: Could not get response. Is the backend running?',
+            isUser: false,
+          ),
+        );
       }
     });
   }
@@ -292,19 +294,19 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: _messages.isEmpty
                 ? const Center(
-              child: Text(
-                'Start a conversation!\nTry: "A wizard enters a dark cave"',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            )
+                    child: Text(
+                      'Start a conversation!\nTry: "A wizard enters a dark cave"',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                  )
                 : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                return _buildMessageBubble(_messages[index]);
-              },
-            ),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      return _buildMessageBubble(_messages[index]);
+                    },
+                  ),
           ),
 
           // Loading indicator
