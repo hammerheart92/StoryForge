@@ -187,8 +187,9 @@ public class DatabaseService {
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String name = rs.getString("name");
+                String createdAt = rs.getString("created_at");
                 int msgCount = rs.getInt("msg_count");
-                sessions.add(new Session(id, name, msgCount));
+                sessions.add(new Session(id, name, msgCount, createdAt));
             }
 
             logger.info("📂 Loaded {} sessions", sessions.size());

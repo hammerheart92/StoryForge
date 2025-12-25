@@ -1,12 +1,31 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/session.dart';
 
 /// Handles communication with the Java backend
 class ChatService {
-  // Your Java backend URL
-  // static const String baseUrl = 'https://storyforge-production.up.railway.app/api/chat';
-  static const String baseUrl = 'http://localhost:8080/api/chat';
+  // Automatic environment detection with override capability
+  static String get baseUrl {
+    // Check for environment override first
+    const envUrl = String.fromEnvironment('API_URL', defaultValue: '');
+    if (envUrl.isNotEmpty) {
+      return envUrl;
+    }
+
+    // Otherwise, use debug mode detection
+    if (kDebugMode) {
+      return 'http://localhost:8080/api/chat';
+    } else {
+      return 'https://storyforge-production.up.railway.app/api/chat';
+    }
+  }
+
+  // Optional: Debug helper to see which URL is being used
+  static void printCurrentEnvironment() {
+    print('🌐 Using API: $baseUrl');
+    print('🐛 Debug mode: $kDebugMode');
+  }
 
   /// Send a message and get Claude's response
   Future<String?> sendMessage(String message) async {
@@ -27,19 +46,6 @@ class ChatService {
     } catch (e) {
       print('Request failed: $e');
       return null;
-    }
-  }
-
-  /// Reset conversation history
-  Future<bool> resetChat() async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/reset'),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Reset failed: $e');
-      return false;
     }
   }
 
@@ -85,13 +91,32 @@ class ChatService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);  // ← Return the data!
+        return json.decode(response.body);
       } else {
         throw Exception('Failed to switch session');
       }
     } catch (e) {
       print('Error switching session: $e');
       return null;
+    }
+  }
+
+  /// Reset/clear the current chat session
+  Future<bool> resetChat() async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reset'),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print('Error resetting chat: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Error resetting chat: $e');
+      return false;
     }
   }
 

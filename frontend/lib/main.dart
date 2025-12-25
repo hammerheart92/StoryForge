@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:storyforge_frontend/services/chat_service.dart';
 import 'screens/chat_screen.dart';
 
 void main() {
+  // Show which API URL is being used (helpful for debugging)
+  ChatService.printCurrentEnvironment();
   runApp(const MyApp());
 }
 
