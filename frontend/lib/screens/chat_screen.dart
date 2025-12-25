@@ -273,7 +273,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       // App Bar
       appBar: AppBar(
-        title: const Text('🎭 ScenarioChat'),
+        title: const Text('🎭 StoryForge'),
         backgroundColor: Colors.greenAccent,
         foregroundColor: Colors.white,
         actions: [
