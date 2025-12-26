@@ -1,5 +1,11 @@
 name: Backend CI
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  actions: read
+
 on:
   # Run on push to any branch
   push:
