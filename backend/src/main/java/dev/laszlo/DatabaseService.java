@@ -173,10 +173,10 @@ public class DatabaseService {
     public List<Session> getAllSessions() {
         List<Session> sessions = new ArrayList<>();
         String selectSQL = """
-                SELECT s.id, s.name, COUNT(m.id) as msg_count 
-                FROM sessions s 
-                LEFT JOIN messages m ON s.id = m.session_id 
-                GROUP BY s.id 
+                SELECT s.id, s.name, s.created_at, COUNT(m.id) as msg_count
+                FROM sessions s
+                LEFT JOIN messages m ON s.id = m.session_id
+                GROUP BY s.id
                 ORDER BY s.id DESC
                 """;
 

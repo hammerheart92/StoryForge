@@ -21,6 +21,7 @@ frontend/.metadata
 # Claude Code
 .claude/
 **/.claude/
+backend/claude_tasks/
 
 # ===== IDE =====
 # IntelliJ IDEA
