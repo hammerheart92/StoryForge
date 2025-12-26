@@ -5,18 +5,32 @@ import '../models/session.dart';
 
 /// Handles communication with the Java backend
 class ChatService {
-  // Automatic environment detection with override capability
+  /// Automatically determines the correct API base URL based on the current environment.
+  ///
+  /// Priority order:
+  /// 1. Environment variable override (--dart-define=API_URL=...)
+  /// 2. Debug mode → localhost (web only)
+  /// 3. Production mode → Railway cloud backend
   static String get baseUrl {
-    // Check for environment override first
+    // PRIORITY 1: Check for explicit environment variable override
+    // Usage: flutter run --dart-define=API_URL=http://custom.url/api/chat
     const envUrl = String.fromEnvironment('API_URL', defaultValue: '');
     if (envUrl.isNotEmpty) {
       return envUrl;
     }
 
-    // Otherwise, use debug mode detection
+    // PRIORITY 2: Debug mode (development)
     if (kDebugMode) {
-      return 'http://localhost:8080/api/chat';
+      // Web development uses localhost
+      if (kIsWeb) {
+        return 'http://localhost:8080/api/chat';
+      } else {
+        // Mobile development uses Railway production
+        // (Local network IP testing requires manual override via --dart-define)
+        return 'https://storyforge-production.up.railway.app/api/chat';
+      }
     } else {
+      // PRIORITY 3: Production mode (release builds)
       return 'https://storyforge-production.up.railway.app/api/chat';
     }
   }
