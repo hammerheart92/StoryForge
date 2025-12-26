@@ -25,7 +25,7 @@ public class ChatController {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
-    // Our existing services
+    // Dependencies - injected by Spring
     private final ChatService chatService;
     private final ConversationHistory history;
     private final DatabaseService databaseService;
@@ -34,23 +34,17 @@ public class ChatController {
     /**
      * Constructor - Spring automatically injects dependencies
      */
-    public ChatController() {
-        // Load API key from environment
-        String apiKey = System.getenv("ANTHROPIC_API_KEY");
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new RuntimeException("ANTHROPIC_API_KEY not set!");
-        }
-
-        this.chatService = new ChatService(apiKey);
+    public ChatController(ChatService chatService, DatabaseService databaseService) {
+        this.chatService = chatService;
+        this.databaseService = databaseService;
         this.history = new ConversationHistory();
-        this.databaseService = new DatabaseService();
 
         // Create a default session or use existing one
         List<Session> sessions = databaseService.getAllSessions();
         if (sessions.isEmpty()) {
             this.currentSessionId = databaseService.createSession("Default Session");
         } else {
-            this.currentSessionId = sessions.get(0).getId();  // Use most recent
+            this.currentSessionId = sessions.get(0).getId();
         }
 
         // Load existing messages from database
@@ -61,7 +55,7 @@ public class ChatController {
                 history.addAssistantMessage(msg[1]);
             }
         }
-        logger.info("\uD83D\uDCC2 Loaded {} messages from history", history.getMessageCount());
+        logger.info("📂 Loaded {} messages from history", history.getMessageCount());
 
         // Set default system prompt
         this.history.setSystemPrompt("You are a creative storyteller who specializes in atmospheric, " +
