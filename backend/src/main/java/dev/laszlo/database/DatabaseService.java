@@ -30,6 +30,7 @@ public class DatabaseService {
     private void initializeDatabase() {
         createSessionsTable();
         createMessagesTable();
+        createUserChoicesTable();  // NEW: Session 14 addition
         logger.info("✅ Database initialized successfully");
     }
 
@@ -56,6 +57,25 @@ public class DatabaseService {
                 )
                 """;
         executeSQL(sql);
+    }
+
+    /**
+     * NEW: Session 14 - Create table to track user choices for branching narratives.
+     */
+    private void createUserChoicesTable() {
+        String sql = """
+                CREATE TABLE IF NOT EXISTS user_choices (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id INTEGER NOT NULL,
+                    choice_id TEXT NOT NULL,
+                    choice_label TEXT NOT NULL,
+                    next_speaker TEXT NOT NULL,
+                    chosen_at TEXT NOT NULL,
+                    FOREIGN KEY (session_id) REFERENCES sessions(id)
+                )
+                """;
+        executeSQL(sql);
+        logger.debug("📊 user_choices table ready");
     }
 
     private void executeSQL(String sql) {
@@ -137,6 +157,84 @@ public class DatabaseService {
         }
     }
 
+    // ==================== CHOICE OPERATIONS (NEW: Session 14) ====================
+
+    /**
+     * NEW: Save a user's choice to the database for tracking narrative branches.
+     */
+    public void saveUserChoice(int sessionId, String choiceId, String choiceLabel, String nextSpeaker) {
+        String insertSQL = "INSERT INTO user_choices (session_id, choice_id, choice_label, next_speaker, chosen_at) VALUES (?, ?, ?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+
+            pstmt.setInt(1, sessionId);
+            pstmt.setString(2, choiceId);
+            pstmt.setString(3, choiceLabel);
+            pstmt.setString(4, nextSpeaker);
+            pstmt.setString(5, java.time.LocalDateTime.now().toString());
+
+            pstmt.executeUpdate();
+            logger.debug("🎯 Choice saved: '{}' -> {}", choiceLabel, nextSpeaker);
+
+        } catch (SQLException e) {
+            logger.error("❌ Failed to save choice: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * NEW: Get all choices made in a specific session (for analytics or debugging).
+     */
+    public List<String[]> getChoiceHistory(int sessionId) {
+        List<String[]> choices = new ArrayList<>();
+        String selectSQL = "SELECT choice_id, choice_label, next_speaker, chosen_at FROM user_choices WHERE session_id = ? ORDER BY id ASC";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(selectSQL)) {
+
+            pstmt.setInt(1, sessionId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String choiceId = rs.getString("choice_id");
+                String label = rs.getString("choice_label");
+                String nextSpeaker = rs.getString("next_speaker");
+                String chosenAt = rs.getString("chosen_at");
+                choices.add(new String[]{choiceId, label, nextSpeaker, chosenAt});
+            }
+
+            logger.debug("📊 Loaded {} choices from session {}", choices.size(), sessionId);
+
+        } catch (SQLException e) {
+            logger.error("❌ Failed to load choice history: {}", e.getMessage());
+        }
+
+        return choices;
+    }
+
+    /**
+     * NEW: Get count of choices made in a session.
+     */
+    public int getChoiceCount(int sessionId) {
+        String countSQL = "SELECT COUNT(*) as count FROM user_choices WHERE session_id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(countSQL)) {
+
+            pstmt.setInt(1, sessionId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("count");
+            }
+
+        } catch (SQLException e) {
+            logger.error("❌ Failed to count choices: {}", e.getMessage());
+        }
+
+        return 0;
+    }
+
     // ==================== SESSION OPERATIONS ====================
 
     /**
@@ -204,26 +302,34 @@ public class DatabaseService {
 
     /**
      * Deletes a session and all its messages.
+     * UPDATED: Now also deletes user choices.
      */
     public void deleteSession(int sessionId) {
         String deleteMessagesSQL = "DELETE FROM messages WHERE session_id = ?";
+        String deleteChoicesSQL = "DELETE FROM user_choices WHERE session_id = ?";  // NEW
         String deleteSessionSQL = "DELETE FROM sessions WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
 
-            // First delete messages
+            // Delete messages
             try (PreparedStatement pstmt = conn.prepareStatement(deleteMessagesSQL)) {
                 pstmt.setInt(1, sessionId);
                 pstmt.executeUpdate();
             }
 
-            // Then delete session
+            // NEW: Delete choices
+            try (PreparedStatement pstmt = conn.prepareStatement(deleteChoicesSQL)) {
+                pstmt.setInt(1, sessionId);
+                pstmt.executeUpdate();
+            }
+
+            // Delete session
             try (PreparedStatement pstmt = conn.prepareStatement(deleteSessionSQL)) {
                 pstmt.setInt(1, sessionId);
                 pstmt.executeUpdate();
             }
 
-            logger.info("🗑️ Deleted session {}", sessionId);
+            logger.info("🗑️ Deleted session {} (including choices)", sessionId);
 
         } catch (SQLException e) {
             logger.error("❌ Failed to delete session: {}", e.getMessage());

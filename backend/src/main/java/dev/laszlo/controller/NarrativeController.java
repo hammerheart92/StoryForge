@@ -3,6 +3,7 @@ package dev.laszlo.controller;
 import dev.laszlo.database.CharacterDatabase;
 import dev.laszlo.database.DatabaseService;
 import dev.laszlo.model.Character;
+import dev.laszlo.model.NarrativeResponse;
 import dev.laszlo.model.Session;
 import dev.laszlo.service.ConversationHistory;
 import dev.laszlo.service.NarrativeEngine;
@@ -85,7 +86,7 @@ public class NarrativeController {
     }
 
     /**
-     * Send a message and get a response from a specific character.
+     * UPDATED: Session 14 - Send a message and get a response WITH CHOICES.
      * POST /api/narrative/speak
      *
      * Request body:
@@ -100,18 +101,31 @@ public class NarrativeController {
      *   "speaker": "ilyra",
      *   "speakerName": "Ilyra",
      *   "mood": "wary",
-     *   "avatarUrl": null
+     *   "avatarUrl": null,
+     *   "choices": [
+     *     {
+     *       "id": "choice_1",
+     *       "label": "Ask about the constellation",
+     *       "nextSpeaker": "ilyra"
+     *     },
+     *     {
+     *       "id": "choice_2",
+     *       "label": "Step back and observe",
+     *       "nextSpeaker": "narrator"
+     *     }
+     *   ]
      * }
      */
     @PostMapping("/speak")
-    public ResponseEntity<Map<String, Object>> speak(@RequestBody Map<String, String> request) {
+    public ResponseEntity<NarrativeResponse> speak(@RequestBody Map<String, String> request) {
         String userMessage = request.get("message");
         String speakerId = request.get("speaker");
 
         // Validate input
         if (userMessage == null || userMessage.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Message cannot be empty"));
+            NarrativeResponse error = new NarrativeResponse();
+            error.setDialogue("Error: Message cannot be empty");
+            return ResponseEntity.badRequest().body(error);
         }
 
         if (speakerId == null || speakerId.isBlank()) {
@@ -123,32 +137,83 @@ public class NarrativeController {
         // Get the character
         Character speaker = characterDb.getCharacter(speakerId);
         if (speaker == null) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Character not found: " + speakerId));
+            NarrativeResponse error = new NarrativeResponse();
+            error.setDialogue("Error: Character not found: " + speakerId);
+            return ResponseEntity.badRequest().body(error);
         }
 
-        // Generate response with character context
-        String response = narrativeEngine.generateResponse(userMessage, speakerId, history);
+        // UPDATED: Generate response WITH choices
+        NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
+                userMessage,
+                speakerId,
+                history
+        );
 
-        // Determine mood from response
-        String mood = narrativeEngine.determineMood(response, speaker);
-
-        // Save to database (we'll use existing messages table for now)
+        // Save to database
         databaseService.saveMessage(currentSessionId, "user", userMessage);
-        databaseService.saveMessage(currentSessionId, speakerId, response);
+        databaseService.saveMessage(currentSessionId, speakerId, response.getDialogue());
 
-        // Build response
-        Map<String, Object> result = new HashMap<>();
-        result.put("dialogue", response);
-        result.put("speaker", speakerId);
-        result.put("speakerName", speaker.getName());
-        result.put("mood", mood);
-        result.put("avatarUrl", speaker.getAvatarUrl());
+        logger.info("✅ {} responded with {} choices",
+                response.getSpeakerName(),
+                response.getChoices().size());
 
-        logger.info("✅ {} responded: {}", speaker.getName(),
-                response.substring(0, Math.min(50, response.length())) + "...");
+        return ResponseEntity.ok(response);
+    }
 
-        return ResponseEntity.ok(result);
+    /**
+     * NEW: Session 14 - Handle choice selection and continue the narrative.
+     * POST /api/narrative/choose
+     *
+     * Request body:
+     * {
+     *   "choiceId": "choice_2",
+     *   "label": "Ask about the constellation",
+     *   "nextSpeaker": "ilyra"
+     * }
+     *
+     * Response: NarrativeResponse with new dialogue and choices
+     */
+    @PostMapping("/choose")
+    public ResponseEntity<NarrativeResponse> choose(@RequestBody Map<String, String> request) {
+        String choiceId = request.get("choiceId");
+        String choiceLabel = request.get("label");
+        String nextSpeaker = request.get("nextSpeaker");
+
+        // Validate input
+        if (choiceId == null || nextSpeaker == null) {
+            NarrativeResponse error = new NarrativeResponse();
+            error.setDialogue("Error: Invalid choice (missing choiceId or nextSpeaker)");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        if (choiceLabel == null) {
+            choiceLabel = "Continue";  // Default label
+        }
+
+        logger.info("🎯 User chose: '{}' -> {}", choiceLabel, nextSpeaker);
+
+        // Save the choice to database
+        databaseService.saveUserChoice(currentSessionId, choiceId, choiceLabel, nextSpeaker);
+
+        // Create transition message based on the choice
+        String transitionMessage = "You chose: " + choiceLabel;
+
+        // Generate response from the next speaker
+        NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
+                transitionMessage,
+                nextSpeaker,
+                history
+        );
+
+        // Save messages to database
+        databaseService.saveMessage(currentSessionId, "user", transitionMessage);
+        databaseService.saveMessage(currentSessionId, nextSpeaker, response.getDialogue());
+
+        logger.info("✅ {} responded after choice with {} new choices",
+                response.getSpeakerName(),
+                response.getChoices().size());
+
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -161,6 +226,18 @@ public class NarrativeController {
         status.put("status", "running");
         status.put("charactersAvailable", characterDb.getAllCharacters().size());
         status.put("currentSession", currentSessionId);
+        status.put("choiceCount", databaseService.getChoiceCount(currentSessionId));
         return ResponseEntity.ok(status);
+    }
+
+    /**
+     * NEW: Session 14 - Get choice history for current session.
+     * GET /api/narrative/choices
+     */
+    @GetMapping("/choices")
+    public ResponseEntity<List<String[]>> getChoiceHistory() {
+        List<String[]> choices = databaseService.getChoiceHistory(currentSessionId);
+        logger.info("📊 Returning {} choices from session {}", choices.size(), currentSessionId);
+        return ResponseEntity.ok(choices);
     }
 }
