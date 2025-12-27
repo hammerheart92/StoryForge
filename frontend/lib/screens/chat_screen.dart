@@ -92,6 +92,10 @@ class _ChatScreenState extends State<ChatScreen> {
       });
 
       Navigator.pop(context); // Close drawer
+
+      // ✨ NEW: Refresh session list after switching
+      _loadSessions();
+
     } catch (e) {
       print('Error switching session: $e');
     }
@@ -255,6 +259,9 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+
+    // ✨ NEW: Refresh session list to update message counts
+    _loadSessions();
   }
 
   /// Reset the conversation
