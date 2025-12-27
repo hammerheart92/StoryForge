@@ -1,10 +1,11 @@
 package dev.laszlo;
 
+import dev.laszlo.database.DatabaseService;
+import dev.laszlo.model.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;

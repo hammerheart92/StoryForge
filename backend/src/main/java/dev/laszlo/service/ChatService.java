@@ -1,4 +1,4 @@
-package dev.laszlo;
+package dev.laszlo.service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;

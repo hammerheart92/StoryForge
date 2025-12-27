@@ -1,6 +1,4 @@
-package dev.laszlo;
-
-import org.springframework.boot.web.reactive.context.StandardReactiveWebEnvironment;
+package dev.laszlo.model;
 
 /**
  * Represents a chat session.

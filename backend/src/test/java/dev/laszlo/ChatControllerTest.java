@@ -1,6 +1,11 @@
 package dev.laszlo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.laszlo.controller.ChatController;
+import dev.laszlo.database.DatabaseService;
+import dev.laszlo.model.Session;
+import dev.laszlo.service.ChatService;
+import dev.laszlo.service.ConversationHistory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

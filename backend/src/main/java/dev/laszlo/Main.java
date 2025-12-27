@@ -1,5 +1,7 @@
 package dev.laszlo;
 
+import dev.laszlo.service.ChatService;
+import dev.laszlo.service.ConversationHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
