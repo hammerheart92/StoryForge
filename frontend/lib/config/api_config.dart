@@ -1,22 +1,51 @@
 // lib/config/api_config.dart
-// Environment configuration for backend API URLs
+// Environment configuration using dart-define
+// No more manual code changes needed!
 
 class ApiConfig {
-  // Production back-end (Railway deployment)
+  // Production backend (Railway deployment)
   static const String productionUrl = 'https://storyforge-production.up.railway.app/api/narrative';
 
-  // Development back-end (Local)
+  // Development backend (local)
   static const String developmentUrl = 'http://localhost:8080/api/narrative';
 
-  // Current environment - Toggle this to switch between local and cloud
-  static const bool isProduction = false;  // ← Set to true for partner demo, false for local dev
+  // Read environment from dart-define (defaults to development)
+  // Usage:
+  //   Development: flutter run (no flag needed)
+  //   Production:  flutter run --dart-define=ENV=production
+  static const String environment = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'development',
+  );
 
-  // Get the appropriate URL based on environment
-  static String get baseUrl => isProduction ? productionUrl : developmentUrl;
+  // Automatically select URL based on environment
+  static String get baseUrl {
+    switch (environment) {
+      case 'production':
+        return productionUrl;
+      case 'development':
+      default:
+        return developmentUrl;
+    }
+  }
+
+  // Helper to check if we're in production
+  static bool get isProduction => environment == 'production';
+
+  // Helper to check if we're in development
+  static bool get isDevelopment => environment == 'development';
 
   // Helper method to print current environment
   static void printEnvironment() {
-    print('🌐 API Environment: ${isProduction ? "PRODUCTION" : "DEVELOPMENT"}');
+    print('🌐 API Environment: ${environment.toUpperCase()}');
     print('🔗 Base URL: $baseUrl');
+    print('');
+    if (isDevelopment) {
+      print('💡 Running in DEVELOPMENT mode (localhost)');
+      print('   To use production: flutter run --dart-define=ENV=production');
+    } else {
+      print('☁️  Running in PRODUCTION mode (Railway cloud)');
+      print('   To use development: flutter run --dart-define=ENV=development');
+    }
   }
 }
