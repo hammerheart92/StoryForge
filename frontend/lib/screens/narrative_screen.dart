@@ -8,6 +8,7 @@ import '../widgets/character_message_card.dart';
 import '../widgets/choices_section.dart';
 import '../widgets/loading_overlay.dart';
 import '../theme/storyforge_theme.dart';
+import 'debug_screen.dart';
 
 class NarrativeScreen extends ConsumerStatefulWidget {
   const NarrativeScreen({super.key});
@@ -76,6 +77,17 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          // Debug menu button
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            tooltip: 'Debug Info',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DebugScreen()),
+              );
+            },
+          ),
           // Reset button
           IconButton(
             icon: const Icon(Icons.refresh),

@@ -37,15 +37,27 @@ class ApiConfig {
 
   // Helper method to print current environment
   static void printEnvironment() {
-    print('🌐 API Environment: ${environment.toUpperCase()}');
-    print('🔗 Base URL: $baseUrl');
     print('');
+    print('========================================');
+    print('🌐 API ENVIRONMENT CONFIGURATION');
+    print('========================================');
+    print('Environment: ${environment.toUpperCase()}');
+    print('Base URL: $baseUrl');
+    print('Production URL: $productionUrl');
+    print('Development URL: $developmentUrl');
+    print('Is Production: $isProduction');
+    print('Is Development: $isDevelopment');
+    print('========================================');
     if (isDevelopment) {
       print('💡 Running in DEVELOPMENT mode (localhost)');
-      print('   To use production: flutter run --dart-define=ENV=production');
+      print('   To switch: flutter run --dart-define=ENV=production');
+      print('   Or use: clean_and_run_prod.bat');
     } else {
       print('☁️  Running in PRODUCTION mode (Railway cloud)');
-      print('   To use development: flutter run --dart-define=ENV=development');
+      print('   To switch: flutter run --dart-define=ENV=development');
+      print('   Or use: run_dev.bat');
     }
+    print('========================================');
+    print('');
   }
 }
