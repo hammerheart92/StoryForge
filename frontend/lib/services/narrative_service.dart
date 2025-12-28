@@ -1,6 +1,7 @@
 // lib/services/narrative_service.dart
 // Service for communicating with the narrative API backend
 
+import '../config/api_config.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/narrative_response.dart';
@@ -14,7 +15,7 @@ class NarrativeService {
   NarrativeService({
     String? baseUrl,
     http.Client? client,
-  })  : baseUrl = baseUrl ?? 'http://localhost:8080/api/narrative',
+  })  : baseUrl = baseUrl ?? ApiConfig.baseUrl,  // ← Use config
         client = client ?? http.Client();
 
   /// Send a message and get a narrative response with choices
@@ -151,8 +152,7 @@ class NarrativeService {
 
   /// Print current environment info (for debugging)
   static void printCurrentEnvironment() {
-    print('🎭 NarrativeService Environment:');
-    print('   Backend URL: http://localhost:8080/api/narrative');
+    ApiConfig.printEnvironment();
     print('   Endpoints:');
     print('     - POST /speak  (get narrative response)');
     print('     - POST /choose (select a choice)');
