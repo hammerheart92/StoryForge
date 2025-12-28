@@ -1,11 +1,16 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:storyforge_frontend/services/chat_service.dart';
-import 'screens/chat_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'screens/narrative_screen.dart';
+import 'theme/storyforge_theme.dart';
 
 void main() {
-  // Show which API URL is being used (helpful for debugging)
-  ChatService.printCurrentEnvironment();
-  runApp(const MyApp());
+  runApp(
+    // Wrap with ProviderScope for Riverpod
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -14,13 +19,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ScenarioChat',
-      debugShowCheckedModeBanner: false,  // Removes debug banner
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyanAccent),
-        useMaterial3: true,
-      ),
-      home: const ChatScreen(),  // Our chat screen
+      title: 'StoryForge',
+      debugShowCheckedModeBanner: false,
+      theme: StoryForgeTheme.lightTheme,
+      home: const NarrativeScreen(),  // Use NarrativeScreen
     );
   }
 }
