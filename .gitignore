@@ -23,6 +23,9 @@ frontend/.metadata
 **/.claude/
 backend/claude_tasks/
 
+# Documentation files
+docs/SESSION_16_PLAN.md
+
 # ===== IDE =====
 # IntelliJ IDEA
 .idea/
