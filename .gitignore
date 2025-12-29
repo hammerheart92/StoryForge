@@ -26,6 +26,9 @@ backend/claude_tasks/
 # Documentation files
 docs/SESSION_16_PLAN.md
 
+# Assets/Images
+frontend/assets/images/characters/
+
 # ===== IDE =====
 # IntelliJ IDEA
 .idea/
