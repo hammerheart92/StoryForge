@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/narrative_provider.dart';
+import '../widgets/character_background.dart';
 import '../widgets/character_message_card.dart';
 import '../widgets/choices_section.dart';
 import '../widgets/loading_overlay.dart';
@@ -102,6 +103,12 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
       ),
       body: Stack(
         children: [
+          // ============================================================
+          // ADDED: Character portrait background (immersive UI)
+          // ============================================================
+          CharacterBackground(
+            speaker: ref.watch(currentSpeakerProvider),
+          ),
           // Main content
           Column(
             children: [
