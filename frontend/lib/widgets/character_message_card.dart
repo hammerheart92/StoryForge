@@ -2,11 +2,13 @@
 // Light cream/beige message cards - Fantasia style
 // Portrait visible AROUND cards, not through them
 // ⭐ UPDATED FOR PHASE 2.3: Now displays italic actionText above dialogue
+// ⭐ UPDATED FOR PHASE 2.4: Character-specific fonts and glows
 
 import 'package:flutter/material.dart';
 import '../models/narrative_message.dart';
 import '../theme/storyforge_theme.dart';
 import '../theme/tokens/spacing.dart';
+import 'character_style_helper.dart';
 
 class CharacterMessageCard extends StatelessWidget {
   final NarrativeMessage message;
@@ -21,13 +23,14 @@ class CharacterMessageCard extends StatelessWidget {
   static const Color _cardBorder = Color(0xFFE8E0D0);         // Warm border
   static const Color _textPrimary = Color(0xFF2D2A26);        // Dark brown text
   static const Color _textSecondary = Color(0xFF5C574F);      // Muted brown
-  static const Color _actionTextGray = Color(0xFF6B6B6B);     // ⭐ NEW: Gray for action text
+  static const Color _actionTextGray = Color(0xFF6B6B6B);     // Gray for action text
   static const Color _userCardBackground = Color(0xFFE8EEF5); // Light blue for user
 
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
     final speakerColor = StoryForgeTheme.getCharacterColor(message.speaker);
+    final characterStyle = CharacterStyle.forSpeaker(message.speaker);  // ⭐ NEW
 
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -127,7 +130,7 @@ class CharacterMessageCard extends StatelessWidget {
                     : _cardBorder,
                 width: 1,
               ),
-              // Soft shadow for depth
+              // Soft shadow for depth + character glow
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.12),
@@ -139,36 +142,45 @@ class CharacterMessageCard extends StatelessWidget {
                   blurRadius: 4,
                   offset: const Offset(0, 1),
                 ),
+                // ⭐ NEW: Character-specific glow
+                if (!isUser)
+                  BoxShadow(
+                    color: characterStyle.glowColor,
+                    blurRadius: 20,
+                    offset: const Offset(0, 0),
+                  ),
               ],
             ),
             // ⭐ CHANGED: From single Text to Column for actionText + dialogue
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ⭐ NEW: Action text (if present) - Italic, gray
+                // ⭐ Action text (if present) - Italic, gray, custom font
                 if (message.hasActionText)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
                       message.actionText!,
                       style: TextStyle(
-                        fontSize: 15,
-                        fontStyle: FontStyle.italic,  // Italic!
-                        color: _actionTextGray,       // Gray color
+                        fontSize: characterStyle.actionFontSize,
+                        fontStyle: FontStyle.italic,
+                        color: _actionTextGray,
                         height: 1.5,
                         fontWeight: FontWeight.w400,
+                        fontFamily: characterStyle.fontFamily,  // ⭐ NEW: Custom font
                       ),
                     ),
                   ),
 
-                // Dialogue text - Regular
+                // Dialogue text - Regular, custom font
                 Text(
                   message.dialogue,
                   style: StoryForgeTheme.dialogueText.copyWith(
-                    color: _textPrimary,  // Dark text on light background
-                    fontSize: 16,
+                    color: _textPrimary,
+                    fontSize: characterStyle.dialogueFontSize,
                     height: 1.6,
                     fontWeight: FontWeight.w400,
+                    fontFamily: characterStyle.fontFamily,  // ⭐ NEW: Custom font
                   ),
                 ),
               ],

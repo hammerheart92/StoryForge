@@ -94,3 +94,16 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  fonts:
+    # Narrator font - Bookish serif
+    - family: Merriweather
+      fonts:
+        - asset: fonts/merriweather/Merriweather_24pt-Italic.ttf
+        - asset: fonts/merriweather/Merriweather_24pt-Regular.ttf
+          style: italic
+
+    # Ilyra font - Elegant script
+    - family: DancingScript
+      fonts:
+        - asset: fonts/dancing_script/DancingScript-Regular.ttf
