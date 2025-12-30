@@ -63,3 +63,6 @@ Thumbs.db
 *.tmp
 .env
 .env.local
+
+# Null
+nul
