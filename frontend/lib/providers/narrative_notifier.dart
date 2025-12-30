@@ -3,6 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/narrative_service.dart';
+import '../services/story_state_service.dart';
 import '../models/narrative_message.dart';
 import '../models/choice.dart';
 import 'narrative_state.dart';
@@ -27,14 +28,21 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
       final historyMessage = NarrativeMessage.fromResponse(response);
 
       // Update state with new response and add to history
+      final newHistory = [...state.history, historyMessage];
       state = state.copyWith(
         currentResponse: response,
-        history: [...state.history, historyMessage],
+        history: newHistory,
         currentSpeaker: response.speaker,
         isLoading: false,
       );
 
       print('✅ Message sent successfully. Speaker: ${response.speakerName}, Choices: ${response.choices.length}');
+
+      // Auto-save state in background
+      await StoryStateService.saveState(
+        messages: newHistory,
+        lastCharacter: response.speaker,
+      );
     } catch (e) {
       print('❌ Error sending message: $e');
 
@@ -64,14 +72,21 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
       final responseMessage = NarrativeMessage.fromResponse(response);
 
       // Update state with new response and add both messages to history
+      final newHistory = [...state.history, choiceMessage, responseMessage];
       state = state.copyWith(
         currentResponse: response,
-        history: [...state.history, choiceMessage, responseMessage],
+        history: newHistory,
         currentSpeaker: response.speaker,
         isLoading: false,
       );
 
       print('✅ Choice processed. Switched to ${response.speakerName}');
+
+      // Auto-save state in background
+      await StoryStateService.saveState(
+        messages: newHistory,
+        lastCharacter: response.speaker,
+      );
     } catch (e) {
       print('❌ Error selecting choice: $e');
 
@@ -92,6 +107,20 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
   void reset() {
     print('🔄 Resetting narrative state');
     state = NarrativeState.initial();
+  }
+
+  /// Restore conversation from saved messages (for "Continue Story")
+  /// Messages appear instantly without animation
+  void restoreFromMessages(List<NarrativeMessage> messages, String lastCharacter) {
+    if (messages.isEmpty) return;
+
+    print('✅ Restoring ${messages.length} messages');
+
+    state = state.copyWith(
+      history: messages,
+      currentSpeaker: lastCharacter,
+      isLoading: false,
+    );
   }
 
   /// Check backend status

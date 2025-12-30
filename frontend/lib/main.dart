@@ -1,7 +1,8 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'screens/narrative_screen.dart';
+import 'screens/home_screen.dart';
+// import 'screens/narrative_screen.dart';  // Will be used in Task 1.3 for navigation
 import 'theme/storyforge_theme.dart';
 
 void main() {
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
       title: 'StoryForge',
       debugShowCheckedModeBanner: false,
       theme: StoryForgeTheme.lightTheme,
-      home: const NarrativeScreen(),  // Use NarrativeScreen
+      home: const HomeScreen(),  // Testing HomeScreen (was NarrativeScreen)
     );
   }
 }

@@ -129,6 +129,25 @@ class StoryForgeTheme {
   /// Avatar radius
   static const avatarRadius = 20.0;
 
+  // ==================== HOME SCREEN DESIGN TOKENS ====================
+
+  /// Narrator teal color (matching CharacterStyleHelper)
+  static const Color narratorTeal = Color(0xFF1A7F8A);
+
+  /// Ilyra purple color (matching CharacterStyleHelper)
+  static const Color ilyraExtended = Color(0xFF6B4A9E);
+
+  /// Home screen button dimensions
+  static const double homeButtonWidth = 300.0;
+  static const double homeButtonHeight = 56.0;
+  static const double homeButtonRadius = 16.0;
+
+  /// Home screen title sizing
+  static const double homeTitleSizeDesktop = 48.0;
+  static const double homeTitleSizeMobile = 40.0;
+  static const double homeSubtitleSizeDesktop = 20.0;
+  static const double homeSubtitleSizeMobile = 18.0;
+
   // ==================== MOOD COLORS ====================
   // Visual indicators for character mood
 

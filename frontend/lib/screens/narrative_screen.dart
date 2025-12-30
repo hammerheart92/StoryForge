@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/narrative_message.dart';
 import '../providers/narrative_provider.dart';
 import '../widgets/character_background.dart';
 import '../widgets/character_message_card.dart';
@@ -12,7 +13,16 @@ import '../theme/storyforge_theme.dart';
 import 'debug_screen.dart';
 
 class NarrativeScreen extends ConsumerStatefulWidget {
-  const NarrativeScreen({super.key});
+  /// Optional restored messages for "Continue Story" functionality
+  /// When provided, these messages are loaded instantly without animation
+  final List<NarrativeMessage>? restoredMessages;
+  final String? lastCharacter;
+
+  const NarrativeScreen({
+    super.key,
+    this.restoredMessages,
+    this.lastCharacter,
+  });
 
   @override
   ConsumerState<NarrativeScreen> createState() => _NarrativeScreenState();
@@ -22,13 +32,28 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _hasStarted = false;
 
+  /// Track how many messages were restored (don't animate these)
+  int _restoredCount = 0;
+
   @override
   void initState() {
     super.initState();
 
     // Start the narrative after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startNarrative();
+      // Check if we're restoring a saved story
+      if (widget.restoredMessages != null && widget.restoredMessages!.isNotEmpty) {
+        // Restore conversation history instantly
+        _restoredCount = widget.restoredMessages!.length;
+        ref.read(narrativeStateProvider.notifier).restoreFromMessages(
+          widget.restoredMessages!,
+          widget.lastCharacter ?? 'narrator',
+        );
+        print('✅ Restored $_restoredCount messages - ready to continue');
+      } else {
+        // New story - start with Narrator as usual
+        _startNarrative();
+      }
     });
   }
 
@@ -121,9 +146,12 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
                   itemCount: state.history.length,
                   itemBuilder: (context, index) {
                     final message = state.history[index];
+                    // Restored messages don't animate, only new messages do
+                    final isNewMessage = index >= _restoredCount;
+                    final isLastMessage = index == state.history.length - 1;
                     return CharacterMessageCard(
                       message: message,
-                      shouldAnimate: index == state.history.length - 1,  // ⭐ NEW: Only animate last message
+                      shouldAnimate: isNewMessage && isLastMessage,
                     );
                   },
                 )
