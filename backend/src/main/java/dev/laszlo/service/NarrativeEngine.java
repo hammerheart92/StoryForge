@@ -82,6 +82,8 @@ public class NarrativeEngine {
     /**
      * Generate a complete narrative response WITH choices for branching.
      * This is the NEW method for Session 14's choice system.
+     *
+     * ⭐ UPDATED FOR PHASE 2.3: Now parses JSON to extract dialogue and actionText
      */
     public NarrativeResponse generateResponseWithChoices(
             String userInput,
@@ -99,8 +101,88 @@ public class NarrativeEngine {
             return error;
         }
 
-        // 2. Generate character's dialogue (using existing logic)
-        String dialogue = generateResponse(userInput, activeCharacterId, history);
+        // 2. Generate character's response (now returns JSON)
+        String rawResponse = generateResponse(userInput, activeCharacterId, history);
+
+        // ⭐ DEBUG LOGGING: Track raw response for each character
+        logger.info("🔍 [{}] Raw Response Length: {}", activeCharacterId, rawResponse.length());
+        logger.info("🔍 [{}] Raw Response Preview (first 200 chars): {}",
+                    activeCharacterId,
+                    rawResponse.length() > 200 ? rawResponse.substring(0, 200) + "..." : rawResponse);
+        logger.info("🔍 [{}] Raw Response Full: {}", activeCharacterId, rawResponse);
+
+// ⭐ NEW: Extract and parse JSON more robustly
+        String dialogue = rawResponse;  // Initialize with raw response as fallback
+        String actionText = null;
+
+        try {
+            // ⭐ IMPROVED: Find valid JSON by trying to parse from each '{' position
+            int jsonStart = rawResponse.indexOf('{');
+
+            logger.info("🔍 [{}] JSON Start Index: {}", activeCharacterId, jsonStart);
+
+            if (jsonStart >= 0) {
+                boolean parsed = false;
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+                // Try to parse JSON starting from each '{' until we find valid JSON
+                for (int i = jsonStart; i < rawResponse.length() && !parsed; i++) {
+                    if (rawResponse.charAt(i) == '{') {
+                        // Try to parse from this position to the end
+                        String candidate = rawResponse.substring(i);
+
+                        try {
+                            // Attempt to parse - Jackson will find the correct end of JSON
+                            com.fasterxml.jackson.databind.JsonNode json = mapper.readTree(candidate);
+
+                            // Check if this JSON has the expected structure
+                            if (json.has("dialogue")) {
+                                dialogue = json.get("dialogue").asText();
+
+                                if (json.has("actionText")) {
+                                    actionText = json.get("actionText").asText();
+                                }
+
+                                parsed = true;
+                                logger.info("✅ [{}] Successfully parsed JSON at position {}", activeCharacterId, i);
+                                logger.info("✅ [{}] Parsed dialogue: {}", activeCharacterId, dialogue);
+                                logger.info("✅ [{}] Parsed actionText: {}", activeCharacterId, actionText);
+                            }
+                        } catch (com.fasterxml.jackson.core.JsonParseException jpe) {
+                            // Not valid JSON at this position, try next '{'
+                            continue;
+                        }
+                    }
+                }
+
+                if (!parsed) {
+                    // No valid JSON found, use raw response
+                    dialogue = rawResponse;
+                    logger.warn("⚠️ [{}] No valid JSON with 'dialogue' field found, using raw text", activeCharacterId);
+                }
+            } else {
+                // No JSON found at all, use raw response
+                dialogue = rawResponse;
+                logger.warn("⚠️ [{}] No JSON braces found in response, using raw text", activeCharacterId);
+            }
+        } catch (Exception e) {
+            // If parsing fails, use raw response as dialogue
+            dialogue = rawResponse;
+            actionText = null;
+            logger.error("❌ [{}] Failed to parse JSON response: {}", activeCharacterId, e.getMessage());
+            logger.error("❌ [{}] Exception details: ", activeCharacterId, e);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // DEBUG LOGGING - CRITICAL FOR FINDING ILYRA BUG
+        // ═══════════════════════════════════════════════════════════════════════════
+        logger.info("═══════════════════════════════════════════════════════════════════");
+        logger.info("CHARACTER: {}", activeCharacterId);
+        logger.info("RAW AI RESPONSE: {}", rawResponse);
+        logger.info("AFTER JSON PARSING:");
+        logger.info("  - dialogue: {}", dialogue);
+        logger.info("  - actionText: {}", actionText);
+        logger.info("═══════════════════════════════════════════════════════════════════");
 
         // 3. Generate choices based on the dialogue and context
         List<Choice> choices = generateChoices(activeCharacterId, dialogue, history);
@@ -111,6 +193,7 @@ public class NarrativeEngine {
         // 5. Build complete narrative response
         NarrativeResponse response = new NarrativeResponse();
         response.setDialogue(dialogue);
+        response.setActionText(actionText);  // ⭐ NEW: Set the action text
         response.setSpeaker(activeCharacterId);
         response.setSpeakerName(character.getName());
         response.setMood(mood);
@@ -119,6 +202,12 @@ public class NarrativeEngine {
 
         logger.info("✅ Generated narrative response: {} with {} choices",
                 character.getName(), choices.size());
+
+        // ⭐ DEBUG LOGGING: Verify final NarrativeResponse object
+        logger.info("🔍 [{}] Final NarrativeResponse - dialogue: {}", activeCharacterId, response.getDialogue());
+        logger.info("🔍 [{}] Final NarrativeResponse - actionText: {}", activeCharacterId, response.getActionText());
+        logger.info("🔍 [{}] Final NarrativeResponse - speaker: {}", activeCharacterId, response.getSpeaker());
+        logger.info("🔍 [{}] Final NarrativeResponse - speakerName: {}", activeCharacterId, response.getSpeakerName());
 
         return response;
     }
@@ -277,12 +366,30 @@ public class NarrativeEngine {
         if ("narrator".equals(character.getId())) {
             logger.debug("Using narrator (base prompt only)");
             return BASE_PROMPT + """
-                
-                ## Current Character: Narrator
-                You are the omniscient narrator. Describe scenes in third-person with rich detail.
-                Set atmosphere, describe environments, and guide the story forward.
-                Your voice is neutral, observant, and immersive.
-                """;
+        
+        ## Current Character: Narrator
+        You are the omniscient narrator. Describe scenes in third-person with rich detail.
+        Set atmosphere, describe environments, and guide the story forward.
+        Your voice is neutral, observant, and immersive.
+        
+        CRITICAL: You MUST respond with valid JSON in this EXACT format:
+        {
+          "dialogue": "Your spoken narration here",
+          "actionText": "Brief scene description (1-2 sentences)"
+        }
+        
+        Guidelines:
+        - dialogue: Your narrative description (what you observe and describe)
+        - actionText: Physical scene details, atmosphere, movements (1-2 sentences max)
+        - ALWAYS include BOTH fields
+        - Keep actionText concise and evocative
+        
+        Example:
+        {
+          "dialogue": "The ancient observatory stands before you, its mechanisms still turning after centuries.",
+          "actionText": "Starlight filters through crystalline windows, casting patterns on the stone floor."
+        }
+        """;
         }
 
         // For other characters, add their personality layer
@@ -296,7 +403,27 @@ public class NarrativeEngine {
                 "**Relationship to User:** " + character.getRelationshipToUser() + "\n\n" +
                 "**Background:** " + character.getDescription() + "\n\n" +
                 "Respond in character. Maintain " + character.getName() + "'s distinct voice, " +
-                "personality, and speaking patterns. Show their current mood through subtle cues.";
+                "personality, and speaking patterns. Show their current mood through subtle cues.\n\n" +
+
+                // NEW: Add JSON format requirement
+                "CRITICAL: You MUST respond with valid JSON in this EXACT format:\n" +
+                "{\n" +
+                "  \"dialogue\": \"Your spoken words here\",\n" +
+                "  \"actionText\": \"Brief action/gesture description (1-2 sentences)\"\n" +
+                "}\n\n" +
+
+                "Guidelines for JSON response:\n" +
+                "- dialogue: What " + character.getName() + " says (in their voice)\n" +
+                "- actionText: What " + character.getName() + " does - gestures, expressions, movements (1-2 sentences max)\n" +
+                "- ALWAYS include BOTH fields\n" +
+                "- actionText shows emotion through body language\n" +
+                "- Use present tense for actionText\n\n" +
+
+                "Example response:\n" +
+                "{\n" +
+                "  \"dialogue\": \"The stars tell ancient stories, if you know how to listen.\",\n" +
+                "  \"actionText\": \"She traces constellation patterns in the air, her eyes distant and contemplative.\"\n" +
+                "}";
 
         logger.debug("Built layered prompt for {}", character.getName());
 

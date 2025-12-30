@@ -13,6 +13,7 @@ public class NarrativeResponse {
     private String speakerName;         // Display name (e.g., "Ilyra", "Narrator")
     private String mood;                // Current mood (e.g., "wary", "cheerful", "observant")
     private String avatarUrl;           // URL to character avatar image (optional)
+    private String actionText;          // Action/gesture description (NEW for Phase 2.3)
     private List<Choice> choices;       // Available choices for the user
 
     // Default constructor
@@ -26,6 +27,8 @@ public class NarrativeResponse {
         this.speaker = speaker;
         this.speakerName = speakerName;
         this.mood = mood;
+        // REMOVED: this.actionText = getActionText();
+        // actionText will be set separately via setActionText()
         this.choices = new ArrayList<>();
     }
 
@@ -78,6 +81,14 @@ public class NarrativeResponse {
         this.choices = choices;
     }
 
+    public String getActionText() {
+        return actionText;
+    }
+
+    public void setActionText(String actionText) {
+        this.actionText = actionText;
+    }
+
     // Convenience method to add a single choice
     public void addChoice(Choice choice) {
         this.choices.add(choice);
@@ -90,6 +101,7 @@ public class NarrativeResponse {
                 ", mood='" + mood + '\'' +
                 ", choiceCount=" + (choices != null ? choices.size() : 0) +
                 ", dialogueLength=" + (dialogue != null ? dialogue.length() : 0) +
+                ", actionTextLength=" + (actionText != null ? actionText.length() : 0) +  // ADDED THIS LINE
                 '}';
     }
 }

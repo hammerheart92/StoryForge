@@ -49,6 +49,19 @@ class NarrativeService {
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+        // ═══════════════════════════════════════════════════════════════════
+        // DEBUG: Print raw JSON to find Ilyra bug
+        // ═══════════════════════════════════════════════════════════════════
+        print('═══════════════════════════════════════════════════════════════');
+        print('🔍 DEBUG - Raw JSON from backend:');
+        print('   speaker: ${json['speaker']}');
+        print('   dialogue: ${json['dialogue']}');
+        print('   actionText: ${json['actionText']}');
+        print('   dialogue type: ${json['dialogue'].runtimeType}');
+        print('   dialogue starts with {: ${json['dialogue'].toString().trim().startsWith('{')}');
+        print('═══════════════════════════════════════════════════════════════');
+
         final narrativeResponse = NarrativeResponse.fromJson(json);
 
         print('✅ Success: ${narrativeResponse.speakerName} with ${narrativeResponse.choices.length} choices');
@@ -91,6 +104,19 @@ class NarrativeService {
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+        // ═══════════════════════════════════════════════════════════════════
+        // DEBUG: Print raw JSON to find Ilyra bug (choose endpoint)
+        // ═══════════════════════════════════════════════════════════════════
+        print('═══════════════════════════════════════════════════════════════');
+        print('🔍 DEBUG CHOOSE - Raw JSON from backend:');
+        print('   speaker: ${json['speaker']}');
+        print('   dialogue: ${json['dialogue']}');
+        print('   actionText: ${json['actionText']}');
+        print('   dialogue type: ${json['dialogue'].runtimeType}');
+        print('   dialogue starts with {: ${json['dialogue'].toString().trim().startsWith('{')}');
+        print('═══════════════════════════════════════════════════════════════');
+
         final narrativeResponse = NarrativeResponse.fromJson(json);
 
         print('✅ Success: Switched to ${narrativeResponse.speakerName}');

@@ -1,6 +1,7 @@
 // lib/widgets/character_message_card.dart
 // Light cream/beige message cards - Fantasia style
 // Portrait visible AROUND cards, not through them
+// ⭐ UPDATED FOR PHASE 2.3: Now displays italic actionText above dialogue
 
 import 'package:flutter/material.dart';
 import '../models/narrative_message.dart';
@@ -20,6 +21,7 @@ class CharacterMessageCard extends StatelessWidget {
   static const Color _cardBorder = Color(0xFFE8E0D0);         // Warm border
   static const Color _textPrimary = Color(0xFF2D2A26);        // Dark brown text
   static const Color _textSecondary = Color(0xFF5C574F);      // Muted brown
+  static const Color _actionTextGray = Color(0xFF6B6B6B);     // ⭐ NEW: Gray for action text
   static const Color _userCardBackground = Color(0xFFE8EEF5); // Light blue for user
 
   @override
@@ -106,8 +108,7 @@ class CharacterMessageCard extends StatelessWidget {
 
           const SizedBox(height: DesignSpacing.sm),
 
-          // Message content card - LIGHT CREAM, SEMI-OPAQUE
-          // Portrait visible AROUND this card, not through it
+          // ⭐ UPDATED: Message content card - now shows actionText + dialogue
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(DesignSpacing.md),
@@ -140,14 +141,37 @@ class CharacterMessageCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: Text(
-              message.dialogue,
-              style: StoryForgeTheme.dialogueText.copyWith(
-                color: _textPrimary,  // Dark text on light background
-                fontSize: 16,
-                height: 1.6,
-                fontWeight: FontWeight.w400,
-              ),
+            // ⭐ CHANGED: From single Text to Column for actionText + dialogue
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ⭐ NEW: Action text (if present) - Italic, gray
+                if (message.hasActionText)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      message.actionText!,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontStyle: FontStyle.italic,  // Italic!
+                        color: _actionTextGray,       // Gray color
+                        height: 1.5,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+
+                // Dialogue text - Regular
+                Text(
+                  message.dialogue,
+                  style: StoryForgeTheme.dialogueText.copyWith(
+                    color: _textPrimary,  // Dark text on light background
+                    fontSize: 16,
+                    height: 1.6,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

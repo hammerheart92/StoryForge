@@ -7,6 +7,7 @@ class NarrativeMessage {
   final String speakerName;     // Display name ("Narrator", "Ilyra", "You")
   final String speaker;         // Character ID ("narrator", "ilyra", "user")
   final String dialogue;        // The message text
+  final String? actionText;     // Action description (italic text)
   final String mood;            // Character's mood at this point
   final DateTime timestamp;     // When this message was created
 
@@ -14,6 +15,7 @@ class NarrativeMessage {
     required this.speakerName,
     required this.speaker,
     required this.dialogue,
+    this.actionText,
     required this.mood,
     required this.timestamp,
   });
@@ -35,6 +37,7 @@ class NarrativeMessage {
       speakerName: response.speakerName,
       speaker: response.speaker,
       dialogue: response.dialogue,
+      actionText: response.actionText,
       mood: response.mood,
       timestamp: DateTime.now(),
     );
@@ -46,8 +49,11 @@ class NarrativeMessage {
   /// Check if this is the narrator
   bool get isNarrator => speaker == 'narrator';
 
+  /// Check if action text is present
+  bool get hasActionText => actionText != null && actionText!.isNotEmpty;
+
   @override
   String toString() {
-    return 'NarrativeMessage($speakerName: ${dialogue.substring(0, 30)}...)';
+    return 'NarrativeMessage($speakerName: ${dialogue.substring(0, dialogue.length > 30 ? 30 : dialogue.length)}...)';
   }
 }
