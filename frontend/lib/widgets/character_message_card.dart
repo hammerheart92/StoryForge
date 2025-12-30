@@ -1,8 +1,9 @@
 // lib/widgets/character_message_card.dart
-// Light cream/beige message cards - Fantasia style
+// Light cream/beige message cards
 // Portrait visible AROUND cards, not through them
 // ⭐ UPDATED FOR PHASE 2.3: Now displays italic actionText above dialogue
 // ⭐ UPDATED FOR PHASE 2.4: Character-specific fonts and glows
+// ⭐ UPDATED: Fantasia-style dark transparent cards
 
 import 'package:flutter/material.dart';
 import '../models/narrative_message.dart';
@@ -19,18 +20,19 @@ class CharacterMessageCard extends StatelessWidget {
   });
 
   // Fantasia-style color palette
-  static const Color _creamBackground = Color(0xFFF5F1E8);    // Light cream
-  static const Color _cardBorder = Color(0xFFE8E0D0);         // Warm border
-  static const Color _textPrimary = Color(0xFF2D2A26);        // Dark brown text
-  static const Color _textSecondary = Color(0xFF5C574F);      // Muted brown
-  static const Color _actionTextGray = Color(0xFF6B6B6B);     // Gray for action text
-  static const Color _userCardBackground = Color(0xFFE8EEF5); // Light blue for user
+  static const Color _darkCardBackground = Color(0xFF1A1A1A);     // Dark gray
+  static const Color _cardBorder = Color(0xFF2A2A2A);             // Subtle border
+  static const Color _textPrimary = Color(0xFFE8E8E8);            // Light text
+  static const Color _actionTextGray = Color(0xFFB0B0B0);         // Gray for action text
+  static const Color _userCardBackground = Color(0xFFE8EEF5);     // Light blue for user
+  static const Color _userTextDark = Color(0xFF1A1A1A);           // Dark text for user
+  static const Color _userActionDark = Color(0xFF2A2A2A);         // Dark action for user
 
   @override
   Widget build(BuildContext context) {
-    final isUser = message.isUser;
+    final isUser = message.speaker == 'user';
     final speakerColor = StoryForgeTheme.getCharacterColor(message.speaker);
-    final characterStyle = CharacterStyle.forSpeaker(message.speaker);  // ⭐ NEW
+    final characterStyle = CharacterStyle.forSpeaker(message.speaker);
 
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -71,22 +73,22 @@ class CharacterMessageCard extends StatelessWidget {
 
               const SizedBox(width: DesignSpacing.sm),
 
-              // Character name - cream background pill
+              // Character name - dark background pill
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: DesignSpacing.sm,
                   vertical: DesignSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: _creamBackground.withOpacity(0.95),
+                  color: _darkCardBackground.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: _cardBorder,
+                    color: _cardBorder.withOpacity(0.6),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withOpacity(0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -104,7 +106,7 @@ class CharacterMessageCard extends StatelessWidget {
               const Spacer(),
 
               // Mood indicator (skip for user messages)
-              if (!isUser)
+              if (!isUser && message.mood.isNotEmpty)
                 _MoodIndicator(mood: message.mood),
             ],
           ),
@@ -116,33 +118,26 @@ class CharacterMessageCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(DesignSpacing.md),
             decoration: BoxDecoration(
-              // Light cream/beige - 90% opacity (semi-opaque)
+              // Dark semi-transparent for characters, light for user
               color: isUser
                   ? _userCardBackground.withOpacity(0.92)
-                  : _creamBackground.withOpacity(0.90),
+                  : _darkCardBackground.withOpacity(0.70),
               borderRadius: BorderRadius.circular(
                 StoryForgeTheme.cardRadius,
               ),
-              // Warm border for definition
+              // Subtle border
               border: Border.all(
-                color: isUser
-                    ? const Color(0xFFD0D8E8)
-                    : _cardBorder,
+                color: _cardBorder.withOpacity(0.5),
                 width: 1,
               ),
-              // Soft shadow for depth + character glow
+              // Soft shadow + character glow
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: Colors.black.withOpacity(0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-                // ⭐ NEW: Character-specific glow
+                // Character-specific glow
                 if (!isUser)
                   BoxShadow(
                     color: characterStyle.glowColor,
@@ -155,8 +150,8 @@ class CharacterMessageCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ⭐ Action text (if present) - Italic, gray, custom font
-                if (message.hasActionText)
+                // ⭐ Action text (if present) - Italic, custom font
+                if (message.hasActionText && message.actionText != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
@@ -164,10 +159,10 @@ class CharacterMessageCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: characterStyle.actionFontSize,
                         fontStyle: FontStyle.italic,
-                        color: _actionTextGray,
+                        color: isUser ? _userActionDark : _actionTextGray,  // ⭐ Safe: Dark for user, light for others
                         height: 1.5,
                         fontWeight: FontWeight.w400,
-                        fontFamily: characterStyle.fontFamily,  // ⭐ NEW: Custom font
+                        fontFamily: characterStyle.fontFamily,
                       ),
                     ),
                   ),
@@ -176,11 +171,11 @@ class CharacterMessageCard extends StatelessWidget {
                 Text(
                   message.dialogue,
                   style: StoryForgeTheme.dialogueText.copyWith(
-                    color: _textPrimary,
+                    color: isUser ? _userTextDark : _textPrimary,  // ⭐ Safe: Dark for user, light for others
                     fontSize: characterStyle.dialogueFontSize,
                     height: 1.6,
                     fontWeight: FontWeight.w400,
-                    fontFamily: characterStyle.fontFamily,  // ⭐ NEW: Custom font
+                    fontFamily: characterStyle.fontFamily,
                   ),
                 ),
               ],
@@ -200,7 +195,10 @@ class _MoodIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final moodColor = StoryForgeTheme.getMoodColor(mood);
+    // Safe mood color retrieval with fallback
+    final moodColor = mood.isNotEmpty
+        ? StoryForgeTheme.getMoodColor(mood)
+        : Colors.grey;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -219,12 +217,22 @@ class _MoodIndicator extends StatelessWidget {
       child: Text(
         mood,
         style: StoryForgeTheme.moodLabel.copyWith(
-          color: moodColor.shade700,
+          color: _getSafeShade700(moodColor),  // ⭐ CHANGED: Safe shade
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
+  }
+
+  // ⭐ NEW: Safe method to get shade700
+  Color _getSafeShade700(Color color) {
+    try {
+      final hsl = HSLColor.fromColor(color);
+      return hsl.withLightness((hsl.lightness - 0.2).clamp(0.0, 1.0)).toColor();
+    } catch (e) {
+      return color; // Return original if shade calculation fails
+    }
   }
 }
 
