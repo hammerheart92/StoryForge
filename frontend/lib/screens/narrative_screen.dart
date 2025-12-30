@@ -121,7 +121,10 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
                   itemCount: state.history.length,
                   itemBuilder: (context, index) {
                     final message = state.history[index];
-                    return CharacterMessageCard(message: message);
+                    return CharacterMessageCard(
+                      message: message,
+                      shouldAnimate: index == state.history.length - 1,  // ⭐ NEW: Only animate last message
+                    );
                   },
                 )
                     : _EmptyState(),
@@ -136,8 +139,8 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
           ),
 
           // Loading overlay
-          if (state.isLoading)
-            const LoadingOverlay(),
+          // if (state.isLoading)
+          //   const LoadingOverlay(),
 
           // Error banner
           if (state.hasError)
