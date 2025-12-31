@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import '../models/narrative_message.dart';
+import '../services/settings_service.dart';
 import '../theme/storyforge_theme.dart';
 import '../theme/tokens/spacing.dart';
 import 'character_style_helper.dart';
@@ -32,6 +33,10 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
   // ⭐ PHASE 2.6: Typewriter effect state
   bool _showDialogue = false;
 
+  // ⭐ PHASE 4: User settings state
+  int _animationSpeed = 20;      // Default: 20ms per character
+  double _textSize = 16.0;       // Default: Medium (16px)
+
   // Fantasia-style color palette
   static const Color _darkCardBackground = Color(0xFF1A1A1A);     // Dark gray
   static const Color _cardBorder = Color(0xFF2A2A2A);             // Subtle border
@@ -41,19 +46,43 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
   static const Color _userTextDark = Color(0xFF1A1A1A);           // Dark text for user
   static const Color _userActionDark = Color(0xFF2A2A2A);         // Dark action for user
 
-  // Typewriter timing constants
-  static const int _msPerCharacter = 20;     // ~50 chars/second
-  static const int _pauseBetweenMs = 150;    // Pause between action and dialogue
+  // Typewriter timing constant (pause between action and dialogue)
+  static const int _pauseBetweenMs = 150;
 
   @override
   void initState() {
     super.initState();
+    _loadSettings();
 
     // If no action text, show dialogue immediately
     if (!widget.message.hasActionText || !widget.shouldAnimate) {
       _showDialogue = true;
     }
   }
+
+  /// Load user settings for animation speed and text size
+  Future<void> _loadSettings() async {
+    try {
+      final settings = await SettingsService.loadSettings();
+      if (mounted) {
+        setState(() {
+          _animationSpeed = settings.animationSpeed;
+          _textSize = settings.textSize.pixels;
+
+          // ⭐ PHASE 4: If instant mode (0ms), show dialogue immediately
+          // (no animation callback to trigger it)
+          if (settings.animationSpeed == 0 && widget.message.hasActionText) {
+            _showDialogue = true;
+          }
+        });
+      }
+    } catch (e) {
+      // Use defaults on error - values already initialized
+    }
+  }
+
+  /// Check if animation should be skipped (0ms = instant)
+  bool get _isInstantMode => _animationSpeed == 0;
 
   @override
   Widget build(BuildContext context) {
@@ -179,21 +208,22 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ⭐ Action text (if present) - Italic, custom font, types first
+                    // ⭐ PHASE 4: Uses user's text size setting
                     if (widget.message.hasActionText && widget.message.actionText != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: widget.shouldAnimate
+                        child: (widget.shouldAnimate && !_isInstantMode)
                             ? TypewriterText(
                                 text: widget.message.actionText!,
                                 style: TextStyle(
-                                  fontSize: characterStyle.actionFontSize,
+                                  fontSize: _textSize,  // ⭐ User setting
                                   fontStyle: FontStyle.italic,
                                   color: isUser ? _userActionDark : _actionTextGray,
                                   height: 1.5,
                                   fontWeight: FontWeight.w400,
                                   fontFamily: characterStyle.fontFamily,
                                 ),
-                                msPerCharacter: _msPerCharacter,
+                                msPerCharacter: _animationSpeed,  // ⭐ User setting
                                 onComplete: () {
                                   // After action text completes, pause then show dialogue
                                   Future.delayed(
@@ -209,7 +239,7 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                             : Text(
                                 widget.message.actionText!,
                                 style: TextStyle(
-                                  fontSize: characterStyle.actionFontSize,
+                                  fontSize: _textSize,  // ⭐ User setting
                                   fontStyle: FontStyle.italic,
                                   color: isUser ? _userActionDark : _actionTextGray,
                                   height: 1.5,
@@ -220,24 +250,25 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                       ),
 
                     // ⭐ Dialogue text - types after action text completes (or immediately if no action)
+                    // ⭐ PHASE 4: Uses user's animation speed and text size settings
                     if (_showDialogue)
-                      widget.shouldAnimate
+                      (widget.shouldAnimate && !_isInstantMode)
                           ? TypewriterText(
                               text: widget.message.dialogue,
                               style: StoryForgeTheme.dialogueText.copyWith(
                                 color: isUser ? _userTextDark : _textPrimary,
-                                fontSize: characterStyle.dialogueFontSize,
+                                fontSize: _textSize,  // ⭐ User setting
                                 height: 1.6,
                                 fontWeight: FontWeight.w400,
                                 fontFamily: characterStyle.fontFamily,
                               ),
-                              msPerCharacter: _msPerCharacter,
+                              msPerCharacter: _animationSpeed,  // ⭐ User setting
                             )
                           : Text(
                               widget.message.dialogue,
                               style: StoryForgeTheme.dialogueText.copyWith(
                                 color: isUser ? _userTextDark : _textPrimary,
-                                fontSize: characterStyle.dialogueFontSize,
+                                fontSize: _textSize,  // ⭐ User setting
                                 height: 1.6,
                                 fontWeight: FontWeight.w400,
                                 fontFamily: characterStyle.fontFamily,

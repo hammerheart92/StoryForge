@@ -3,7 +3,9 @@
 // Features profile header, stats grid, and settings menu
 
 import 'package:flutter/material.dart';
+import '../services/settings_service.dart';
 import '../services/stats_service.dart';
+import '../services/story_state_service.dart';
 import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
 
@@ -16,11 +18,13 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   UserStats _stats = UserStats.empty();
+  AppSettings _settings = const AppSettings();
 
   @override
   void initState() {
     super.initState();
     _loadStats();
+    _loadSettings();
   }
 
   Future<void> _loadStats() async {
@@ -30,6 +34,284 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _stats = stats;
       });
     }
+  }
+
+  Future<void> _loadSettings() async {
+    final settings = await SettingsService.loadSettings();
+    if (mounted) {
+      setState(() {
+        _settings = settings;
+      });
+    }
+  }
+
+  // ==================== SETTINGS DIALOGS ====================
+
+  /// Animation Speed dialog with slider (0-100ms)
+  Future<void> _showAnimationSpeedDialog() async {
+    double speed = _settings.animationSpeed.toDouble();
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF23272C),
+          title: const Text(
+            'Animation Speed',
+            style: TextStyle(color: DesignColors.dPrimaryText),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Slider(
+                value: speed,
+                min: 0,
+                max: 100,
+                divisions: 20,
+                activeColor: DesignColors.highlightTeal,
+                inactiveColor: DesignColors.dSurfaces,
+                label: '${speed.round()}ms',
+                onChanged: (value) {
+                  setDialogState(() {
+                    speed = value;
+                  });
+                },
+              ),
+              Text(
+                '${speed.round()}ms per character',
+                style: const TextStyle(color: DesignColors.dPrimaryText),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                speed == 0
+                    ? 'Instant'
+                    : speed < 15
+                        ? 'Fast'
+                        : speed < 30
+                            ? 'Normal'
+                            : 'Slow',
+                style: TextStyle(color: DesignColors.dSecondaryText),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: DesignColors.dSecondaryText),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                final newSettings =
+                    _settings.copyWith(animationSpeed: speed.round());
+                await SettingsService.saveSettings(newSettings);
+                if (mounted) {
+                  setState(() {
+                    _settings = newSettings;
+                  });
+                }
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text(
+                'Save',
+                style: TextStyle(color: DesignColors.highlightTeal),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Text Size dialog with radio buttons (Small/Medium/Large)
+  Future<void> _showTextSizeDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF23272C),
+        title: const Text(
+          'Text Size',
+          style: TextStyle(color: DesignColors.dPrimaryText),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildTextSizeOption(TextSize.small, 'Small', 14),
+            _buildTextSizeOption(TextSize.medium, 'Medium', 16),
+            _buildTextSizeOption(TextSize.large, 'Large', 18),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextSizeOption(TextSize size, String label, double fontSize) {
+    return RadioListTile<TextSize>(
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: fontSize,
+          color: DesignColors.dPrimaryText,
+        ),
+      ),
+      value: size,
+      groupValue: _settings.textSize,
+      activeColor: DesignColors.highlightTeal,
+      onChanged: (value) async {
+        if (value != null) {
+          final newSettings = _settings.copyWith(textSize: value);
+          await SettingsService.saveSettings(newSettings);
+          if (mounted) {
+            setState(() {
+              _settings = newSettings;
+            });
+          }
+          if (context.mounted) Navigator.pop(context);
+        }
+      },
+    );
+  }
+
+  /// Language dialog with radio buttons (English/Română)
+  Future<void> _showLanguageDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF23272C),
+        title: const Text(
+          'Language',
+          style: TextStyle(color: DesignColors.dPrimaryText),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildLanguageOption('en', 'English'),
+            _buildLanguageOption('ro', 'Română'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(String code, String label) {
+    return RadioListTile<String>(
+      title: Text(
+        label,
+        style: const TextStyle(color: DesignColors.dPrimaryText),
+      ),
+      value: code,
+      groupValue: _settings.language,
+      activeColor: DesignColors.highlightTeal,
+      onChanged: (value) async {
+        if (value != null) {
+          final newSettings = _settings.copyWith(language: value);
+          await SettingsService.saveSettings(newSettings);
+          if (mounted) {
+            setState(() {
+              _settings = newSettings;
+            });
+          }
+          if (context.mounted) Navigator.pop(context);
+        }
+      },
+    );
+  }
+
+  /// Clear Data confirmation dialog
+  Future<void> _showClearDataDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF23272C),
+        title: const Text(
+          'Clear All Data?',
+          style: TextStyle(color: DesignColors.dPrimaryText),
+        ),
+        content: const Text(
+          'This will delete all your stories, choices, and settings. '
+          'This action cannot be undone.',
+          style: TextStyle(color: DesignColors.dSecondaryText),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: DesignColors.dSecondaryText),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: DesignColors.dDanger),
+            child: const Text('Delete Everything'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await StoryStateService.clearState();
+      await SettingsService.saveSettings(const AppSettings());
+
+      if (mounted) {
+        setState(() {
+          _stats = UserStats.empty();
+          _settings = const AppSettings();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All data cleared'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  /// About dialog with version info
+  Future<void> _showAboutDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF23272C),
+        title: const Text(
+          'About StoryForge',
+          style: TextStyle(color: DesignColors.dPrimaryText),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Version 1.0.0',
+              style: TextStyle(color: DesignColors.dPrimaryText),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'AI-powered interactive storytelling',
+              style: TextStyle(color: DesignColors.dPrimaryText),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Built with Flutter & Claude API',
+              style: TextStyle(color: DesignColors.dSecondaryText),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: DesignColors.highlightTeal),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -100,7 +382,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: DesignSpacing.xl),
 
                     // Section 3: Settings List
-                    const _SettingsList(),
+                    _SettingsList(
+                      settings: _settings,
+                      onAnimationSpeedTap: _showAnimationSpeedDialog,
+                      onTextSizeTap: _showTextSizeDialog,
+                      onLanguageTap: _showLanguageDialog,
+                      onClearDataTap: _showClearDataDialog,
+                      onAboutTap: _showAboutDialog,
+                    ),
 
                     const SizedBox(height: DesignSpacing.xl),
                   ],
@@ -314,7 +603,38 @@ class _StatCard extends StatelessWidget {
 
 /// Settings menu list
 class _SettingsList extends StatelessWidget {
-  const _SettingsList();
+  final AppSettings settings;
+  final VoidCallback onAnimationSpeedTap;
+  final VoidCallback onTextSizeTap;
+  final VoidCallback onLanguageTap;
+  final VoidCallback onClearDataTap;
+  final VoidCallback onAboutTap;
+
+  const _SettingsList({
+    required this.settings,
+    required this.onAnimationSpeedTap,
+    required this.onTextSizeTap,
+    required this.onLanguageTap,
+    required this.onClearDataTap,
+    required this.onAboutTap,
+  });
+
+  /// Get display text for text size
+  String _getTextSizeLabel(TextSize size) {
+    switch (size) {
+      case TextSize.small:
+        return 'Small';
+      case TextSize.medium:
+        return 'Medium';
+      case TextSize.large:
+        return 'Large';
+    }
+  }
+
+  /// Get display text for language
+  String _getLanguageLabel(String code) {
+    return code == 'en' ? 'English' : 'Română';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -351,10 +671,8 @@ class _SettingsList extends StatelessWidget {
                 icon: Icons.speed,
                 iconColor: DesignColors.highlightTeal,
                 title: 'Animation Speed',
-                subtitle: '20ms per character',
-                onTap: () {
-                  // TODO: Implement in Phase 3
-                },
+                subtitle: '${settings.animationSpeed}ms per character',
+                onTap: onAnimationSpeedTap,
               ),
 
               _buildDivider(),
@@ -364,10 +682,8 @@ class _SettingsList extends StatelessWidget {
                 icon: Icons.text_fields,
                 iconColor: DesignColors.highlightTeal,
                 title: 'Text Size',
-                subtitle: 'Medium',
-                onTap: () {
-                  // TODO: Implement in Phase 3
-                },
+                subtitle: _getTextSizeLabel(settings.textSize),
+                onTap: onTextSizeTap,
               ),
 
               _buildDivider(),
@@ -377,10 +693,8 @@ class _SettingsList extends StatelessWidget {
                 icon: Icons.language,
                 iconColor: DesignColors.highlightTeal,
                 title: 'Language',
-                subtitle: 'English',
-                onTap: () {
-                  // TODO: Implement in Phase 3
-                },
+                subtitle: _getLanguageLabel(settings.language),
+                onTap: onLanguageTap,
               ),
 
               _buildDivider(),
@@ -391,9 +705,7 @@ class _SettingsList extends StatelessWidget {
                 iconColor: DesignColors.dDanger,
                 title: 'Clear All Data',
                 subtitle: 'Delete all stories and settings',
-                onTap: () {
-                  // TODO: Implement in Phase 4
-                },
+                onTap: onClearDataTap,
               ),
 
               _buildDivider(),
@@ -405,9 +717,7 @@ class _SettingsList extends StatelessWidget {
                 title: 'About StoryForge',
                 subtitle: 'Version 1.0.0',
                 showChevron: false,
-                onTap: () {
-                  // TODO: Implement in Phase 4
-                },
+                onTap: onAboutTap,
               ),
             ],
           ),
