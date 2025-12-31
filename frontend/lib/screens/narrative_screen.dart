@@ -51,7 +51,12 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
         );
         print('✅ Restored $_restoredCount messages - ready to continue');
       } else {
-        // New story - start with Narrator as usual
+        // New story - CRITICAL: Reset provider state before starting
+        // This clears any old conversation data from previous sessions
+        ref.read(narrativeStateProvider.notifier).reset();
+        print('🔄 Reset provider state for fresh story');
+
+        // Start with Narrator as usual
         _startNarrative();
       }
     });

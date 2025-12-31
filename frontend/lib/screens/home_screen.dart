@@ -199,13 +199,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      final dataCleared = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const ProfileScreen(),
                         ),
                       );
+
+                      // Refresh state if data was cleared
+                      if (dataCleared == true) {
+                        _checkForSavedStory();
+                      }
                     },
                     borderRadius: BorderRadius.circular(24),
                     splashColor: DesignColors.highlightTeal.withOpacity(0.3),

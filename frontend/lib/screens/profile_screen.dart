@@ -267,6 +267,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             duration: Duration(seconds: 2),
           ),
         );
+
+        // Pop back with flag that data was cleared
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.pop(context, true); // true = data was cleared
+          }
+        });
       }
     }
   }
