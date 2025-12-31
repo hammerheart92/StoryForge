@@ -2,6 +2,7 @@
 // Represents a single message in the conversation history
 
 import 'narrative_response.dart';
+import 'choice.dart';
 
 class NarrativeMessage {
   final String speakerName;     // Display name ("Narrator", "Ilyra", "You")
@@ -10,6 +11,7 @@ class NarrativeMessage {
   final String? actionText;     // Action description (italic text)
   final String mood;            // Character's mood at this point
   final DateTime timestamp;     // When this message was created
+  final List<Choice>? choices;  // Choices available after this message (null for user messages)
 
   NarrativeMessage({
     required this.speakerName,
@@ -18,6 +20,7 @@ class NarrativeMessage {
     this.actionText,
     required this.mood,
     required this.timestamp,
+    this.choices,
   });
 
   /// Create a user choice message (for history)
@@ -40,6 +43,7 @@ class NarrativeMessage {
       actionText: response.actionText,
       mood: response.mood,
       timestamp: DateTime.now(),
+      choices: response.choices,  // CRITICAL: Capture choices from response
     );
   }
 
@@ -51,6 +55,9 @@ class NarrativeMessage {
 
   /// Check if action text is present
   bool get hasActionText => actionText != null && actionText!.isNotEmpty;
+
+  /// Check if this message has choices available
+  bool get hasChoices => choices != null && choices!.isNotEmpty;
 
   @override
   String toString() {

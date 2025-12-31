@@ -14,10 +14,11 @@ class Choice {
     this.description,
   });
 
-  /// Create Choice from JSON (from backend API)
+  /// Create Choice from JSON (from backend API or storage)
+  /// Handles both 'id' (storage format) and 'choiceId' (legacy format)
   factory Choice.fromJson(Map<String, dynamic> json) {
     return Choice(
-      id: json['id'] as String,
+      id: (json['id'] ?? json['choiceId']) as String,
       label: json['label'] as String,
       nextSpeaker: json['nextSpeaker'] as String,
       description: json['description'] as String?,
@@ -30,6 +31,16 @@ class Choice {
       'choiceId': id,
       'label': label,
       'nextSpeaker': nextSpeaker,
+    };
+  }
+
+  /// Convert Choice to JSON for local storage persistence
+  Map<String, dynamic> toStorageJson() {
+    return {
+      'id': id,
+      'label': label,
+      'nextSpeaker': nextSpeaker,
+      'description': description,
     };
   }
 

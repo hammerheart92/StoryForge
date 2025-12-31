@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/narrative_message.dart';
+import '../models/choice.dart';
 
 /// Service for persisting and restoring story state
 /// Note: Web persistence is limited due to localStorage port-specific behavior
@@ -35,6 +36,7 @@ class StoryStateService {
         'actionText': msg.actionText,
         'mood': msg.mood,
         'timestamp': msg.timestamp.toIso8601String(),
+        'choices': msg.choices?.map((choice) => choice.toStorageJson()).toList(),  // Save choices with correct field names
       }).toList();
 
       await prefs.setString(_keyConversationHistory, jsonEncode(messagesJson));
@@ -59,6 +61,14 @@ class StoryStateService {
 
       final List<dynamic> messagesData = jsonDecode(historyJson);
       final messages = messagesData.map((data) {
+        // Parse choices if they exist
+        List<Choice>? choices;
+        if (data['choices'] != null) {
+          choices = (data['choices'] as List<dynamic>)
+              .map((choiceJson) => Choice.fromJson(choiceJson as Map<String, dynamic>))
+              .toList();
+        }
+
         return NarrativeMessage(
           speakerName: data['speakerName'] as String,
           speaker: data['speaker'] as String,
@@ -66,6 +76,7 @@ class StoryStateService {
           actionText: data['actionText'] as String?,
           mood: data['mood'] as String,
           timestamp: DateTime.parse(data['timestamp'] as String),
+          choices: choices,  // Restore choices
         );
       }).toList();
 

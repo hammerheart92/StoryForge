@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/narrative_service.dart';
 import '../services/story_state_service.dart';
 import '../models/narrative_message.dart';
+import '../models/narrative_response.dart';
 import '../models/choice.dart';
 import 'narrative_state.dart';
 
@@ -116,9 +117,34 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
 
     print('✅ Restoring ${messages.length} messages');
 
+    // Find the last message with choices (should be the last AI message)
+    NarrativeMessage? lastMessageWithChoices;
+    for (int i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].hasChoices) {
+        lastMessageWithChoices = messages[i];
+        break;
+      }
+    }
+
+    // Reconstruct NarrativeResponse from the last message with choices
+    // This is CRITICAL for displaying choice buttons after restore
+    NarrativeResponse? currentResponse;
+    if (lastMessageWithChoices != null) {
+      currentResponse = NarrativeResponse(
+        speakerName: lastMessageWithChoices.speakerName,
+        speaker: lastMessageWithChoices.speaker,
+        dialogue: lastMessageWithChoices.dialogue,
+        actionText: lastMessageWithChoices.actionText,
+        mood: lastMessageWithChoices.mood,
+        choices: lastMessageWithChoices.choices!,
+      );
+      print('✅ Restored ${lastMessageWithChoices.choices!.length} choices from last message');
+    }
+
     state = state.copyWith(
       history: messages,
       currentSpeaker: lastCharacter,
+      currentResponse: currentResponse,  // Restore choices for display
       isLoading: false,
     );
   }
