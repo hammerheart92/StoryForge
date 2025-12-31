@@ -9,6 +9,7 @@ import '../theme/storyforge_theme.dart';
 import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
 import 'narrative_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,21 +43,24 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDesktop = screenWidth > 600;
 
     return Scaffold(
-      body: Container(
-        // Option B: Subtle vertical gradient (atmospheric depth)
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A2E), // Dark blue-gray (top)
-              Color(0xFF121417), // Near black (middle) - matches dBackground
-              Color(0xFF0D0D0D), // Deeper black (bottom)
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
+      body: Stack(
+        children: [
+          // Main content with gradient background
+          Container(
+            // Option B: Subtle vertical gradient (atmospheric depth)
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF1A1A2E), // Dark blue-gray (top)
+                  Color(0xFF121417), // Near black (middle) - matches dBackground
+                  Color(0xFF0D0D0D), // Deeper black (bottom)
+                ],
+                stops: [0.0, 0.5, 1.0],
+              ),
+            ),
+            child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               child: Padding(
@@ -183,6 +187,51 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+      ),
+
+          // Profile icon button (top-right)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(DesignSpacing.md),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileScreen(),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(24),
+                    splashColor: DesignColors.highlightTeal.withOpacity(0.3),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: DesignColors.dSurfaces.withOpacity(0.6),
+                        border: Border.all(
+                          color: DesignColors.highlightTeal.withOpacity(0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: DesignColors.highlightTeal,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
