@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/character_info.dart';
+import '../widgets/character_card.dart';
+import 'narrative_screen.dart';
 
 class CharacterSelectionScreen extends StatelessWidget {
   const CharacterSelectionScreen({super.key});
@@ -62,40 +64,27 @@ class CharacterSelectionScreen extends StatelessWidget {
     return CharacterInfo.all.map((character) {
       return Padding(
         padding: const EdgeInsets.all(16),
-        child: _buildPlaceholderCard(character),
+        child: CharacterCard(
+          character: character,
+          onSelect: () => _handleCharacterSelection(context, character),
+        ),
       );
     }).toList();
   }
 
-  Widget _buildPlaceholderCard(CharacterInfo character) {
-    return Container(
-      width: 300,
-      height: 400,
-      decoration: BoxDecoration(
-        color: Color(0xFF23272C),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: character.accentColor.withOpacity(0.5),
-          width: 2,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(character.icon, size: 80, color: character.accentColor),
-            SizedBox(height: 16),
-            Text(
-              character.name,
-              style: TextStyle(
-                fontFamily: 'Merriweather',
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+  void _handleCharacterSelection(BuildContext context,
+      CharacterInfo character) {
+    print('🎭 User selected: ${character.name}');
+
+    // Navigate to narrative screen with selected character
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            NarrativeScreen(
+              restoredMessages: null, // Fresh start
+              startingCharacter: character.id, // Pass the character ID
             ),
-          ],
-        ),
       ),
     );
   }

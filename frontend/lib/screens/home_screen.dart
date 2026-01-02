@@ -10,6 +10,7 @@ import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
 import 'narrative_screen.dart';
 import 'profile_screen.dart';
+import 'character_selection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,133 +62,133 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: DesignSpacing.lg,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Title: "StoryForge"
-                    Text(
-                      'StoryForge',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Merriweather',
-                        fontSize: isDesktop
-                            ? StoryForgeTheme.homeTitleSizeDesktop
-                            : StoryForgeTheme.homeTitleSizeMobile,
-                        fontWeight: FontWeight.bold,
-                        color: DesignColors.dPrimaryText,
-                        letterSpacing: 2.0,
-                        shadows: [
-                          // Subtle text glow for drama
-                          Shadow(
-                            color: Colors.white.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 0),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: DesignSpacing.lg,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Title: "StoryForge"
+                        Text(
+                          'StoryForge',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Merriweather',
+                            fontSize: isDesktop
+                                ? StoryForgeTheme.homeTitleSizeDesktop
+                                : StoryForgeTheme.homeTitleSizeMobile,
+                            fontWeight: FontWeight.bold,
+                            color: DesignColors.dPrimaryText,
+                            letterSpacing: 2.0,
+                            shadows: [
+                              // Subtle text glow for drama
+                              Shadow(
+                                color: Colors.white.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 0),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
 
-                    const SizedBox(height: DesignSpacing.md),
+                        const SizedBox(height: DesignSpacing.md),
 
-                    // Subtitle: "Interactive Storytelling"
-                    Text(
-                      'Interactive Storytelling',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Merriweather',
-                        fontSize: isDesktop
-                            ? StoryForgeTheme.homeSubtitleSizeDesktop
-                            : StoryForgeTheme.homeSubtitleSizeMobile,
-                        fontStyle: FontStyle.italic,
-                        color: DesignColors.dSecondaryText,
-                        letterSpacing: 1.2,
-                        height: 1.5,
-                      ),
-                    ),
-
-                    SizedBox(height: isDesktop ? 80 : 64),
-
-                    // Primary Button: "Begin Your Story"
-                    _PrimaryButton(
-                      onTap: () async {
-                        // Clear old state before starting new story
-                        await StoryStateService.clearState();
-
-                        if (!context.mounted) return;
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const NarrativeScreen(
-                              restoredMessages: null, // Fresh start
-                            ),
+                        // Subtitle: "Interactive Storytelling"
+                        Text(
+                          'Interactive Storytelling',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Merriweather',
+                            fontSize: isDesktop
+                                ? StoryForgeTheme.homeSubtitleSizeDesktop
+                                : StoryForgeTheme.homeSubtitleSizeMobile,
+                            fontStyle: FontStyle.italic,
+                            color: DesignColors.dSecondaryText,
+                            letterSpacing: 1.2,
+                            height: 1.5,
                           ),
-                        );
+                        ),
 
-                        // Refresh button state after returning
-                        _checkForSavedStory();
-                      },
-                    ),
+                        SizedBox(height: isDesktop ? 80 : 64),
 
-                    const SizedBox(height: DesignSpacing.lg),
+                        // Primary Button: "Begin Your Story"
+                        _PrimaryButton(
+                          onTap: () async {
+                            // Clear old state before starting new story
+                            await StoryStateService.clearState();
 
-                    // Secondary Button: "Continue Story"
-                    _SecondaryButton(
-                      enabled: _hasSavedStory,
-                      onTap: _hasSavedStory
-                          ? () async {
-                              // Load saved state and restore
-                              final savedState =
-                                  await StoryStateService.loadState();
+                            if (!context.mounted) return;
 
-                              if (savedState == null) {
-                                // Edge case: state deleted between check and tap
-                                if (mounted) {
-                                  setState(() {
-                                    _hasSavedStory = false;
-                                  });
-                                }
-                                return;
+                            // New story - go through character selection first!
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CharacterSelectionScreen(),
+                              ),
+                            );
+
+                            // Refresh button state after returning
+                            _checkForSavedStory();
+                          },
+                        ),
+
+                        const SizedBox(height: DesignSpacing.lg),
+
+                        // Secondary Button: "Continue Story"
+                        _SecondaryButton(
+                          enabled: _hasSavedStory,
+                          onTap: _hasSavedStory
+                              ? () async {
+                            // Load saved state and restore
+                            final savedState =
+                            await StoryStateService.loadState();
+
+                            if (savedState == null) {
+                              // Edge case: state deleted between check and tap
+                              if (mounted) {
+                                setState(() {
+                                  _hasSavedStory = false;
+                                });
                               }
-
-                              if (!context.mounted) return;
-
-                              // Navigate with restored messages
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NarrativeScreen(
-                                    restoredMessages: savedState['messages']
-                                        as List<NarrativeMessage>,
-                                    lastCharacter:
-                                        savedState['lastCharacter'] as String,
-                                  ),
-                                ),
-                              );
-
-                              // Refresh button state after returning
-                              _checkForSavedStory();
+                              return;
                             }
-                          : null,
-                    ),
 
-                    SizedBox(
-                      height: isDesktop
-                          ? DesignSpacing.xxl
-                          : DesignSpacing.xl,
+                            if (!context.mounted) return;
+
+                            // Navigate with restored messages
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NarrativeScreen(
+                                  restoredMessages: savedState['messages']
+                                  as List<NarrativeMessage>,
+                                  lastCharacter:
+                                  savedState['lastCharacter'] as String,
+                                ),
+                              ),
+                            );
+
+                            // Refresh button state after returning
+                            _checkForSavedStory();
+                          }
+                              : null,
+                        ),
+
+                        SizedBox(
+                          height: isDesktop
+                              ? DesignSpacing.xxl
+                              : DesignSpacing.xl,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
 
           // Profile icon button (top-right)
           Positioned(
@@ -219,16 +220,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 48,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: DesignColors.dSurfaces.withOpacity(0.6),
+                        color: Colors.transparent,
                         border: Border.all(
-                          color: DesignColors.highlightTeal.withOpacity(0.4),
-                          width: 1,
+                          color: DesignColors.highlightTeal.withOpacity(0.5),
+                          width: 2,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.person,
+                      child: Icon(
+                        Icons.person_outline,
                         color: DesignColors.highlightTeal,
-                        size: 28,
+                        size: 24,
                       ),
                     ),
                   ),
@@ -372,42 +373,42 @@ class _SecondaryButton extends StatelessWidget {
             // Glow effect (stronger when enabled)
             boxShadow: enabled
                 ? [
-                    // Inner glow (close, intense) - enabled state
-                    BoxShadow(
-                      color: StoryForgeTheme.ilyraExtended.withOpacity(0.5),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 0),
-                    ),
-                    // Outer glow (far, soft) - enabled state
-                    BoxShadow(
-                      color: StoryForgeTheme.ilyraExtended.withOpacity(0.3),
-                      blurRadius: 40,
-                      spreadRadius: 5,
-                      offset: const Offset(0, 4),
-                    ),
-                    // Subtle bottom shadow for depth
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.5),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
+              // Inner glow (close, intense) - enabled state
+              BoxShadow(
+                color: StoryForgeTheme.ilyraExtended.withOpacity(0.5),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, 0),
+              ),
+              // Outer glow (far, soft) - enabled state
+              BoxShadow(
+                color: StoryForgeTheme.ilyraExtended.withOpacity(0.3),
+                blurRadius: 40,
+                spreadRadius: 5,
+                offset: const Offset(0, 4),
+              ),
+              // Subtle bottom shadow for depth
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ]
                 : [
-                    // Very subtle purple glow - disabled state
-                    BoxShadow(
-                      color: StoryForgeTheme.ilyraExtended.withOpacity(0.15),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 2),
-                    ),
-                    // Soft shadow for depth
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+              // Very subtle purple glow - disabled state
+              BoxShadow(
+                color: StoryForgeTheme.ilyraExtended.withOpacity(0.15),
+                blurRadius: 12,
+                spreadRadius: 1,
+                offset: const Offset(0, 2),
+              ),
+              // Soft shadow for depth
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Material(
             color: Colors.transparent,
