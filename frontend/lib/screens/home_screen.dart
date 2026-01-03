@@ -11,6 +11,7 @@ import '../theme/tokens/spacing.dart';
 import 'narrative_screen.dart';
 import 'profile_screen.dart';
 import 'character_selection_screen.dart';
+import 'story_selection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -121,15 +122,32 @@ class _HomeScreenState extends State<HomeScreen> {
                           onTap: () async {
                             if (!context.mounted) return;
 
-                            // Navigate to character selection and wait for selected character ID
-                            final selectedCharacterId = await Navigator.push<String>(
+                            // STEP 1: Navigate to story selection and wait for selected story ID
+                            final selectedStoryId = await Navigator.push<String>(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const CharacterSelectionScreen(),
+                                builder: (context) => const StorySelectionScreen(),
                               ),
                             );
 
-                            // If user backed out without selecting (null), just refresh state
+                            // If user backed out without selecting story, just refresh state
+                            if (selectedStoryId == null) {
+                              _checkForSavedStory();
+                              return;
+                            }
+
+                            if (!context.mounted) return;
+
+                            // STEP 2: Navigate to character selection (filtered by selected story)
+                            print('📖 HomeScreen: User selected story: $selectedStoryId');
+                            final selectedCharacterId = await Navigator.push<String>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CharacterSelectionScreen(storyId: selectedStoryId),
+                              ),
+                            );
+
+                            // If user backed out without selecting character, just refresh state
                             if (selectedCharacterId == null) {
                               _checkForSavedStory();
                               return;
@@ -137,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                             if (!context.mounted) return;
 
-                            // User selected a character - navigate to narrative screen
+                            // STEP 3: User selected a character - navigate to narrative screen
                             print('🎯 HomeScreen: Navigating to story with character: $selectedCharacterId');
                             await Navigator.push(
                               context,
@@ -149,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
 
-                            // NOW this callback fires when returning from NarrativeScreen! ✅
+                            // Refresh button state after returning from narrative
                             print('🔄 HomeScreen: Returned from narrative, checking for saved story');
                             _checkForSavedStory();
                           },

@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
-import '../models/character_info.dart';
-import '../widgets/character_card.dart';
+import '../models/story_info.dart';
+import '../widgets/story_card.dart';
 
-class CharacterSelectionScreen extends StatelessWidget {
-  final String storyId;
-
-  const CharacterSelectionScreen({
-    super.key,
-    required this.storyId,
-  });
+class StorySelectionScreen extends StatelessWidget {
+  const StorySelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Choose Your Guide',
+          'Choose Your Story',
           style: TextStyle(
             fontFamily: 'Merriweather',
             fontSize: 24,
@@ -48,16 +43,16 @@ class CharacterSelectionScreen extends StatelessWidget {
 
                   return isMobile
                       ? SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: _buildCharacterCards(context),
-                    ),
-                  )
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: _buildStoryCards(context),
+                          ),
+                        )
                       : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: _buildCharacterCards(context),
-                  );
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: _buildStoryCards(context),
+                        );
                 },
               ),
             ),
@@ -67,25 +62,22 @@ class CharacterSelectionScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildCharacterCards(BuildContext context) {
-    final storyCharacters = CharacterInfo.forStory(storyId);
-
-    return storyCharacters.map((character) {
+  List<Widget> _buildStoryCards(BuildContext context) {
+    return StoryInfo.all.map((story) {
       return Padding(
         padding: const EdgeInsets.all(16),
-        child: CharacterCard(
-          character: character,
-          onSelect: () => _handleCharacterSelection(context, character),
+        child: StoryCard(
+          story: story,
+          onSelect: () => _handleStorySelection(context, story),
         ),
       );
     }).toList();
   }
 
-  void _handleCharacterSelection(BuildContext context, CharacterInfo character) {
-    print('🎭 User selected: ${character.name} (ID: ${character.id})');
+  void _handleStorySelection(BuildContext context, StoryInfo story) {
+    print('Story selected: ${story.title} (ID: ${story.id})');
 
-    // Return the selected character ID to HomeScreen
-    // HomeScreen will handle navigation to NarrativeScreen
-    Navigator.pop(context, character.id);
+    // Return the selected story ID to HomeScreen
+    Navigator.pop(context, story.id);
   }
 }

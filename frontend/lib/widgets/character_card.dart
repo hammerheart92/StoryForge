@@ -39,11 +39,15 @@ class CharacterCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildCharacterIcon(),
-            _buildCharacterInfo(),
+            SizedBox(height: 16),
+            Expanded(
+              child: _buildCharacterInfo(),
+            ),
+            SizedBox(height: 16),
             _buildTraits(),
+            SizedBox(height: 16),
             _buildSelectButton(),
           ],
         ),
@@ -79,41 +83,43 @@ class CharacterCard extends StatelessWidget {
   }
 
   Widget _buildCharacterInfo() {
-    return Column(
-      children: [
-        Text(
-          character.name,
-          style: TextStyle(
-            fontFamily: 'Merriweather',
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFFF1F3F5),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Text(
+            character.name,
+            style: TextStyle(
+              fontFamily: 'Merriweather',
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFF1F3F5),
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 8),
-        Text(
-          character.tagline,
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            fontSize: 14,
-            fontStyle: FontStyle.italic,
-            color: character.accentColor,
+          SizedBox(height: 8),
+          Text(
+            character.tagline,
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              color: character.accentColor,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 16),
-        Text(
-          character.description,
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            fontSize: 14,
-            height: 1.5,
-            color: Color(0xFFB0B3B8),
+          SizedBox(height: 16),
+          Text(
+            character.description,
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 14,
+              height: 1.5,
+              color: Color(0xFFB0B3B8),
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-      ],
+        ],
+      ),
     );
   }
 
