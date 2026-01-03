@@ -28,15 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkForSavedStory();
   }
 
-  /// Called every time this widget's dependencies change
-  /// This fires when navigating back to this screen
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Refresh saved story status whenever we return to this screen
-    _checkForSavedStory();
-  }
-
   /// Check for saved story on screen load
   Future<void> _checkForSavedStory() async {
     print('🔍 HomeScreen checking for saved story');
@@ -128,19 +119,38 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Primary Button: "Begin Your Story"
                         _PrimaryButton(
                           onTap: () async {
-                            // Navigate to character selection
-                            // Note: We DON'T clear state here - NarrativeScreen will do it
                             if (!context.mounted) return;
 
-                            await Navigator.push(
+                            // Navigate to character selection and wait for selected character ID
+                            final selectedCharacterId = await Navigator.push<String>(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const CharacterSelectionScreen(),
                               ),
                             );
 
-                            // Refresh button state after returning
-                            // This will keep "Continue Story" enabled if user backed out
+                            // If user backed out without selecting (null), just refresh state
+                            if (selectedCharacterId == null) {
+                              _checkForSavedStory();
+                              return;
+                            }
+
+                            if (!context.mounted) return;
+
+                            // User selected a character - navigate to narrative screen
+                            print('🎯 HomeScreen: Navigating to story with character: $selectedCharacterId');
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NarrativeScreen(
+                                  restoredMessages: null,
+                                  startingCharacter: selectedCharacterId,
+                                ),
+                              ),
+                            );
+
+                            // NOW this callback fires when returning from NarrativeScreen! ✅
+                            print('🔄 HomeScreen: Returned from narrative, checking for saved story');
                             _checkForSavedStory();
                           },
                         ),

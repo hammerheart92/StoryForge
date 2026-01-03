@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/character_info.dart';
 import '../widgets/character_card.dart';
-import 'narrative_screen.dart';
 
 class CharacterSelectionScreen extends StatelessWidget {
   const CharacterSelectionScreen({super.key});
@@ -42,7 +41,6 @@ class CharacterSelectionScreen extends StatelessWidget {
                 builder: (context, constraints) {
                   final isMobile = constraints.maxWidth < 600;
 
-                  // ✅ NEW - Scrollable on mobile!
                   return isMobile
                       ? SingleChildScrollView(
                     padding: EdgeInsets.symmetric(vertical: 40),
@@ -79,16 +77,8 @@ class CharacterSelectionScreen extends StatelessWidget {
   void _handleCharacterSelection(BuildContext context, CharacterInfo character) {
     print('🎭 User selected: ${character.name} (ID: ${character.id})');
 
-    // Navigate to narrative screen with selected character
-    // Use pushReplacement so back button doesn't return to character selection
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NarrativeScreen(
-          restoredMessages: null, // Fresh start
-          startingCharacter: character.id, // Pass the character ID ('narrator' or 'ilyra')
-        ),
-      ),
-    );
+    // Return the selected character ID to HomeScreen
+    // HomeScreen will handle navigation to NarrativeScreen
+    Navigator.pop(context, character.id);
   }
 }
