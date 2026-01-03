@@ -13,6 +13,7 @@ class StoryStateService {
   static const String _keyConversationHistory = 'conversation_history';
   static const String _keyLastCharacter = 'last_character';
   static const String _keyLastSaveTime = 'last_save_time';
+  static const String _keyStoryId = 'story_id';
 
   /// Check if there is a saved story state
   static Future<bool> hasSavedState() async {
@@ -27,9 +28,10 @@ class StoryStateService {
   static Future<void> saveState({
     required List<NarrativeMessage> messages,
     required String lastCharacter,
+    String storyId = 'observatory',
   }) async {
     try {
-      print('💾 StoryStateService.saveState() called with ${messages.length} messages');
+      print('💾 StoryStateService.saveState() called with ${messages.length} messages (story: $storyId)');
       final prefs = await SharedPreferences.getInstance();
 
       final messagesJson = messages.map((msg) => {
@@ -45,6 +47,7 @@ class StoryStateService {
       await prefs.setString(_keyConversationHistory, jsonEncode(messagesJson));
       await prefs.setString(_keyLastCharacter, lastCharacter);
       await prefs.setString(_keyLastSaveTime, DateTime.now().toIso8601String());
+      await prefs.setString(_keyStoryId, storyId);
 
       print('💾 Story state saved successfully: ${messages.length} messages');
     } catch (e) {
@@ -85,13 +88,15 @@ class StoryStateService {
 
       final lastCharacter = prefs.getString(_keyLastCharacter) ?? 'narrator';
       final lastSaveTime = prefs.getString(_keyLastSaveTime);
+      final storyId = prefs.getString(_keyStoryId) ?? 'observatory';
 
-      print('Story state loaded: ${messages.length} messages');
+      print('Story state loaded: ${messages.length} messages (story: $storyId)');
 
       return {
         'messages': messages,
         'lastCharacter': lastCharacter,
         'lastSaveTime': lastSaveTime,
+        'storyId': storyId,
       };
     } catch (e) {
       print('Error loading state: $e');
@@ -107,6 +112,7 @@ class StoryStateService {
       await prefs.remove(_keyConversationHistory);
       await prefs.remove(_keyLastCharacter);
       await prefs.remove(_keyLastSaveTime);
+      await prefs.remove(_keyStoryId);
       print('Story state cleared');
     } catch (e) {
       print('Error clearing state: $e');

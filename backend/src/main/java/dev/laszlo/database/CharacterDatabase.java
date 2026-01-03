@@ -12,6 +12,8 @@ import java.util.List;
 /**
  * Manages character data in the SQLite database.
  * Handles creating, reading, and storing characters.
+ *
+ * ⭐ SESSION 21: Added storyId support for multi-story system
  */
 public class CharacterDatabase {
 
@@ -30,6 +32,7 @@ public class CharacterDatabase {
 
     /**
      * Create the characters table if it doesn't exist.
+     * ⭐ UPDATED: Added story_id column
      */
     private void createCharactersTable() {
         String sql = """
@@ -42,7 +45,8 @@ public class CharacterDatabase {
                     avatar_url TEXT,
                     default_mood TEXT,
                     relationship_to_user TEXT,
-                    description TEXT
+                    description TEXT,
+                    story_id TEXT
                 )
                 """;
 
@@ -56,17 +60,26 @@ public class CharacterDatabase {
     }
 
     /**
-     * Add default characters to the database (Narrator and Ilyra).
+     * Add default characters to the database (Narrator, Ilyra, Illidan, Tyrande).
      * Only adds them if they don't already exist.
+     *
+     * ⭐ SESSION 21: Added Illidan and Tyrande characters with storyId
      */
     private void seedDefaultCharacters() {
         // Check if characters already exist
-        if (getCharacter("narrator") != null) {
+        if (getCharacter("narrator") != null &&
+                getCharacter("ilyra") != null &&
+                getCharacter("illidan") != null &&
+                getCharacter("tyrande") != null) {
             logger.debug("Default characters already exist, skipping seed");
             return;
         }
 
-        // Create Narrator
+        // ========================================
+        // OBSERVATORY STORY CHARACTERS
+        // ========================================
+
+        // Create Narrator (storyId: "observatory")
         Character narrator = new Character(
                 "narrator",
                 "Narrator",
@@ -76,11 +89,12 @@ public class CharacterDatabase {
                 null,  // No avatar for now
                 "observant",
                 "guide",
-                "The narrator weaves the story, describing scenes, actions, and the world around you."
+                "The narrator weaves the story, describing scenes, actions, and the world around you.",
+                "observatory"  // ⭐ storyId
         );
         saveCharacter(narrator);
 
-        // Create Ilyra
+        // Create Ilyra (storyId: "observatory")
         Character ilyra = new Character(
                 "ilyra",
                 "Ilyra",
@@ -90,22 +104,58 @@ public class CharacterDatabase {
                 null,  // No avatar for now
                 "wary",
                 "uncertain",
-                "Once the court astronomer, Ilyra was exiled after predicting an omen the king refused to believe. She now lives in isolation, studying the stars that betrayed her position but never her passion."
+                "Once the court astronomer, Ilyra was exiled after predicting an omen the king refused to believe. She now lives in isolation, studying the stars that betrayed her position but never her passion.",
+                "observatory"  // ⭐ storyId
         );
         saveCharacter(ilyra);
 
-        logger.info("📝 Seeded default characters: Narrator and Ilyra");
+        // ========================================
+        // ILLIDAN STORY CHARACTERS (THE BETRAYER'S PATH)
+        // ========================================
+
+        // Create Illidan Stormrage (storyId: "illidan")
+        Character illidan = new Character(
+                "illidan",
+                "Illidan Stormrage",
+                "The Betrayer",
+                Arrays.asList("ruthless", "tormented", "driven", "arrogant"),
+                "First-person perspective. Dark, intense, philosophical. Justifies extreme actions with conviction. Defiant and unrepentant. Poetic when describing power and transformation.",
+                null,  // No avatar for now
+                "defiant",
+                "distant",
+                "Blinded but visionary, exiled but determined. Consumed by fel power from the Skull of Gul'dan, he transformed into a demon with wings of shadow and eyes of fel fire. Imprisoned for 10,000 years by his brother Malfurion, recently freed by Tyrande to fight the Burning Legion. Walks the path between light and shadow, bending to no master.",
+                "illidan"  // ⭐ storyId
+        );
+        saveCharacter(illidan);
+
+        // Create Tyrande Whisperwind (storyId: "illidan")
+        Character tyrande = new Character(
+                "tyrande",
+                "Tyrande Whisperwind",
+                "High Priestess of Elune",
+                Arrays.asList("compassionate", "conflicted", "hopeful", "loyal"),
+                "Second-person observer perspective. Concerned, regretful tone. Describes events from external view, witnessing Illidan's choices. Balances hope with growing horror. References moonlight and Elune.",
+                null,  // No avatar for now
+                "concerned",
+                "witness",
+                "The High Priestess of Elune walks in silver moonlight, her faith unwavering even as she watches the one she freed embrace darkness. Made the fateful decision to free Illidan from his 10,000-year imprisonment, believing in redemption and second chances. Now caught between duty to her people and caring for Illidan as he transforms into a demon.",
+                "illidan"  // ⭐ storyId
+        );
+        saveCharacter(tyrande);
+
+        logger.info("📚 Seeded default characters: Narrator, Ilyra, Illidan, and Tyrande");
     }
 
     /**
      * Save a character to the database.
+     * ⭐ UPDATED: Now saves story_id
      */
     private void saveCharacter(Character character) {
         String sql = """
                 INSERT OR REPLACE INTO characters 
                 (id, name, role, personality, speech_style, avatar_url, 
-                 default_mood, relationship_to_user, description)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 default_mood, relationship_to_user, description, story_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection conn = DriverManager.getConnection(DB_URL);
@@ -120,9 +170,10 @@ public class CharacterDatabase {
             pstmt.setString(7, character.getDefaultMood());
             pstmt.setString(8, character.getRelationshipToUser());
             pstmt.setString(9, character.getDescription());
+            pstmt.setString(10, character.getStoryId());  // ⭐ NEW
 
             pstmt.executeUpdate();
-            logger.debug("Saved character: {}", character.getName());
+            logger.debug("Saved character: {} (story: {})", character.getName(), character.getStoryId());
 
         } catch (SQLException e) {
             logger.error("❌ Failed to save character: {}", e.getMessage());
@@ -132,6 +183,7 @@ public class CharacterDatabase {
     /**
      * Get a character by ID.
      * Returns null if character doesn't exist.
+     * ⭐ UPDATED: Now loads story_id
      */
     public Character getCharacter(String id) {
         String sql = "SELECT * FROM characters WHERE id = ?";
@@ -157,6 +209,7 @@ public class CharacterDatabase {
                 character.setDefaultMood(rs.getString("default_mood"));
                 character.setRelationshipToUser(rs.getString("relationship_to_user"));
                 character.setDescription(rs.getString("description"));
+                character.setStoryId(rs.getString("story_id"));  // ⭐ NEW
 
                 return character;
             }
@@ -170,6 +223,7 @@ public class CharacterDatabase {
 
     /**
      * Get all available characters.
+     * ⭐ UPDATED: Now loads story_id
      */
     public List<Character> getAllCharacters() {
         List<Character> characters = new ArrayList<>();
@@ -194,6 +248,7 @@ public class CharacterDatabase {
                 character.setDefaultMood(rs.getString("default_mood"));
                 character.setRelationshipToUser(rs.getString("relationship_to_user"));
                 character.setDescription(rs.getString("description"));
+                character.setStoryId(rs.getString("story_id"));  // ⭐ NEW
 
                 characters.add(character);
             }
@@ -202,6 +257,49 @@ public class CharacterDatabase {
 
         } catch (SQLException e) {
             logger.error("❌ Failed to get all characters: {}", e.getMessage());
+        }
+
+        return characters;
+    }
+
+    /**
+     * ⭐ NEW: Get characters filtered by story ID.
+     * This is used to generate choices only from characters in the same story.
+     */
+    public List<Character> getCharactersByStory(String storyId) {
+        List<Character> characters = new ArrayList<>();
+        String sql = "SELECT * FROM characters WHERE story_id = ? ORDER BY id";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, storyId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Character character = new Character();
+                character.setId(rs.getString("id"));
+                character.setName(rs.getString("name"));
+                character.setRole(rs.getString("role"));
+
+                // Parse personality
+                String personalityStr = rs.getString("personality");
+                character.setPersonality(Arrays.asList(personalityStr.split(",")));
+
+                character.setSpeechStyle(rs.getString("speech_style"));
+                character.setAvatarUrl(rs.getString("avatar_url"));
+                character.setDefaultMood(rs.getString("default_mood"));
+                character.setRelationshipToUser(rs.getString("relationship_to_user"));
+                character.setDescription(rs.getString("description"));
+                character.setStoryId(rs.getString("story_id"));
+
+                characters.add(character);
+            }
+
+            logger.info("📂 Loaded {} characters for story '{}'", characters.size(), storyId);
+
+        } catch (SQLException e) {
+            logger.error("❌ Failed to get characters for story {}: {}", storyId, e.getMessage());
         }
 
         return characters;

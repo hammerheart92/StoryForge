@@ -11,10 +11,12 @@ import 'choice_button.dart';
 
 class ChoicesSection extends ConsumerWidget {
   final List<Choice> choices;
+  final String storyId;
 
   const ChoicesSection({
     super.key,
     required this.choices,
+    required this.storyId,
   });
 
   @override
@@ -65,7 +67,7 @@ class ChoicesSection extends ConsumerWidget {
             isLoading: isLoading,
             onPressed: () {
               // Call the notifier to select this choice
-              ref.read(narrativeStateProvider.notifier).selectChoice(choice);
+              ref.read(narrativeStateProvider.notifier).selectChoice(choice, storyId);
             },
           )),
 

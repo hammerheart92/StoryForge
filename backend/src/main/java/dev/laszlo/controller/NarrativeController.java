@@ -16,6 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST controller for narrative interactions.
+ * ⭐ SESSION 21: Added storyId support for multi-story system
+ */
 @RestController
 @RequestMapping("/api/narrative")
 @CrossOrigin(origins = "*")
@@ -86,13 +90,14 @@ public class NarrativeController {
     }
 
     /**
-     * UPDATED: Session 14 - Send a message and get a response WITH CHOICES.
+     * UPDATED: Session 21 - Send a message and get a response WITH CHOICES.
      * POST /api/narrative/speak
      *
      * Request body:
      * {
      *   "message": "What are you studying?",
-     *   "speaker": "ilyra"
+     *   "speaker": "ilyra",
+     *   "storyId": "observatory"
      * }
      *
      * Response:
@@ -120,6 +125,7 @@ public class NarrativeController {
     public ResponseEntity<NarrativeResponse> speak(@RequestBody Map<String, String> request) {
         String userMessage = request.get("message");
         String speakerId = request.get("speaker");
+        String storyId = request.get("storyId");  // ⭐ NEW: Get storyId from request
 
         // Validate input
         if (userMessage == null || userMessage.isBlank()) {
@@ -132,7 +138,13 @@ public class NarrativeController {
             speakerId = "narrator";  // Default to narrator
         }
 
-        logger.info("💬 User: '{}' | Speaker: {}", userMessage, speakerId);
+        // ⭐ NEW: Validate and default storyId
+        if (storyId == null || storyId.isBlank()) {
+            storyId = "observatory";  // Default to observatory story
+            logger.debug("No storyId provided, defaulting to 'observatory'");
+        }
+
+        logger.info("💬 User: '{}' | Speaker: {} | Story: {}", userMessage, speakerId, storyId);
 
         // Get the character
         Character speaker = characterDb.getCharacter(speakerId);
@@ -142,10 +154,11 @@ public class NarrativeController {
             return ResponseEntity.badRequest().body(error);
         }
 
-        // UPDATED: Generate response WITH choices
+        // ⭐ UPDATED: Generate response WITH choices and storyId
         NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
                 userMessage,
                 speakerId,
+                storyId,  // ⭐ NEW: Pass storyId
                 history
         );
 
@@ -161,14 +174,15 @@ public class NarrativeController {
     }
 
     /**
-     * NEW: Session 14 - Handle choice selection and continue the narrative.
+     * UPDATED: Session 21 - Handle choice selection and continue the narrative.
      * POST /api/narrative/choose
      *
      * Request body:
      * {
      *   "choiceId": "choice_2",
      *   "label": "Ask about the constellation",
-     *   "nextSpeaker": "ilyra"
+     *   "nextSpeaker": "ilyra",
+     *   "storyId": "observatory"
      * }
      *
      * Response: NarrativeResponse with new dialogue and choices
@@ -178,6 +192,7 @@ public class NarrativeController {
         String choiceId = request.get("choiceId");
         String choiceLabel = request.get("label");
         String nextSpeaker = request.get("nextSpeaker");
+        String storyId = request.get("storyId");  // ⭐ NEW: Get storyId from request
 
         // Validate input
         if (choiceId == null || nextSpeaker == null) {
@@ -190,7 +205,13 @@ public class NarrativeController {
             choiceLabel = "Continue";  // Default label
         }
 
-        logger.info("🎯 User chose: '{}' -> {}", choiceLabel, nextSpeaker);
+        // ⭐ NEW: Validate and default storyId
+        if (storyId == null || storyId.isBlank()) {
+            storyId = "observatory";  // Default to observatory story
+            logger.debug("No storyId provided, defaulting to 'observatory'");
+        }
+
+        logger.info("🎯 User chose: '{}' -> {} | Story: {}", choiceLabel, nextSpeaker, storyId);
 
         // Save the choice to database
         databaseService.saveUserChoice(currentSessionId, choiceId, choiceLabel, nextSpeaker);
@@ -198,10 +219,11 @@ public class NarrativeController {
         // Create transition message based on the choice
         String transitionMessage = "You chose: " + choiceLabel;
 
-        // Generate response from the next speaker
+        // ⭐ UPDATED: Generate response from the next speaker with storyId
         NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
                 transitionMessage,
                 nextSpeaker,
+                storyId,  // ⭐ NEW: Pass storyId
                 history
         );
 

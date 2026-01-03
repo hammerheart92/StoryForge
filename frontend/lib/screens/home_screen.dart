@@ -156,13 +156,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (!context.mounted) return;
 
                             // STEP 3: User selected a character - navigate to narrative screen
-                            print('🎯 HomeScreen: Navigating to story with character: $selectedCharacterId');
+                            print('🎯 HomeScreen: Navigating to story with character: $selectedCharacterId (story: $selectedStoryId)');
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => NarrativeScreen(
                                   restoredMessages: null,
                                   startingCharacter: selectedCharacterId,
+                                  storyId: selectedStoryId,
                                 ),
                               ),
                             );
@@ -205,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   as List<NarrativeMessage>,
                                   lastCharacter:
                                   savedState['lastCharacter'] as String,
+                                  storyId: savedState['storyId'] as String,
                                 ),
                               ),
                             );

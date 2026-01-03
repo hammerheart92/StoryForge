@@ -26,17 +26,17 @@ public class NarrativeEngine {
 
     // Base narrative prompt - shared by all characters
     private static final String BASE_PROMPT = """
-        You are an interactive narrative engine for a fantasy roleplay experience.
-        Your role is to create immersive, engaging story moments that respond to the player's choices.
-        
-        Guidelines:
-        - Write in a natural, flowing style
-        - Show, don't tell - use vivid sensory details
-        - Let character personalities shine through dialogue and actions
-        - Keep responses focused and meaningful (2-4 paragraphs)
-        - Maintain consistency with established character traits
-        - Create moments that invite player interaction
-        """;
+            You are an interactive narrative engine for a fantasy roleplay experience.
+            Your role is to create immersive, engaging story moments that respond to the player's choices.
+                    
+            Guidelines:
+            - Write in a natural, flowing style
+            - Show, don't tell - use vivid sensory details
+            - Let character personalities shine through dialogue and actions
+            - Keep responses focused and meaningful (2-4 paragraphs)
+            - Maintain consistency with established character traits
+            - Create moments that invite player interaction
+            """;
 
     public NarrativeEngine(ChatService chatService, CharacterDatabase characterDb) {
         this.chatService = chatService;
@@ -82,12 +82,13 @@ public class NarrativeEngine {
     /**
      * Generate a complete narrative response WITH choices for branching.
      * This is the NEW method for Session 14's choice system.
-     *
+     * <p>
      * ⭐ UPDATED FOR PHASE 2.3: Now parses JSON to extract dialogue and actionText
      */
     public NarrativeResponse generateResponseWithChoices(
             String userInput,
             String activeCharacterId,
+            String storyId,
             ConversationHistory history
     ) {
         logger.info("🎭 Generating response WITH CHOICES for character: {}", activeCharacterId);
@@ -107,8 +108,8 @@ public class NarrativeEngine {
         // ⭐ DEBUG LOGGING: Track raw response for each character
         logger.info("🔍 [{}] Raw Response Length: {}", activeCharacterId, rawResponse.length());
         logger.info("🔍 [{}] Raw Response Preview (first 200 chars): {}",
-                    activeCharacterId,
-                    rawResponse.length() > 200 ? rawResponse.substring(0, 200) + "..." : rawResponse);
+                activeCharacterId,
+                rawResponse.length() > 200 ? rawResponse.substring(0, 200) + "..." : rawResponse);
         logger.info("🔍 [{}] Raw Response Full: {}", activeCharacterId, rawResponse);
 
 // ⭐ NEW: Extract and parse JSON more robustly
@@ -185,7 +186,7 @@ public class NarrativeEngine {
         logger.info("═══════════════════════════════════════════════════════════════════");
 
         // 3. Generate choices based on the dialogue and context
-        List<Choice> choices = generateChoices(activeCharacterId, dialogue, history);
+        List<Choice> choices = generateChoices(activeCharacterId, dialogue, storyId, history);
 
         // 4. Determine character's mood from the response
         String mood = determineMood(dialogue, character);
@@ -219,13 +220,14 @@ public class NarrativeEngine {
     private List<Choice> generateChoices(
             String currentSpeaker,
             String lastDialogue,
+            String storyId,
             ConversationHistory history
     ) {
         logger.info("🎲 Generating choices for context...");
 
         try {
             // Build specialized prompt for choice generation
-            String choicePrompt = buildChoicePrompt(currentSpeaker, lastDialogue);
+            String choicePrompt = buildChoicePrompt(currentSpeaker, lastDialogue, storyId);
 
             // Create temporary history for choice generation
             ConversationHistory tempHistory = new ConversationHistory();
@@ -237,7 +239,7 @@ public class NarrativeEngine {
             logger.debug("📝 Raw choice response: {}", choicesText);
 
             // Parse choices from Claude's response
-            List<Choice> choices = parseChoices(choicesText, currentSpeaker);
+            List<Choice> choices = parseChoices(choicesText, currentSpeaker, storyId);
 
             logger.info("✅ Generated {} choices", choices.size());
             return choices;
@@ -245,45 +247,53 @@ public class NarrativeEngine {
         } catch (Exception e) {
             logger.error("❌ Error generating choices: {}", e.getMessage());
             // Return fallback choices on error
-            return createFallbackChoices(currentSpeaker);
+            return createFallbackChoices(currentSpeaker, storyId);
         }
     }
 
     /**
      * Build the prompt for Claude to generate narrative choices.
      */
-    private String buildChoicePrompt(String currentSpeaker, String lastDialogue) {
+
+    private String buildChoicePrompt(String currentSpeaker, String lastDialogue, String storyId) {
+        // ⭐ Get characters for this story
+        List<Character> storyCharacters = characterDb.getCharactersByStory(storyId);
+        String characterList = storyCharacters.stream()
+                .map(Character::getId)
+                .collect(java.util.stream.Collectors.joining(", "));
+
         return String.format("""
-            You are a narrative choice generator for an interactive fantasy story.
-            
-            Current situation:
-            - Active character: %s
-            - Last dialogue: "%s"
-            
-            Your task: Generate 2-3 meaningful choices for the player.
-            
-            Requirements:
-            - Make choices distinct and interesting
-            - Include at least one choice that switches to a different character
-            - Vary choice types: actions, questions, observations
-            - Keep choices concise (3-8 words each)
-            
-            Available characters: narrator, ilyra
-            
-            Format each choice EXACTLY like this:
-            [CHOICE: Ask about the constellation | ilyra]
-            [CHOICE: Step back and observe | narrator]
-            [CHOICE: Offer to help with research | ilyra]
-            
-            Generate the choices now:
-            """, currentSpeaker,
-                lastDialogue.length() > 200 ? lastDialogue.substring(0, 200) + "..." : lastDialogue);
+                        You are a narrative choice generator for an interactive fantasy story.
+                                
+                        Current situation:
+                        - Active character: %s
+                        - Last dialogue: "%s"
+                                
+                        Your task: Generate 2-3 meaningful choices for the player.
+                                
+                        Requirements:
+                        - Make choices distinct and interesting
+                        - Include at least one choice that switches to a different character
+                        - Vary choice types: actions, questions, observations
+                        - Keep choices concise (3-8 words each)
+                                
+                        Available characters: %s
+                                
+                        Format each choice EXACTLY like this:
+                        [CHOICE: Ask about the constellation | ilyra]
+                        [CHOICE: Step back and observe | narrator]
+                        [CHOICE: Offer to help with research | ilyra]
+                                
+                        Generate the choices now:
+                        """, currentSpeaker,
+                lastDialogue.length() > 200 ? lastDialogue.substring(0, 200) + "..." : lastDialogue,
+                characterList);
     }
 
     /**
      * Parse choices from Claude's response using regex pattern matching.
      */
-    private List<Choice> parseChoices(String response, String currentSpeaker) {
+    private List<Choice> parseChoices(String response, String currentSpeaker, String storyId) {
         List<Choice> choices = new ArrayList<>();
 
         // Pattern: [CHOICE: label text | nextSpeaker]
@@ -314,7 +324,7 @@ public class NarrativeEngine {
         // If parsing failed or no choices found, return fallback
         if (choices.isEmpty()) {
             logger.warn("⚠️ No choices parsed from response, using fallback");
-            return createFallbackChoices(currentSpeaker);
+            return createFallbackChoices(currentSpeaker, storyId);
         }
 
         // Limit to 3 choices maximum
@@ -328,7 +338,7 @@ public class NarrativeEngine {
     /**
      * Create fallback choices when parsing fails or as defaults.
      */
-    private List<Choice> createFallbackChoices(String currentSpeaker) {
+    private List<Choice> createFallbackChoices(String currentSpeaker, String storyId) {
         List<Choice> fallback = new ArrayList<>();
 
         if ("narrator".equals(currentSpeaker)) {
@@ -366,30 +376,30 @@ public class NarrativeEngine {
         if ("narrator".equals(character.getId())) {
             logger.debug("Using narrator (base prompt only)");
             return BASE_PROMPT + """
-        
-        ## Current Character: Narrator
-        You are the omniscient narrator. Describe scenes in third-person with rich detail.
-        Set atmosphere, describe environments, and guide the story forward.
-        Your voice is neutral, observant, and immersive.
-        
-        CRITICAL: You MUST respond with valid JSON in this EXACT format:
-        {
-          "dialogue": "Your spoken narration here",
-          "actionText": "Brief scene description (1-2 sentences)"
-        }
-        
-        Guidelines:
-        - dialogue: Your narrative description (what you observe and describe)
-        - actionText: Physical scene details, atmosphere, movements (1-2 sentences max)
-        - ALWAYS include BOTH fields
-        - Keep actionText concise and evocative
-        
-        Example:
-        {
-          "dialogue": "The ancient observatory stands before you, its mechanisms still turning after centuries.",
-          "actionText": "Starlight filters through crystalline windows, casting patterns on the stone floor."
-        }
-        """;
+                            
+                    ## Current Character: Narrator
+                    You are the omniscient narrator. Describe scenes in third-person with rich detail.
+                    Set atmosphere, describe environments, and guide the story forward.
+                    Your voice is neutral, observant, and immersive.
+                            
+                    CRITICAL: You MUST respond with valid JSON in this EXACT format:
+                    {
+                      "dialogue": "Your spoken narration here",
+                      "actionText": "Brief scene description (1-2 sentences)"
+                    }
+                            
+                    Guidelines:
+                    - dialogue: Your narrative description (what you observe and describe)
+                    - actionText: Physical scene details, atmosphere, movements (1-2 sentences max)
+                    - ALWAYS include BOTH fields
+                    - Keep actionText concise and evocative
+                            
+                    Example:
+                    {
+                      "dialogue": "The ancient observatory stands before you, its mechanisms still turning after centuries.",
+                      "actionText": "Starlight filters through crystalline windows, casting patterns on the stone floor."
+                    }
+                    """;
         }
 
         // For other characters, add their personality layer

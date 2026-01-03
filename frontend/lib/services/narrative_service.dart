@@ -27,12 +27,12 @@ class NarrativeService {
   ///   'narrator'
   /// );
   /// ```
-  Future<NarrativeResponse> speak(String message, String speaker) async {
+  Future<NarrativeResponse> speak(String message, String speaker, String storyId) async {  // ⭐ Added storyId parameter
     try {
       final url = Uri.parse('$baseUrl/speak');
 
       print('🌐 POST $url');
-      print('📤 Request: message="$message", speaker="$speaker"');
+      print('📤 Request: message="$message", speaker="$speaker", storyId="$storyId"');  // ⭐ Updated log
 
       final response = await client.post(
         url,
@@ -42,6 +42,7 @@ class NarrativeService {
         body: jsonEncode({
           'message': message,
           'speaker': speaker,
+          'storyId': storyId,  // ⭐ NEW: Include storyId in request
         }),
       );
 
@@ -85,19 +86,22 @@ class NarrativeService {
   /// ```dart
   /// final response = await narrativeService.choose(choice);
   /// ```
-  Future<NarrativeResponse> choose(Choice choice) async {
+  Future<NarrativeResponse> choose(Choice choice, String storyId) async {  // ⭐ Added storyId parameter
     try {
       final url = Uri.parse('$baseUrl/choose');
 
       print('🌐 POST $url');
-      print('📤 Request: choice="${choice.label}", nextSpeaker="${choice.nextSpeaker}"');
+      print('📤 Request: choice="${choice.label}", nextSpeaker="${choice.nextSpeaker}", storyId="$storyId"');  // ⭐ Updated log
 
       final response = await client.post(
         url,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode(choice.toJson()),
+        body: jsonEncode({
+          ...choice.toJson(),  // ⭐ Spread existing choice data
+          'storyId': storyId,  // ⭐ Add storyId to request
+        }),
       );
 
       print('📥 Response status: ${response.statusCode}');

@@ -1,5 +1,6 @@
 // lib/providers/narrative_notifier.dart
 // Business logic for narrative state management
+// ⭐ SESSION 21: Added storyId support for multi-story system
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/narrative_service.dart';
@@ -15,15 +16,16 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
   NarrativeNotifier(this._service) : super(NarrativeState.initial());
 
   /// Send a message and get narrative response with choices
-  Future<void> sendMessage(String message, String speaker) async {
+  /// ⭐ UPDATED: Added storyId parameter
+  Future<void> sendMessage(String message, String speaker, String storyId) async {
     // Set loading state
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       print('📤 Sending message: "$message" to $speaker');
 
-      // Call API
-      final response = await _service.speak(message, speaker);
+      // ⭐ UPDATED: Call API with storyId
+      final response = await _service.speak(message, speaker, storyId);
 
       // Create history message from response
       final historyMessage = NarrativeMessage.fromResponse(response);
@@ -44,6 +46,7 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
       await StoryStateService.saveState(
         messages: newHistory,
         lastCharacter: response.speaker,
+        storyId: storyId,
       );
     } catch (e) {
       print('❌ Error sending message: $e');
@@ -57,7 +60,8 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
   }
 
   /// Select a choice and continue the narrative
-  Future<void> selectChoice(Choice choice) async {
+  /// ⭐ UPDATED: Added storyId parameter
+  Future<void> selectChoice(Choice choice, String storyId) async {
     print('🎯 User selected choice: "${choice.label}" -> ${choice.nextSpeaker}');
 
     // Set loading state
@@ -67,8 +71,8 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
       // Add user's choice to history
       final choiceMessage = NarrativeMessage.userChoice(choice.label);
 
-      // Call API
-      final response = await _service.choose(choice);
+      // ⭐ UPDATED: Call API with storyId
+      final response = await _service.choose(choice, storyId);
 
       // Create history message from response
       final responseMessage = NarrativeMessage.fromResponse(response);
@@ -89,6 +93,7 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
       await StoryStateService.saveState(
         messages: newHistory,
         lastCharacter: response.speaker,
+        storyId: storyId,
       );
     } catch (e) {
       print('❌ Error selecting choice: $e');

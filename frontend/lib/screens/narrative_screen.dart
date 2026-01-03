@@ -22,11 +22,15 @@ class NarrativeScreen extends ConsumerStatefulWidget {
   /// Only used for new stories, ignored when restoring
   final String? startingCharacter;
 
+  /// Story ID for the current narrative ('observatory' or 'illidan')
+  final String storyId;
+
   const NarrativeScreen({
     super.key,
     this.restoredMessages,
     this.lastCharacter,
     this.startingCharacter,
+    required this.storyId,
   });
 
   @override
@@ -76,12 +80,13 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
     // Use the selected character, default to 'narrator' if not specified
     final character = widget.startingCharacter ?? 'narrator';
 
-    print('🎭 Starting narrative with character: $character');
+    print('🎭 Starting narrative with character: $character (story: ${widget.storyId})');
 
     // Send initial message to begin the story
     ref.read(narrativeStateProvider.notifier).sendMessage(
       'I approach the ancient observatory',
       character,
+      widget.storyId,
     );
   }
 
@@ -177,6 +182,7 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
               if (state.hasCurrentResponse && !state.isLoading)
                 ChoicesSection(
                   choices: state.currentResponse!.choices,
+                  storyId: widget.storyId,
                 ),
             ],
           ),

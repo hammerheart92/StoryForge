@@ -5,6 +5,8 @@ import java.util.List;
 /**
  * Represents a character in the narrative.
  * Each character has a distinct personality, speaking style, and mood.
+ *
+ * ⭐ SESSION 21: Added storyId field to support multi-story system
  */
 public class Character {
 
@@ -17,6 +19,7 @@ public class Character {
     private String defaultMood;             // "wary", "cheerful"
     private String relationshipToUser;      // "uncertain", "friendly"
     private String description;             // Backstory
+    private String storyId;                 // ⭐ NEW: "observatory", "illidan"
 
     // Empty constructor
 
@@ -27,7 +30,7 @@ public class Character {
 
     public Character(String id, String name, String role, List<String> personality,
                      String speechStyle, String avatarUrl, String defaultMood,
-                     String relationshipToUser, String description) {
+                     String relationshipToUser, String description, String storyId) {
         this.id = id;
         this.name = name;
         this.role = role;
@@ -37,6 +40,7 @@ public class Character {
         this.defaultMood = defaultMood;
         this.relationshipToUser = relationshipToUser;
         this.description = description;
+        this.storyId = storyId;
     }
 
     // Getters and Setters
@@ -111,5 +115,13 @@ public class Character {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getStoryId() {
+        return storyId;
+    }
+
+    public void setStoryId(String storyId) {
+        this.storyId = storyId;
     }
 }
