@@ -40,6 +40,7 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
       print('✅ Message sent successfully. Speaker: ${response.speakerName}, Choices: ${response.choices.length}');
 
       // Auto-save state in background
+      print('💾 NarrativeNotifier: Saving state after sendMessage (${newHistory.length} messages)');
       await StoryStateService.saveState(
         messages: newHistory,
         lastCharacter: response.speaker,
@@ -84,6 +85,7 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
       print('✅ Choice processed. Switched to ${response.speakerName}');
 
       // Auto-save state in background
+      print('💾 NarrativeNotifier: Saving state after selectChoice (${newHistory.length} messages)');
       await StoryStateService.saveState(
         messages: newHistory,
         lastCharacter: response.speaker,

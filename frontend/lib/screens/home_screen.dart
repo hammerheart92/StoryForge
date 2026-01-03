@@ -28,9 +28,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkForSavedStory();
   }
 
+  /// Called every time this widget's dependencies change
+  /// This fires when navigating back to this screen
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh saved story status whenever we return to this screen
+    _checkForSavedStory();
+  }
+
   /// Check for saved story on screen load
   Future<void> _checkForSavedStory() async {
+    print('🔍 HomeScreen checking for saved story');
     final hasSaved = await StoryStateService.hasSavedState();
+    print('🔍 Has saved state: $hasSaved');
     if (mounted) {
       setState(() {
         _hasSavedStory = hasSaved;
@@ -117,12 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Primary Button: "Begin Your Story"
                         _PrimaryButton(
                           onTap: () async {
-                            // Clear old state before starting new story
-                            await StoryStateService.clearState();
-
+                            // Navigate to character selection
+                            // Note: We DON'T clear state here - NarrativeScreen will do it
                             if (!context.mounted) return;
 
-                            // New story - go through character selection first!
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -131,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
 
                             // Refresh button state after returning
+                            // This will keep "Continue Story" enabled if user backed out
                             _checkForSavedStory();
                           },
                         ),

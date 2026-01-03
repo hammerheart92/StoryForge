@@ -42,10 +42,14 @@ class CharacterSelectionScreen extends StatelessWidget {
                 builder: (context, constraints) {
                   final isMobile = constraints.maxWidth < 600;
 
+                  // ✅ NEW - Scrollable on mobile!
                   return isMobile
-                      ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: _buildCharacterCards(context),
+                      ? SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: _buildCharacterCards(context),
+                    ),
                   )
                       : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -72,19 +76,18 @@ class CharacterSelectionScreen extends StatelessWidget {
     }).toList();
   }
 
-  void _handleCharacterSelection(BuildContext context,
-      CharacterInfo character) {
-    print('🎭 User selected: ${character.name}');
+  void _handleCharacterSelection(BuildContext context, CharacterInfo character) {
+    print('🎭 User selected: ${character.name} (ID: ${character.id})');
 
     // Navigate to narrative screen with selected character
+    // Use pushReplacement so back button doesn't return to character selection
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            NarrativeScreen(
-              restoredMessages: null, // Fresh start
-              startingCharacter: character.id, // Pass the character ID
-            ),
+        builder: (context) => NarrativeScreen(
+          restoredMessages: null, // Fresh start
+          startingCharacter: character.id, // Pass the character ID ('narrator' or 'ilyra')
+        ),
       ),
     );
   }

@@ -18,7 +18,9 @@ class StoryStateService {
   static Future<bool> hasSavedState() async {
     final prefs = await SharedPreferences.getInstance();
     final history = prefs.getString(_keyConversationHistory);
-    return history != null && history.isNotEmpty;
+    final result = history != null && history.isNotEmpty;
+    print('🔍 StoryStateService.hasSavedState() = $result');
+    return result;
   }
 
   /// Save current conversation state
@@ -27,6 +29,7 @@ class StoryStateService {
     required String lastCharacter,
   }) async {
     try {
+      print('💾 StoryStateService.saveState() called with ${messages.length} messages');
       final prefs = await SharedPreferences.getInstance();
 
       final messagesJson = messages.map((msg) => {
@@ -43,9 +46,9 @@ class StoryStateService {
       await prefs.setString(_keyLastCharacter, lastCharacter);
       await prefs.setString(_keyLastSaveTime, DateTime.now().toIso8601String());
 
-      print('Story state saved: ${messages.length} messages');
+      print('💾 Story state saved successfully: ${messages.length} messages');
     } catch (e) {
-      print('Error saving state: $e');
+      print('❌ Error saving state: $e');
     }
   }
 
