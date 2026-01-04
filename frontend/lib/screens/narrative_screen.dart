@@ -1,6 +1,7 @@
 // lib/screens/narrative_screen.dart
 // Main screen for the interactive branching narrative experience
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/narrative_message.dart';
@@ -44,6 +45,11 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
   /// Track how many messages were restored (don't animate these)
   int _restoredCount = 0;
 
+  /// Character reveal animation state
+  bool _isRevealActive = true;
+  String? _lastSpeaker;
+  Timer? _revealTimer;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +65,9 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
           widget.lastCharacter ?? 'narrator',
         );
         print('✅ Restored $_restoredCount messages - ready to continue');
+
+        // Trigger reveal animation for restored story
+        _triggerRevealAnimation();
       } else {
         // New story - CRITICAL: Reset provider state before starting
         // This clears any old conversation data from previous sessions
@@ -67,6 +76,9 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
 
         // Start with selected character (or default to Narrator)
         _startNarrative();
+
+        // Trigger reveal animation for new story
+        _triggerRevealAnimation();
       }
     });
   }
@@ -90,6 +102,22 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
     );
   }
 
+  /// Trigger the dramatic character reveal animation
+  void _triggerRevealAnimation() {
+    setState(() {
+      _isRevealActive = true;
+    });
+
+    _revealTimer?.cancel();
+    _revealTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() {
+          _isRevealActive = false;
+        });
+      }
+    });
+  }
+
   /// Scroll to bottom when new messages arrive
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
@@ -108,6 +136,15 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(narrativeStateProvider);
+    final currentSpeaker = ref.watch(currentSpeakerProvider);
+
+    // Detect character switch and trigger reveal animation
+    if (_lastSpeaker != null && _lastSpeaker != currentSpeaker && currentSpeaker.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _triggerRevealAnimation();
+      });
+    }
+    _lastSpeaker = currentSpeaker;
 
     // Auto-scroll when new messages arrive
     ref.listen(narrativeStateProvider, (previous, next) {
@@ -149,40 +186,53 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
       body: Stack(
         children: [
           // ============================================================
-          // ADDED: Character portrait background (immersive UI)
+          // Character portrait background (always visible, no animation)
           // ============================================================
           CharacterBackground(
-            speaker: ref.watch(currentSpeakerProvider),
+            speaker: currentSpeaker,
           ),
-          // Main content
+
+          // ============================================================
+          // Main content with slide-up animation
+          // ============================================================
           Column(
             children: [
-              // Conversation history (scrollable)
+              // Conversation history (scrollable) with slide-up animation
               Expanded(
-                child: state.hasHistory
-                    ? ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.only(top: 16, bottom: 16),
-                  itemCount: state.history.length,
-                  itemBuilder: (context, index) {
-                    final message = state.history[index];
-                    // Restored messages don't animate, only new messages do
-                    final isNewMessage = index >= _restoredCount;
-                    final isLastMessage = index == state.history.length - 1;
-                    return CharacterMessageCard(
-                      message: message,
-                      shouldAnimate: isNewMessage && isLastMessage,
-                    );
-                  },
-                )
-                    : _EmptyState(),
+                child: AnimatedSlide(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  offset: _isRevealActive ? const Offset(0, 1) : Offset.zero,
+                  child: state.hasHistory
+                      ? ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.only(top: 16, bottom: 16),
+                          itemCount: state.history.length,
+                          itemBuilder: (context, index) {
+                            final message = state.history[index];
+                            // Restored messages don't animate, only new messages do
+                            final isNewMessage = index >= _restoredCount;
+                            final isLastMessage = index == state.history.length - 1;
+                            return CharacterMessageCard(
+                              message: message,
+                              shouldAnimate: isNewMessage && isLastMessage,
+                            );
+                          },
+                        )
+                      : _EmptyState(),
+                ),
               ),
 
-              // Choices section (fixed at bottom)
+              // Choices section (fixed at bottom) with slide-up animation
               if (state.hasCurrentResponse && !state.isLoading)
-                ChoicesSection(
-                  choices: state.currentResponse!.choices,
-                  storyId: widget.storyId,
+                AnimatedSlide(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  offset: _isRevealActive ? const Offset(0, 1) : Offset.zero,
+                  child: ChoicesSection(
+                    choices: state.currentResponse!.choices,
+                    storyId: widget.storyId,
+                  ),
                 ),
             ],
           ),
@@ -207,6 +257,7 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _revealTimer?.cancel();
     super.dispose();
   }
 }
