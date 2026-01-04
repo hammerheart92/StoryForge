@@ -112,9 +112,10 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
   }
 
   /// Reset the narrative (start over)
-  void reset() {
+  /// Optionally set the initial speaker to prevent portrait flash
+  void reset({String? initialSpeaker}) {
     print('🔄 Resetting narrative state');
-    state = NarrativeState.initial();
+    state = NarrativeState(currentSpeaker: initialSpeaker ?? 'narrator');
   }
 
   /// Restore conversation from saved messages (for "Continue Story")

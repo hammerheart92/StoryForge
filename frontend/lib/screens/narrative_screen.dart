@@ -69,10 +69,11 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
         // Trigger reveal animation for restored story
         _triggerRevealAnimation();
       } else {
-        // New story - CRITICAL: Reset provider state before starting
-        // This clears any old conversation data from previous sessions
-        ref.read(narrativeStateProvider.notifier).reset();
-        print('🔄 Reset provider state for fresh story');
+        // New story - Reset with initial speaker in one atomic operation
+        // This prevents portrait flash from previous character
+        final initialCharacter = widget.startingCharacter ?? 'narrator';
+        ref.read(narrativeStateProvider.notifier).reset(initialSpeaker: initialCharacter);
+        print('🔄 Reset provider state for fresh story with speaker: $initialCharacter');
 
         // Start with selected character (or default to Narrator)
         _startNarrative();
@@ -176,7 +177,8 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
             icon: const Icon(Icons.refresh),
             tooltip: 'Start Over',
             onPressed: state.isLoading ? null : () {
-              ref.read(narrativeStateProvider.notifier).reset();
+              final initialCharacter = widget.startingCharacter ?? 'narrator';
+              ref.read(narrativeStateProvider.notifier).reset(initialSpeaker: initialCharacter);
               _hasStarted = false;
               _startNarrative();
             },
