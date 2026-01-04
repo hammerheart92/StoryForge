@@ -87,6 +87,10 @@ class CharacterBackground extends StatelessWidget {
         return 'assets/images/characters/narrator_portrait.webp';
       case 'ilyra':
         return 'assets/images/characters/ilyra_portrait.webp';
+      case 'illidan':  // ⭐ NEW
+        return 'assets/images/characters/illidan.png';
+      case 'tyrande':  // ⭐ NEW
+        return 'assets/images/characters/tyrande.png';
       default:
         return 'assets/images/characters/narrator_portrait.webp';
     }
@@ -98,6 +102,10 @@ class CharacterBackground extends StatelessWidget {
         return const Color(0xFF1A4D5C);
       case 'ilyra':
         return const Color(0xFF4A1A5C);
+      case 'illidan':  // ⭐ NEW
+        return const Color(0xFF1A3D1A);  // Dark fel green
+      case 'tyrande':  // ⭐ NEW
+        return const Color(0xFF3D3D4D);  // Dark silver/blue
       default:
         return const Color(0xFF1A1A1A);
     }
