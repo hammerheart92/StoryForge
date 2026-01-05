@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * REST controller for narrative interactions.
@@ -30,7 +31,7 @@ public class NarrativeController {
     private final NarrativeEngine narrativeEngine;
     private final CharacterDatabase characterDb;
     private final DatabaseService databaseService;
-    private final ConversationHistory history;
+    private final Map<String, ConversationHistory> storyHistories;
 
     private int currentSessionId;
 
@@ -45,7 +46,7 @@ public class NarrativeController {
         this.narrativeEngine = narrativeEngine;
         this.characterDb = characterDb;
         this.databaseService = databaseService;
-        this.history = new ConversationHistory();
+        this.storyHistories = new ConcurrentHashMap<>();
 
         // Initialize with a default session
         List<Session> sessions = databaseService.getAllSessions();
@@ -56,6 +57,17 @@ public class NarrativeController {
         }
 
         logger.info("🎭 NarrativeController initialized with session {}", currentSessionId);
+    }
+
+    /**
+     * Get or create conversation history for a specific story.
+     * Each story maintains independent conversation context.
+     */
+    private ConversationHistory getHistoryForStory(String storyId) {
+        return storyHistories.computeIfAbsent(storyId, id -> {
+            logger.info("📖 Creating new conversation history for story: {}", id);
+            return new ConversationHistory();
+        });
     }
 
     /**
@@ -154,12 +166,14 @@ public class NarrativeController {
             return ResponseEntity.badRequest().body(error);
         }
 
-        // ⭐ UPDATED: Generate response WITH choices and storyId
+        // ⭐ Get story-specific history
+        ConversationHistory history = getHistoryForStory(storyId);
+
         NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
                 userMessage,
                 speakerId,
-                storyId,  // ⭐ NEW: Pass storyId
-                history
+                storyId,
+                history  // ✅ NEW: story-scoped history
         );
 
         // Save to database
@@ -219,12 +233,14 @@ public class NarrativeController {
         // Create transition message based on the choice
         String transitionMessage = "You chose: " + choiceLabel;
 
-        // ⭐ UPDATED: Generate response from the next speaker with storyId
+        // ⭐ Get story-specific history
+        ConversationHistory history = getHistoryForStory(storyId);
+
         NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
                 transitionMessage,
                 nextSpeaker,
-                storyId,  // ⭐ NEW: Pass storyId
-                history
+                storyId,
+                history  // ✅ NEW: story-scoped history
         );
 
         // Save messages to database
