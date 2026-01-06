@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Manages character data in the SQLite database.
  * Handles creating, reading, and storing characters.
- *
+ * <p>
  * ⭐ SESSION 21: Added storyId support for multi-story system
  */
 public class CharacterDatabase {
@@ -62,7 +62,7 @@ public class CharacterDatabase {
     /**
      * Add default characters to the database (Narrator, Ilyra, Illidan, Tyrande).
      * Only adds them if they don't already exist.
-     *
+     * <p>
      * ⭐ SESSION 21: Added Illidan and Tyrande characters with storyId
      */
     private void seedDefaultCharacters() {
@@ -70,7 +70,9 @@ public class CharacterDatabase {
         if (getCharacter("narrator") != null &&
                 getCharacter("ilyra") != null &&
                 getCharacter("illidan") != null &&
-                getCharacter("tyrande") != null) {
+                getCharacter("tyrande") != null &&
+                getCharacter("blackwood") != null &&
+                getCharacter("isla") != null) {
             logger.debug("Default characters already exist, skipping seed");
             return;
         }
@@ -143,7 +145,41 @@ public class CharacterDatabase {
         );
         saveCharacter(tyrande);
 
-        logger.info("📚 Seeded default characters: Narrator, Ilyra, Illidan, and Tyrande");
+        // ========================================
+        // PIRATES STORY CHARACTERS (THE PIRATE'S COVE)
+        // ========================================
+
+        // Create Captain Nathaniel Blackwood (storyId: "pirates")
+        Character blackwood = new Character(
+                "blackwood",
+                "Captain Nathaniel Blackwood",
+                "Legendary Pirate Captain",
+                Arrays.asList("ruthless", "cunning", "melancholic", "commanding", "haunted", "romantically frustrated"),
+                "Third-person narrator perspective. Poetic maritime language, dark humor, alternates between commanding authority and vulnerable longing when speaking of Isla. Uses seafaring metaphors. Makes romantic advances ranging from subtle compliments to bold declarations.",
+                null,  // No avatar for now
+                "defiant",
+                "distant",
+                "A weathered pirate captain in his 40s with graying beard, dark leather coat, tricorn hat, and eyes that have seen too many storms. Legendary for his ruthlessness at sea and cunning in battle, but harbors deep romantic feelings for his navigator Isla Hartwell. Each of her rejections wounds his pride yet fuels his determination.",
+                "pirates"  // ⭐ storyId
+        );
+        saveCharacter(blackwood);
+
+        // Create Isla Hartwell (storyId: "pirates")
+        Character isla = new Character(
+                "isla",
+                "Isla Hartwell",
+                "Ship's Navigator & Mapmaker",
+                Arrays.asList("sharp-witted", "pragmatic", "loyal", "professional", "boundary-keeper"),
+                "First-person perspective. Direct, technical nautical terminology, grounded and practical. Deflects Blackwood's romantic advances with wit, humor, or firm redirection to duties. Uses navigation and sailing metaphors.",
+                null,  // No avatar for now
+                "wary",
+                "professional",
+                "A sharp-eyed navigator in her 30s with practical clothing, wind-blown hair, and navigational tools always at hand. Her intelligence and independence make her invaluable aboard ship. She maintains firm boundaries against Captain Blackwood's romantic advances, keeping her focus on charts and survival rather than affairs of the heart.",
+                "pirates"  // ⭐ storyId
+        );
+        saveCharacter(isla);
+
+        logger.info("📚 Seeded default characters: Narrator, Ilyra, Illidan, Tyrande, Captain Nathaniel and Isla Hartwell");
     }
 
     /**
