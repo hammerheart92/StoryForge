@@ -71,6 +71,9 @@ flutter:
     - assets/images/characters/ilyra_portrait.webp
     - assets/images/characters/illidan.png
     - assets/images/characters/tyrande.png
+    - assets/images/scenes/pirates/pirate_captains_cabin.png
+    - assets/images/scenes/pirates/pirate_ship_deck.png
+    - assets/images/scenes/pirates/pirate_ship_navigation_room.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

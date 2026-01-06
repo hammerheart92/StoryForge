@@ -45,5 +45,18 @@ class StoryInfo {
     icon: Icons.whatshot,
   );
 
-  static List<StoryInfo> get all => [observatory, illidan];
+  // ⭐ SESSION 24: Pirates Story - The Pirate's Cove
+  static final StoryInfo pirates = StoryInfo(
+    id: 'pirates',
+    title: "The Pirate's Cove",
+    tagline: 'Romance and rivalry on the high seas',
+    description:
+    "Captain Nathaniel Blackwood commands the fastest ship on the seven seas, but his heart sails uncharted waters. His brilliant navigator Isla Hartwell charts every course—except the one toward his affections. A tale of adventure, unrequited love, and the treasures that truly matter.",
+    theme: 'Pirate Adventure',
+    accentColor: Color(0xFF1A5F7A),  // Deep ocean blue
+    characterIds: ['blackwood', 'isla'],
+    icon: Icons.sailing,
+  );
+
+  static List<StoryInfo> get all => [observatory, illidan, pirates];
 }

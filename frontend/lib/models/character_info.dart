@@ -67,7 +67,32 @@ class CharacterInfo {
     icon: Icons.nightlight,
   );
 
-  static List<CharacterInfo> get all => [narrator, ilyra, illidan, tyrande];
+  // ⭐ SESSION 24: Pirates Story Characters
+  static final CharacterInfo blackwood = CharacterInfo(
+    id: 'blackwood',
+    storyId: 'pirates',
+    name: 'Captain Nathaniel Blackwood',
+    tagline: 'A legend haunted by what he cannot command',
+    description:
+    'Captain Blackwood commands the fastest ship and fiercest crew on the seven seas. Weathered by storms and battles, his graying beard and piercing eyes tell tales of countless victories. Yet the one treasure that eludes him is not gold or glory—it\'s the heart of his brilliant navigator, Isla Hartwell.',
+    traits: ['Cunning', 'Melancholic', 'Romantic', 'Commanding'],
+    accentColor: Color(0xFF1A5F7A),  // Deep ocean blue
+    icon: Icons.sailing,
+  );
+
+  static final CharacterInfo isla = CharacterInfo(
+    id: 'isla',
+    storyId: 'pirates',
+    name: 'Isla Hartwell',
+    tagline: 'Charts every course—except the heart\'s',
+    description:
+    'Isla Hartwell is the finest navigator to sail the seven seas. Her sharp wit and sharper mind have guided Captain Blackwood\'s ship through the most treacherous waters. She values professionalism, competence, and boundaries—especially against the Captain\'s persistent romantic advances.',
+    traits: ['Sharp-Witted', 'Professional', 'Pragmatic', 'Boundary-Keeper'],
+    accentColor: Color(0xFFD4A574),  // Warm brass/gold (navigation tools)
+    icon: Icons.explore,
+  );
+
+  static List<CharacterInfo> get all => [narrator, ilyra, illidan, tyrande, blackwood, isla];
 
   /// Get all characters for a specific story
   static List<CharacterInfo> forStory(String storyId) {

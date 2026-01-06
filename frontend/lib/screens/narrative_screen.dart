@@ -189,9 +189,11 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
         children: [
           // ============================================================
           // Character portrait background (always visible, no animation)
+          // ⭐ SESSION 24: Now includes mood for dynamic scene switching
           // ============================================================
           CharacterBackground(
             speaker: currentSpeaker,
+            mood: state.currentResponse?.mood,  // ⭐ NEW: Pass mood from backend
           ),
 
           // ============================================================

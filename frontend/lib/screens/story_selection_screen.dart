@@ -22,6 +22,8 @@ class StorySelectionScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: Container(
+        width: double.infinity,  // ⭐ Force full width
+        height: double.infinity,  // ⭐ Force full height
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -34,28 +36,35 @@ class StorySelectionScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 900),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isMobile = constraints.maxWidth < 600;
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
 
-                  return isMobile
-                      ? SingleChildScrollView(
-                          padding: EdgeInsets.symmetric(vertical: 40),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: _buildStoryCards(context),
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: _buildStoryCards(context),
-                        );
-                },
-              ),
-            ),
+              return isMobile
+                  ? Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 600),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: _buildStoryCards(context),
+                    ),
+                  ),
+                ),
+              )
+                  : Center(  // ⭐ Center vertically
+                child: SingleChildScrollView(
+                  // ⭐ Horizontal scroll - no width constraint!
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: _buildStoryCards(context),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -63,6 +72,11 @@ class StorySelectionScreen extends StatelessWidget {
   }
 
   List<Widget> _buildStoryCards(BuildContext context) {
+    print('🏴‍☠️ DEBUG: Building ${StoryInfo.all.length} story cards');
+    for (var story in StoryInfo.all) {
+      print('  📖 Story: ${story.title} (ID: ${story.id})');
+    }
+
     return StoryInfo.all.map((story) {
       return Padding(
         padding: const EdgeInsets.all(16),
