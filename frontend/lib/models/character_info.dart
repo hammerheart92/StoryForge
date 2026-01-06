@@ -9,6 +9,7 @@ class CharacterInfo {
   final List<String> traits;
   final Color accentColor;
   final IconData icon;
+  final String? portraitPath;
 
   const CharacterInfo({
     required this.id,
@@ -19,6 +20,7 @@ class CharacterInfo {
     required this.traits,
     required this.accentColor,
     required this.icon,
+    this.portraitPath,
   });
 
   static final CharacterInfo narrator = CharacterInfo(
@@ -30,6 +32,7 @@ class CharacterInfo {
     traits: ['Wise', 'Observant', 'Timeless', 'Impartial'],
     accentColor: Color(0xFF30B2A3),
     icon: Icons.auto_stories,
+    portraitPath: 'assets/images/characters/narrator_portrait.webp',
   );
 
   static final CharacterInfo ilyra = CharacterInfo(
@@ -41,6 +44,7 @@ class CharacterInfo {
     traits: ['Mystical', 'Passionate', 'Exiled', 'Devoted'],
     accentColor: Color(0xFFA88ED9),
     icon: Icons.star,
+    portraitPath: 'assets/images/characters/ilyra_portrait.webp',
   );
 
   static final CharacterInfo illidan = CharacterInfo(
@@ -53,6 +57,7 @@ class CharacterInfo {
     traits: ['Ruthless', 'Tormented', 'Driven', 'Arrogant'],
     accentColor: Color(0xFF33CC33),
     icon: Icons.whatshot,
+    portraitPath: 'assets/images/characters/illidan.png',
   );
 
   static final CharacterInfo tyrande = CharacterInfo(
@@ -65,6 +70,7 @@ class CharacterInfo {
     traits: ['Compassionate', 'Conflicted', 'Hopeful', 'Loyal'],
     accentColor: Color(0xFFC0C0C0),
     icon: Icons.nightlight,
+    portraitPath: 'assets/images/characters/tyrande.png',
   );
 
   // ⭐ SESSION 24: Pirates Story Characters
@@ -78,6 +84,7 @@ class CharacterInfo {
     traits: ['Cunning', 'Melancholic', 'Romantic', 'Commanding'],
     accentColor: Color(0xFF1A5F7A),  // Deep ocean blue
     icon: Icons.sailing,
+    portraitPath: 'assets/images/characters/blackwood_portrait.png',
   );
 
   static final CharacterInfo isla = CharacterInfo(
@@ -90,6 +97,7 @@ class CharacterInfo {
     traits: ['Sharp-Witted', 'Professional', 'Pragmatic', 'Boundary-Keeper'],
     accentColor: Color(0xFFD4A574),  // Warm brass/gold (navigation tools)
     icon: Icons.explore,
+    portraitPath: 'assets/images/characters/isla_portrait.png',
   );
 
   static List<CharacterInfo> get all => [narrator, ilyra, illidan, tyrande, blackwood, isla];

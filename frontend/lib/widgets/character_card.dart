@@ -56,6 +56,42 @@ class CharacterCard extends StatelessWidget {
   }
 
   Widget _buildCharacterIcon() {
+    // If character has a portrait, show image
+    if (character.portraitPath != null) {
+      return Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: character.accentColor.withOpacity(0.5),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: character.accentColor.withOpacity(0.3),
+              blurRadius: 20,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: ClipOval(
+          child: Image.asset(
+            character.portraitPath!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              // Fallback to icon on error
+              return Container(
+                color: character.accentColor.withOpacity(0.1),
+                child: Icon(character.icon, size: 50, color: character.accentColor),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    // Fallback: original icon-based display
     return Container(
       width: 100,
       height: 100,
