@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'animated_character_background.dart'; // ⭐ NEW: Import video widget
 
 /// Displays character portrait or scene as background - SHARP and VISIBLE
 ///
@@ -7,9 +8,15 @@ import 'package:flutter/material.dart';
 /// - Existing characters (Narrator, Ilyra, Illidan, Tyrande) keep static portraits
 /// - Smooth transitions between scenes (500ms crossfade)
 /// - Fallback to default scene if mood-specific scene not found
+///
+/// ⭐ SESSION 25: Added animated video backgrounds for pirates
+/// - Blackwood and Isla now use looping MP4 videos
+/// - Videos auto-play, loop infinitely, and are muted
+/// - Fallback to static PNG scenes if video fails to load
+/// - Other characters continue using static portraits
 class CharacterBackground extends StatelessWidget {
   final String speaker;
-  final String? mood; // ⭐ NEW: Optional mood for scene selection
+  final String? mood; // ⭐ Optional mood for scene selection
   final Duration transitionDuration;
 
   const CharacterBackground({
@@ -35,13 +42,60 @@ class CharacterBackground extends StatelessWidget {
       key: ValueKey(key),
       fit: StackFit.expand,
       children: [
-        // 1. Character portrait/scene - SHARP, NO BLUR!
-        _buildSharpPortrait(),
+        // 1. Character portrait/scene/video - SHARP, NO BLUR!
+        _buildCharacterBackground(),
 
         // 2. Dark vignette around edges (NOT over the portrait!)
         _buildEdgeVignette(),
       ],
     );
+  }
+
+  /// ⭐ NEW: Decides whether to show video or static image
+  Widget _buildCharacterBackground() {
+    // Pirates characters get animated videos
+    if (_hasAnimatedVideo(speaker)) {
+      return _buildAnimatedVideo();
+    }
+
+    // All other characters get static portraits/scenes
+    return _buildSharpPortrait();
+  }
+
+  /// ⭐ NEW: Check if character has an animated video
+  bool _hasAnimatedVideo(String speaker) {
+    final speakerLower = speaker.toLowerCase();
+    return speakerLower == 'blackwood' || speakerLower == 'isla';
+  }
+
+  /// ⭐ NEW: Build animated video background for pirates
+  Widget _buildAnimatedVideo() {
+    final videoPath = _getVideoPath(speaker);
+    final fallbackImagePath = _getCharacterImagePath(speaker, mood);
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: AnimatedCharacterBackground(
+        videoPath: videoPath,
+        fallbackImagePath: fallbackImagePath, // Fallback to static scene
+      ),
+    );
+  }
+
+  /// ⭐ NEW: Get video path for character
+  String _getVideoPath(String speaker) {
+    switch (speaker.toLowerCase()) {
+      case 'blackwood':
+        return 'assets/videos/blackwood_animation.mp4';
+      case 'isla':
+        return 'assets/videos/isla_animation.mp4';
+      default:
+      // Should never reach here due to _hasAnimatedVideo check
+        return '';
+    }
   }
 
   /// Portrait image - positioned at top, SHARP and VISIBLE
@@ -86,7 +140,7 @@ class CharacterBackground extends StatelessWidget {
     );
   }
 
-  /// ⭐ NEW: Get image path with mood-based scene selection for pirates
+  /// ⭐ Get image path with mood-based scene selection for pirates
   String _getCharacterImagePath(String speaker, String? mood) {
     final speakerLower = speaker.toLowerCase();
 
@@ -101,16 +155,16 @@ class CharacterBackground extends StatelessWidget {
         return 'assets/images/characters/narrator_portrait.webp';
       case 'ilyra':
         return 'assets/images/characters/ilyra_portrait.webp';
-      case 'illidan':  // ⭐ NEW
+      case 'illidan':
         return 'assets/images/characters/illidan.png';
-      case 'tyrande':  // ⭐ NEW
+      case 'tyrande':
         return 'assets/images/characters/tyrande.png';
       default:
         return 'assets/images/characters/narrator_portrait.webp';
     }
   }
 
-  /// ⭐ NEW: Map pirate character + mood to scene path
+  /// ⭐ Map pirate character + mood to scene path
   String _getPirateScenePath(String character, String? mood) {
     // Mood-to-scene mapping for pirates
     final sceneMap = _getPirateSceneMap(character);
@@ -120,7 +174,7 @@ class CharacterBackground extends StatelessWidget {
     return sceneMap[moodLower] ?? sceneMap['default']!;
   }
 
-  /// ⭐ NEW: Scene mapping tables for each pirate character
+  /// ⭐ Scene mapping tables for each pirate character
   Map<String, String> _getPirateSceneMap(String character) {
     switch (character) {
       case 'blackwood':
@@ -171,9 +225,9 @@ class CharacterBackground extends StatelessWidget {
         return const Color(0xFF1A3D1A);  // Dark fel green
       case 'tyrande':
         return const Color(0xFF3D3D4D);  // Dark silver/blue
-      case 'blackwood':  // ⭐ NEW
+      case 'blackwood':
         return const Color(0xFF1A2A3A);  // Dark ocean blue
-      case 'isla':  // ⭐ NEW
+      case 'isla':
         return const Color(0xFF3A2A1A);  // Warm brown (navigation room)
       default:
         return const Color(0xFF1A1A1A);
