@@ -78,7 +78,11 @@ flutter:
     - assets/images/scenes/pirates/pirate_ship_deck.png
     - assets/images/scenes/pirates/pirate_ship_navigation_room.png
     - assets/videos/isla_animation.mp4
+    - assets/videos/isla_storm_animation.mp4
+    - assets/videos/isla_sunset_animation.mp4
     - assets/videos/blackwood_animation.mp4
+    - assets/videos/blackwood_cabin_animation.mp4
+    - assets/videos/blackwood_treasure_animation.mp4
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

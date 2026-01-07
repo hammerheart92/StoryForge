@@ -115,6 +115,7 @@ public class NarrativeEngine {
 // ⭐ NEW: Extract and parse JSON more robustly
         String dialogue = rawResponse;  // Initialize with raw response as fallback
         String actionText = null;
+        String extractedMood = null;  // ⭐ SESSION 26: Variable to store mood
 
         try {
             // ⭐ IMPROVED: Find valid JSON by trying to parse from each '{' position
@@ -142,6 +143,12 @@ public class NarrativeEngine {
 
                                 if (json.has("actionText")) {
                                     actionText = json.get("actionText").asText();
+                                }
+
+                                // ⭐ SESSION 26: Extract mood from JSON
+                                if (json.has("mood")) {
+                                    extractedMood = json.get("mood").asText().trim();
+                                    logger.info("✅ [{}] Extracted mood from JSON: {}", activeCharacterId, extractedMood);
                                 }
 
                                 parsed = true;
@@ -189,7 +196,15 @@ public class NarrativeEngine {
         List<Choice> choices = generateChoices(activeCharacterId, dialogue, storyId, history);
 
         // 4. Determine character's mood from the response
-        String mood = determineMood(dialogue, character);
+        // ⭐ SESSION 26: Use extracted mood if available, otherwise determine from response
+        String mood;
+        if (extractedMood != null && !extractedMood.isEmpty()) {
+            mood = extractedMood;
+            logger.info("✅ Using mood from JSON: {}", mood);
+        } else {
+            mood = determineMood(dialogue, character);
+            logger.info("🔍 Determined mood from text analysis: {}", mood);
+        }
 
         // 5. Build complete narrative response
         NarrativeResponse response = new NarrativeResponse();
@@ -370,6 +385,7 @@ public class NarrativeEngine {
     /**
      * Build the complete prompt: Base + Character Context.
      * This is the magic that makes characters feel different!
+     * ⭐ SESSION 26: Added mood inference for Pirates story characters
      */
     private String buildLayeredPrompt(Character character) {
         // If it's the narrator, just use base prompt
@@ -402,6 +418,9 @@ public class NarrativeEngine {
                     """;
         }
 
+        // ⭐ NEW: Get mood options for character
+        String moodInstructions = getMoodInstructionsForCharacter(character.getId());
+
         // For other characters, add their personality layer
         String characterLayer = "\n\n" +
                 "## Current Character\n" +
@@ -415,29 +434,146 @@ public class NarrativeEngine {
                 "Respond in character. Maintain " + character.getName() + "'s distinct voice, " +
                 "personality, and speaking patterns. Show their current mood through subtle cues.\n\n" +
 
-                // NEW: Add JSON format requirement
+                // ⭐ UPDATED: Add mood field to JSON format
                 "CRITICAL: You MUST respond with valid JSON in this EXACT format:\n" +
                 "{\n" +
                 "  \"dialogue\": \"Your spoken words here\",\n" +
-                "  \"actionText\": \"Brief action/gesture description (1-2 sentences)\"\n" +
+                "  \"actionText\": \"Brief action/gesture description (1-2 sentences)\",\n" +
+                "  \"mood\": \"current_emotional_state\"\n" +
                 "}\n\n" +
 
                 "Guidelines for JSON response:\n" +
                 "- dialogue: What " + character.getName() + " says (in their voice)\n" +
                 "- actionText: What " + character.getName() + " does - gestures, expressions, movements (1-2 sentences max)\n" +
-                "- ALWAYS include BOTH fields\n" +
+                "- mood: Your current emotional state (see mood options below)\n" +
+                "- ALWAYS include ALL THREE fields\n" +
                 "- actionText shows emotion through body language\n" +
                 "- Use present tense for actionText\n\n" +
+
+                moodInstructions +  // ⭐ Add character-specific mood options
 
                 "Example response:\n" +
                 "{\n" +
                 "  \"dialogue\": \"The stars tell ancient stories, if you know how to listen.\",\n" +
-                "  \"actionText\": \"She traces constellation patterns in the air, her eyes distant and contemplative.\"\n" +
+                "  \"actionText\": \"She traces constellation patterns in the air, her eyes distant and contemplative.\",\n" +
+                "  \"mood\": \"wary\"\n" +
                 "}";
 
         logger.debug("Built layered prompt for {}", character.getName());
 
         return BASE_PROMPT + characterLayer;
+    }
+
+    /**
+     * ⭐ NEW SESSION 26: Get mood instructions for specific characters.
+     * Pirates characters (Blackwood/Isla) get detailed mood options.
+     * Other characters use generic moods.
+     */
+    private String getMoodInstructionsForCharacter(String characterId) {
+        switch (characterId.toLowerCase()) {
+            case "blackwood":
+                return """
+                        
+                        **MOOD OPTIONS for Captain Blackwood:**
+                        Choose the mood that best reflects your current emotional state:
+                        
+                        - "defiant" - Challenged, refusing to back down, asserting authority
+                        - "frustrated" - Plans going wrong, rejected by Isla, irritated
+                        - "angry" - Genuinely enraged, dangerous, seeing red
+                        - "contemplative" - Reflecting on feelings, processing emotions, introspective
+                        - "longing" - Expressing desire for Isla, yearning, romantically vulnerable
+                        - "melancholic" - Sad, regretful, haunted by past, sorrowful
+                        - "charming" - Trying to win someone over, smooth, seductive
+                        - "triumphant" - Celebrating success, victorious, proud
+                        - "confident" - Assured, in control, commanding presence
+                        
+                        Select ONE mood that best fits this moment.
+                        
+                        """;
+
+            case "isla":
+                return """
+                        
+                        **MOOD OPTIONS for Isla Hartwell:**
+                        Choose the mood that best reflects your current emotional state:
+                        
+                        - "analytical" - Examining details professionally, technical focus
+                        - "focused" - Concentrating on task, sharp attention, work mode
+                        - "firm" - Setting boundaries with Blackwood, direct, assertive
+                        - "wary" - Cautious, suspicious, on guard, watching carefully
+                        - "concerned" - Worried about something, anxious about situation
+                        - "anxious" - Stressed, fearful, nervous, uneasy
+                        - "uncomfortable" - Awkward situation, wants to leave, socially tense
+                        - "hopeful" - Optimistic about outcomes, seeing positive possibilities
+                        - "optimistic" - Positive, forward-looking, encouraged
+                        - "warm" - Showing rare kindness, softer moment, gentle
+                        
+                        Select ONE mood that best fits this moment.
+                        
+                        """;
+
+            case "ilyra":
+                return """
+                        
+                        **MOOD OPTIONS for Ilyra:**
+                        Choose the mood that best reflects your current emotional state:
+                        
+                        - "wary" - Guarded, cautious, not trusting yet
+                        - "curious" - Intellectually engaged, interested despite reservations
+                        - "melancholic" - Sad about her exile, dwelling on past
+                        - "defensive" - Protecting herself emotionally, sharp responses
+                        - "resigned" - Accepting her fate, philosophical about isolation
+                        - "passionate" - Excited about astronomy, animated when discussing stars
+                        - "vulnerable" - Rare moment of openness, guard lowered
+                        
+                        Select ONE mood that best fits this moment.
+                        
+                        """;
+
+            case "illidan":
+                return """
+                        
+                        **MOOD OPTIONS for Illidan:**
+                        Choose the mood that best reflects your current emotional state:
+                        
+                        - "defiant" - Refusing to apologize, asserting his choices
+                        - "tormented" - Struggling with inner demons, conflicted
+                        - "ruthless" - Cold, calculating, ends justify means
+                        - "arrogant" - Superior, dismissive of others' concerns
+                        - "philosophical" - Deep thoughts about power and sacrifice
+                        - "intense" - Focused, driven, burning determination
+                        
+                        Select ONE mood that best fits this moment.
+                        
+                        """;
+
+            case "tyrande":
+                return """
+                        
+                        **MOOD OPTIONS for Tyrande:**
+                        Choose the mood that best reflects your current emotional state:
+                        
+                        - "concerned" - Worried about Illidan's path, apprehensive
+                        - "hopeful" - Still believing in redemption, optimistic
+                        - "conflicted" - Torn between duty and caring, uncertain
+                        - "compassionate" - Showing empathy, understanding pain
+                        - "regretful" - Doubting her decision to free him, sorrowful
+                        - "horrified" - Witnessing transformation, shocked
+                        
+                        Select ONE mood that best fits this moment.
+                        
+                        """;
+
+            default:
+                // Generic mood options for other characters
+                return """
+                        
+                        **MOOD OPTIONS:**
+                        Choose a mood that reflects your current emotional state:
+                        wary, curious, pleased, concerned, contemplative, defiant, calm
+                        
+                        """;
+        }
     }
 
     /**

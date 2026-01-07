@@ -70,7 +70,7 @@ class CharacterBackground extends StatelessWidget {
 
   /// ⭐ NEW: Build animated video background for pirates
   Widget _buildAnimatedVideo() {
-    final videoPath = _getVideoPath(speaker);
+    final videoPath = _getVideoPath(speaker, mood);
     final fallbackImagePath = _getCharacterImagePath(speaker, mood);
 
     return Positioned(
@@ -85,17 +85,49 @@ class CharacterBackground extends StatelessWidget {
     );
   }
 
-  /// ⭐ NEW: Get video path for character
-  String _getVideoPath(String speaker) {
-    switch (speaker.toLowerCase()) {
-      case 'blackwood':
-        return 'assets/videos/blackwood_animation.mp4';
-      case 'isla':
+  /// ⭐ SESSION 26: Get video path based on character and mood
+  String _getVideoPath(String speaker, String? mood) {
+    final speakerLower = speaker.toLowerCase();
+    final moodLower = mood?.toLowerCase() ?? 'default';
+
+    // Isla's mood-based video selection
+    if (speakerLower == 'isla') {
+      // Professional/analytical moods → Navigation room (warm, focused)
+      if (['analytical', 'focused', 'firm', 'wary'].contains(moodLower)) {
         return 'assets/videos/isla_animation.mp4';
-      default:
-      // Should never reach here due to _hasAnimatedVideo check
-        return '';
+      }
+      // Worried/anxious moods → Storm rigging (dark, tense)
+      else if (['concerned', 'anxious', 'uncomfortable'].contains(moodLower)) {
+        return 'assets/videos/isla_storm_animation.mp4';
+      }
+      // Happy/optimistic moods → Sunset crow's nest (golden, hopeful)
+      else if (['hopeful', 'optimistic', 'warm'].contains(moodLower)) {
+        return 'assets/videos/isla_sunset_animation.mp4';
+      }
+      // Default fallback
+      return 'assets/videos/isla_animation.mp4';
     }
+
+    // Blackwood's mood-based video selection
+    if (speakerLower == 'blackwood') {
+      // Dramatic/defiant moods → Storm deck (dark, dramatic)
+      if (['defiant', 'frustrated', 'angry'].contains(moodLower)) {
+        return 'assets/videos/blackwood_animation.mp4';
+      }
+      // Quiet/contemplative moods → Cabin at night (dim, vulnerable)
+      else if (['contemplative', 'longing', 'melancholic'].contains(moodLower)) {
+        return 'assets/videos/blackwood_cabin_animation.mp4';
+      }
+      // Triumphant moods → Treasure room (golden, victorious)
+      else if (['triumphant', 'charming', 'confident'].contains(moodLower)) {
+        return 'assets/videos/blackwood_treasure_animation.mp4';
+      }
+      // Default fallback
+      return 'assets/videos/blackwood_cabin_animation.mp4';
+    }
+
+    // Should never reach here due to _hasAnimatedVideo check
+    return '';
   }
 
   /// Portrait image - positioned at top, SHARP and VISIBLE
