@@ -131,31 +131,34 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                   const SizedBox(width: DesignSpacing.sm),
 
                   // Character name - dark background pill
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: DesignSpacing.sm,
-                      vertical: DesignSpacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _darkCardBackground.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _cardBorder.withOpacity(0.6),
-                        width: 1,
+                  Flexible(  // ⭐ ADDED: Wrapper for long names
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: DesignSpacing.sm,
+                        vertical: DesignSpacing.xs,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
+                      decoration: BoxDecoration(
+                        color: _darkCardBackground.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _cardBorder.withOpacity(0.6),
+                          width: 1,
                         ),
-                      ],
-                    ),
-                    child: Text(
-                      widget.message.speakerName,
-                      style: StoryForgeTheme.characterName.copyWith(
-                        color: _textPrimary,
-                        fontWeight: FontWeight.w600,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        widget.message.speakerName,
+                        overflow: TextOverflow.ellipsis,  // ⭐ ADDED: Handles overflow
+                        style: StoryForgeTheme.characterName.copyWith(
+                          color: _textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
