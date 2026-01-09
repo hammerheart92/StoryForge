@@ -10,6 +10,7 @@ import java.util.List;
 
 /**
  * Handles SQLite database operations for chat persistence.
+ * ⭐ SESSION 26: Added story_saves table for multi-story save system
  */
 public class DatabaseService {
 
@@ -31,6 +32,7 @@ public class DatabaseService {
         createSessionsTable();
         createMessagesTable();
         createUserChoicesTable();  // NEW: Session 14 addition
+        createStorySavesTable();   // ⭐ SESSION 26: Multi-story save system
         logger.info("✅ Database initialized successfully");
     }
 
@@ -76,6 +78,52 @@ public class DatabaseService {
                 """;
         executeSQL(sql);
         logger.debug("📊 user_choices table ready");
+    }
+
+    /**
+     * ⭐ SESSION 26: Create table to store conversation saves for each story.
+     * This enables users to maintain progress across multiple stories simultaneously.
+     */
+    private void createStorySavesTable() {
+        String sql = """
+                CREATE TABLE IF NOT EXISTS story_saves (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    story_id TEXT NOT NULL,
+                    save_slot INTEGER DEFAULT 1,
+                    user_id TEXT DEFAULT 'default',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    current_speaker TEXT,
+                    message_count INTEGER DEFAULT 0,
+                    choice_count INTEGER DEFAULT 0,
+                    conversation_json TEXT NOT NULL,
+                    progress_metadata TEXT,
+                    is_completed BOOLEAN DEFAULT 0,
+                    UNIQUE(story_id, save_slot, user_id)
+                )
+                """;
+        executeSQL(sql);
+
+        // Create indexes for fast lookups
+        String indexLookup = """
+                CREATE INDEX IF NOT EXISTS idx_story_saves_lookup 
+                ON story_saves(story_id, save_slot, user_id)
+                """;
+        executeSQL(indexLookup);
+
+        String indexRecent = """
+                CREATE INDEX IF NOT EXISTS idx_story_saves_recent 
+                ON story_saves(last_played_at DESC)
+                """;
+        executeSQL(indexRecent);
+
+        String indexUser = """
+                CREATE INDEX IF NOT EXISTS idx_story_saves_user 
+                ON story_saves(user_id, last_played_at DESC)
+                """;
+        executeSQL(indexUser);
+
+        logger.debug("💾 story_saves table ready");
     }
 
     private void executeSQL(String sql) {
