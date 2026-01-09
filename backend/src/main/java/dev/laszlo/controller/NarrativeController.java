@@ -7,6 +7,7 @@ import dev.laszlo.model.NarrativeResponse;
 import dev.laszlo.model.Session;
 import dev.laszlo.service.ConversationHistory;
 import dev.laszlo.service.NarrativeEngine;
+import dev.laszlo.service.StorySaveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +16,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * REST controller for narrative interactions.
  * ⭐ SESSION 21: Added storyId support for multi-story system
+ * ⭐ SESSION 26: Integrated StorySaveService for persistent multi-story saves
  */
 @RestController
 @RequestMapping("/api/narrative")
@@ -31,22 +32,24 @@ public class NarrativeController {
     private final NarrativeEngine narrativeEngine;
     private final CharacterDatabase characterDb;
     private final DatabaseService databaseService;
-    private final Map<String, ConversationHistory> storyHistories;
+    private final StorySaveService storySaveService;  // ⭐ SESSION 26: Database save service
 
     private int currentSessionId;
 
     /**
      * Spring automatically injects these dependencies.
+     * ⭐ SESSION 26: Added StorySaveService injection
      */
     public NarrativeController(
             NarrativeEngine narrativeEngine,
             CharacterDatabase characterDb,
-            DatabaseService databaseService
+            DatabaseService databaseService,
+            StorySaveService storySaveService  // ⭐ NEW
     ) {
         this.narrativeEngine = narrativeEngine;
         this.characterDb = characterDb;
         this.databaseService = databaseService;
-        this.storyHistories = new ConcurrentHashMap<>();
+        this.storySaveService = storySaveService;  // ⭐ NEW
 
         // Initialize with a default session
         List<Session> sessions = databaseService.getAllSessions();
@@ -56,18 +59,42 @@ public class NarrativeController {
             this.currentSessionId = sessions.get(0).getId();
         }
 
-        logger.info("🎭 NarrativeController initialized with session {}", currentSessionId);
+        logger.info("🎭 NarrativeController initialized with session {} and persistent save system", currentSessionId);
     }
 
     /**
-     * Get or create conversation history for a specific story.
+     * ⭐ SESSION 26: UPDATED - Get or create conversation history from DATABASE.
      * Each story maintains independent conversation context.
+     * Now persists across server restarts!
      */
     private ConversationHistory getHistoryForStory(String storyId) {
-        return storyHistories.computeIfAbsent(storyId, id -> {
-            logger.info("📖 Creating new conversation history for story: {}", id);
+        // Try to load existing save from database
+        ConversationHistory history = storySaveService.loadStoryProgress(storyId, 1);
+
+        if (history != null) {
+            logger.info("📂 Loaded existing save for story: {} ({} messages)",
+                    storyId, history.getMessageCount());
+            return history;
+        } else {
+            // No save exists, create new history
+            logger.info("📖 Creating new conversation history for story: {}", storyId);
             return new ConversationHistory();
-        });
+        }
+    }
+
+    /**
+     * ⭐ SESSION 26: NEW - Save conversation progress to database.
+     * Called after each user interaction to persist state.
+     */
+    private void saveHistoryForStory(String storyId, ConversationHistory history, String currentSpeaker) {
+        boolean saved = storySaveService.saveStoryProgress(storyId, 1, history, currentSpeaker);
+
+        if (saved) {
+            logger.debug("💾 Auto-saved progress for story: {} ({} messages)",
+                    storyId, history.getMessageCount());
+        } else {
+            logger.warn("⚠️ Failed to save progress for story: {}", storyId);
+        }
     }
 
     /**
@@ -103,6 +130,7 @@ public class NarrativeController {
 
     /**
      * UPDATED: Session 21 - Send a message and get a response WITH CHOICES.
+     * ⭐ SESSION 26 - Auto-saves progress to database after response
      * POST /api/narrative/speak
      *
      * Request body:
@@ -166,21 +194,24 @@ public class NarrativeController {
             return ResponseEntity.badRequest().body(error);
         }
 
-        // ⭐ Get story-specific history
+        // ⭐ SESSION 26: Load story-specific history from database
         ConversationHistory history = getHistoryForStory(storyId);
 
         NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
                 userMessage,
                 speakerId,
                 storyId,
-                history  // ✅ NEW: story-scoped history
+                history  // ✅ NEW: story-scoped history (now from database)
         );
 
-        // Save to database
+        // Save to old session database (backwards compatibility)
         databaseService.saveMessage(currentSessionId, "user", userMessage);
         databaseService.saveMessage(currentSessionId, speakerId, response.getDialogue());
 
-        logger.info("✅ {} responded with {} choices",
+        // ⭐ SESSION 26: Auto-save progress to database
+        saveHistoryForStory(storyId, history, response.getSpeaker());
+
+        logger.info("✅ {} responded with {} choices (progress auto-saved)",
                 response.getSpeakerName(),
                 response.getChoices().size());
 
@@ -189,6 +220,7 @@ public class NarrativeController {
 
     /**
      * UPDATED: Session 21 - Handle choice selection and continue the narrative.
+     * ⭐ SESSION 26 - Auto-saves progress to database after response
      * POST /api/narrative/choose
      *
      * Request body:
@@ -227,27 +259,30 @@ public class NarrativeController {
 
         logger.info("🎯 User chose: '{}' -> {} | Story: {}", choiceLabel, nextSpeaker, storyId);
 
-        // Save the choice to database
+        // Save the choice to old database (backwards compatibility)
         databaseService.saveUserChoice(currentSessionId, choiceId, choiceLabel, nextSpeaker);
 
         // Create transition message based on the choice
         String transitionMessage = "You chose: " + choiceLabel;
 
-        // ⭐ Get story-specific history
+        // ⭐ SESSION 26: Load story-specific history from database
         ConversationHistory history = getHistoryForStory(storyId);
 
         NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
                 transitionMessage,
                 nextSpeaker,
                 storyId,
-                history  // ✅ NEW: story-scoped history
+                history  // ✅ NEW: story-scoped history (now from database)
         );
 
-        // Save messages to database
+        // Save messages to old session database (backwards compatibility)
         databaseService.saveMessage(currentSessionId, "user", transitionMessage);
         databaseService.saveMessage(currentSessionId, nextSpeaker, response.getDialogue());
 
-        logger.info("✅ {} responded after choice with {} new choices",
+        // ⭐ SESSION 26: Auto-save progress to database
+        saveHistoryForStory(storyId, history, response.getSpeaker());
+
+        logger.info("✅ {} responded after choice with {} new choices (progress auto-saved)",
                 response.getSpeakerName(),
                 response.getChoices().size());
 
