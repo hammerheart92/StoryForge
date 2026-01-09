@@ -1,5 +1,7 @@
 package dev.laszlo.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -349,6 +351,69 @@ public class StorySaveService {
             logger.error("❌ Failed to delete save: {}", e.getMessage());
             return false;
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+// REST API METHODS (SESSION 28)
+// ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Get all saves for a specific user (for Story Library screen).
+     * Returns list of SaveInfo for all stories.
+     */
+    public List<SaveInfo> getAllSavesForUser(String userId) {
+        String sql = """
+            SELECT story_id, save_slot, created_at, last_played_at,
+                   current_speaker, message_count, choice_count, is_completed
+            FROM story_saves
+            WHERE user_id = ?
+            ORDER BY last_played_at DESC
+            """;
+
+        List<SaveInfo> saves = new ArrayList<>();
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                saves.add(new SaveInfo(
+                        rs.getString("story_id"),
+                        rs.getInt("save_slot"),
+                        rs.getString("created_at"),
+                        rs.getString("last_played_at"),
+                        rs.getString("current_speaker"),
+                        rs.getInt("message_count"),
+                        rs.getInt("choice_count"),
+                        rs.getBoolean("is_completed")
+                ));
+            }
+
+            logger.info("📋 Retrieved {} saves for user: {}", saves.size(), userId);
+
+        } catch (SQLException e) {
+            logger.error("❌ Failed to get all saves: {}", e.getMessage());
+        }
+
+        return saves;
+    }
+
+    /**
+     * Get save for a specific story (without specifying slot - assumes slot 1).
+     * Used by REST API for simpler frontend integration.
+     */
+    public SaveInfo getSaveByStoryId(String userId, String storyId) {
+        return getSaveInfo(storyId, 1);  // Default to slot 1
+    }
+
+    /**
+     * Delete save by storyId (without specifying slot - assumes slot 1).
+     * Used by REST API for simpler frontend integration.
+     */
+    public boolean deleteSaveByStoryId(String userId, String storyId) {
+        return deleteSave(storyId, 1);  // Default to slot 1
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

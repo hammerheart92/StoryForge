@@ -10,6 +10,10 @@ import dev.laszlo.service.NarrativeEngine;
 import dev.laszlo.service.StorySaveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import dev.laszlo.dto.SaveInfoDTO;
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -312,5 +316,95 @@ public class NarrativeController {
         List<String[]> choices = databaseService.getChoiceHistory(currentSessionId);
         logger.info("📊 Returning {} choices from session {}", choices.size(), currentSessionId);
         return ResponseEntity.ok(choices);
+    }
+
+    // SAVE MANAGEMENT ENDPOINTS (SESSION 28)
+// ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Get all saves for the current user.
+     * Used by Story Library screen to display all stories with progress.
+     */
+    @GetMapping("/saves")
+    public ResponseEntity<List<SaveInfoDTO>> getAllSaves() {
+        try {
+            String userId = "default";  // Future: get from authentication
+            List<StorySaveService.SaveInfo> saves = storySaveService.getAllSavesForUser(userId);
+
+            // Convert SaveInfo to SaveInfoDTO
+            List<SaveInfoDTO> dtos = saves.stream()
+                    .map(save -> new SaveInfoDTO(
+                            save.storyId,
+                            save.currentSpeaker,
+                            save.currentSpeaker,  // characterName = currentSpeaker for now
+                            save.messageCount,
+                            LocalDateTime.parse(save.lastPlayedAt),
+                            save.isCompleted
+                    ))
+                    .collect(Collectors.toList());
+
+            logger.info("📋 Returning {} saves", dtos.size());
+            return ResponseEntity.ok(dtos);
+
+        } catch (Exception e) {
+            logger.error("❌ Error fetching saves: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get a specific save by storyId.
+     * Used by Story Library to check if save exists for a story.
+     */
+    @GetMapping("/saves/{storyId}")
+    public ResponseEntity<SaveInfoDTO> getSaveByStory(@PathVariable String storyId) {
+        try {
+            String userId = "default";  // Future: get from authentication
+            StorySaveService.SaveInfo save = storySaveService.getSaveByStoryId(userId, storyId);
+
+            if (save == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            SaveInfoDTO dto = new SaveInfoDTO(
+                    save.storyId,
+                    save.currentSpeaker,
+                    save.currentSpeaker,  // characterName = currentSpeaker for now
+                    save.messageCount,
+                    LocalDateTime.parse(save.lastPlayedAt),
+                    save.isCompleted
+            );
+
+            logger.info("📂 Returning save for story: {}", storyId);
+            return ResponseEntity.ok(dto);
+
+        } catch (Exception e) {
+            logger.error("❌ Error fetching save for {}: {}", storyId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Delete a specific save by storyId.
+     * Used by Story Library when user long-presses to delete a save.
+     */
+    @DeleteMapping("/saves/{storyId}")
+    public ResponseEntity<Void> deleteSave(@PathVariable String storyId) {
+        try {
+            String userId = "default";  // Future: get from authentication
+            boolean deleted = storySaveService.deleteSaveByStoryId(userId, storyId);
+
+            if (deleted) {
+                logger.info("🗑️ Deleted save for story: {}", storyId);
+                return ResponseEntity.noContent().build();
+            } else {
+                logger.warn("⚠️ No save found to delete for story: {}", storyId);
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (Exception e) {
+            logger.error("❌ Error deleting save for {}: {}", storyId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
