@@ -1,10 +1,12 @@
 // lib/providers/narrative_notifier.dart
 // Business logic for narrative state management
 // ⭐ SESSION 21: Added storyId support for multi-story system
+// ⭐ SESSION 27: Added SaveService for Story Library metadata
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/narrative_service.dart';
 import '../services/story_state_service.dart';
+import '../services/save_service.dart';
 import '../models/narrative_message.dart';
 import '../models/narrative_response.dart';
 import '../models/choice.dart';
@@ -41,12 +43,18 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
 
       print('✅ Message sent successfully. Speaker: ${response.speakerName}, Choices: ${response.choices.length}');
 
-      // Auto-save state in background
+      // Auto-save state in background (Session 27: multi-story support)
       print('💾 NarrativeNotifier: Saving state after sendMessage (${newHistory.length} messages)');
-      await StoryStateService.saveState(
+      await StoryStateService.saveStateForStory(
+        storyId: storyId,
         messages: newHistory,
         lastCharacter: response.speaker,
+      );
+      // Update Story Library metadata
+      await SaveService.updateSave(
         storyId: storyId,
+        characterId: response.speaker,
+        messageCount: newHistory.length,
       );
     } catch (e) {
       print('❌ Error sending message: $e');
@@ -88,12 +96,18 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
 
       print('✅ Choice processed. Switched to ${response.speakerName}');
 
-      // Auto-save state in background
+      // Auto-save state in background (Session 27: multi-story support)
       print('💾 NarrativeNotifier: Saving state after selectChoice (${newHistory.length} messages)');
-      await StoryStateService.saveState(
+      await StoryStateService.saveStateForStory(
+        storyId: storyId,
         messages: newHistory,
         lastCharacter: response.speaker,
+      );
+      // Update Story Library metadata
+      await SaveService.updateSave(
         storyId: storyId,
+        characterId: response.speaker,
+        messageCount: newHistory.length,
       );
     } catch (e) {
       print('❌ Error selecting choice: $e');
