@@ -1,17 +1,82 @@
 // lib/services/save_service.dart
 // Service for managing multi-story save metadata
-// Full conversation data is handled by StoryStateService
+// Session 28: Backend API integration with local cache fallback
 
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/save_info.dart';
 import '../models/character_info.dart';
+import 'narrative_service.dart';
+import 'story_state_service.dart';
 
 class SaveService {
+  final NarrativeService _narrativeService;
   static const String _keySaveMetadata = 'story_saves';
 
-  /// Get all saved story metadata
-  static Future<List<SaveInfo>> getAllSaves() async {
+  SaveService(this._narrativeService);
+
+  /// Get all saves - backend first, local cache fallback
+  Future<List<SaveInfo>> getAllSaves() async {
+    try {
+      // Try backend first
+      final saves = await _narrativeService.getAllSavesFromBackend();
+      // Cache to local for offline access
+      await _cacheToLocal(saves);
+      return saves;
+    } catch (e) {
+      print('⚠️ Backend unavailable, using local cache: $e');
+      return await _loadFromLocalCache();
+    }
+  }
+
+  /// Get save for specific story - backend first, local cache fallback
+  Future<SaveInfo?> getSaveForStory(String storyId) async {
+    try {
+      final saves = await getAllSaves();
+      return saves.where((s) => s.storyId == storyId).firstOrNull;
+    } catch (e) {
+      print('⚠️ Error getting save for story $storyId: $e');
+      return null;
+    }
+  }
+
+  /// Delete save - backend + local
+  Future<void> deleteSave(String storyId) async {
+    try {
+      await _narrativeService.deleteSaveFromBackend(storyId);
+    } catch (e) {
+      print('⚠️ Failed to delete from backend: $e');
+    }
+    // Always delete locally
+    await _deleteFromLocalCache(storyId);
+    await StoryStateService.clearStateForStory(storyId);
+  }
+
+  /// Check if any saves exist
+  Future<bool> hasAnySaves() async {
+    final saves = await getAllSaves();
+    return saves.isNotEmpty;
+  }
+
+  // ==================== Local Cache Helpers ====================
+
+  /// Cache saves to local storage
+  Future<void> _cacheToLocal(List<SaveInfo> saves) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final Map<String, dynamic> savesMap = {};
+      for (final save in saves) {
+        savesMap[save.storyId] = save.toJson();
+      }
+      await prefs.setString(_keySaveMetadata, jsonEncode(savesMap));
+      print('💾 Cached ${saves.length} saves to local storage');
+    } catch (e) {
+      print('Error caching saves: $e');
+    }
+  }
+
+  /// Load saves from local cache
+  Future<List<SaveInfo>> _loadFromLocalCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savesJson = prefs.getString(_keySaveMetadata);
@@ -25,36 +90,36 @@ class SaveService {
         return SaveInfo.fromJson(entry.value as Map<String, dynamic>);
       }).toList();
     } catch (e) {
-      print('Error loading saves: $e');
+      print('Error loading from local cache: $e');
       return [];
     }
   }
 
-  /// Get save metadata for a specific story
-  static Future<SaveInfo?> getSaveForStory(String storyId) async {
+  /// Delete save from local cache
+  Future<void> _deleteFromLocalCache(String storyId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savesJson = prefs.getString(_keySaveMetadata);
 
       if (savesJson == null || savesJson.isEmpty) {
-        return null;
+        return;
       }
 
       final Map<String, dynamic> savesMap = jsonDecode(savesJson);
-      final saveData = savesMap[storyId];
+      savesMap.remove(storyId);
 
-      if (saveData == null) {
-        return null;
-      }
-
-      return SaveInfo.fromJson(saveData as Map<String, dynamic>);
+      await prefs.setString(_keySaveMetadata, jsonEncode(savesMap));
+      print('🗑️ Deleted save from local cache: $storyId');
     } catch (e) {
-      print('Error loading save for story $storyId: $e');
-      return null;
+      print('Error deleting from local cache: $e');
     }
   }
 
-  /// Update or create save metadata for a story
+  // ==================== Static Methods for NarrativeNotifier ====================
+  // These remain static for backward compatibility with NarrativeNotifier
+
+  /// Update or create save metadata locally (called after each choice)
+  /// Backend auto-saves on speak/choose, this is for UI responsiveness
   static Future<void> updateSave({
     required String storyId,
     required String characterId,
@@ -88,62 +153,9 @@ class SaveService {
       savesMap[storyId] = saveInfo.toJson();
       await prefs.setString(_keySaveMetadata, jsonEncode(savesMap));
 
-      print('SaveService: Updated save for $storyId (${messageCount} messages)');
+      print('💾 SaveService: Updated local save for $storyId ($messageCount messages)');
     } catch (e) {
       print('Error updating save: $e');
     }
-  }
-
-  /// Delete save metadata for a story
-  static Future<void> deleteSave(String storyId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savesJson = prefs.getString(_keySaveMetadata);
-
-      if (savesJson == null || savesJson.isEmpty) {
-        return;
-      }
-
-      final Map<String, dynamic> savesMap = jsonDecode(savesJson);
-      savesMap.remove(storyId);
-
-      await prefs.setString(_keySaveMetadata, jsonEncode(savesMap));
-
-      // Also clear the conversation data for this story
-      await _clearConversationData(storyId);
-
-      print('SaveService: Deleted save for $storyId');
-    } catch (e) {
-      print('Error deleting save: $e');
-    }
-  }
-
-  /// Clear conversation data for a specific story
-  static Future<void> _clearConversationData(String storyId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Clear story-specific keys
-      await prefs.remove('conversation_history_$storyId');
-      await prefs.remove('last_character_$storyId');
-      await prefs.remove('last_save_time_$storyId');
-
-      // Also check if old single-story format matches this story
-      final currentStoryId = prefs.getString('story_id');
-      if (currentStoryId == storyId) {
-        await prefs.remove('conversation_history');
-        await prefs.remove('last_character');
-        await prefs.remove('last_save_time');
-        await prefs.remove('story_id');
-      }
-    } catch (e) {
-      print('Error clearing conversation data: $e');
-    }
-  }
-
-  /// Check if any saves exist
-  static Future<bool> hasAnySaves() async {
-    final saves = await getAllSaves();
-    return saves.isNotEmpty;
   }
 }

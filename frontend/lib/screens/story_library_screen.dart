@@ -208,7 +208,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
             backgroundColor: DesignColors.dWarning,
           ),
         );
-        await SaveService.deleteSave(story.id);
+        await ref.read(saveServiceProvider).deleteSave(story.id);
         ref.invalidate(saveListProvider);
         _navigateToCharacterSelection(story.id);
       }
@@ -244,7 +244,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
       if (!confirmed || !mounted) return;
 
       // Delete existing save
-      await SaveService.deleteSave(story.id);
+      await ref.read(saveServiceProvider).deleteSave(story.id);
       ref.invalidate(saveListProvider);
     }
 
@@ -284,7 +284,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
   }
 
   Future<void> _handleDelete(String storyId) async {
-    await SaveService.deleteSave(storyId);
+    await ref.read(saveServiceProvider).deleteSave(storyId);
     ref.invalidate(saveListProvider);
 
     if (mounted) {

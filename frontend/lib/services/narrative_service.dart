@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/narrative_response.dart';
 import '../models/choice.dart';
+import '../models/save_info.dart';
 
 class NarrativeService {
   // Backend URL - change this if your backend is on a different port
@@ -177,6 +178,65 @@ class NarrativeService {
     } catch (e) {
       print('❌ Narrative API is not available: $e');
       return false;
+    }
+  }
+
+  // ==================== SESSION 28: Save Management API ====================
+
+  /// Get all saves from backend API
+  Future<List<SaveInfo>> getAllSavesFromBackend() async {
+    try {
+      final url = Uri.parse('$baseUrl/saves');
+      print('🌐 GET $url');
+
+      final response = await client.get(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> json = jsonDecode(response.body);
+        final saves = json.map((item) => SaveInfo.fromJson(item as Map<String, dynamic>)).toList();
+        print('✅ Success: ${saves.length} saves loaded from backend');
+        return saves;
+      } else {
+        throw NarrativeApiException(
+          'Failed to load saves: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+    } catch (e) {
+      print('❌ Error in getAllSavesFromBackend(): $e');
+      rethrow;
+    }
+  }
+
+  /// Delete save from backend API
+  Future<void> deleteSaveFromBackend(String storyId) async {
+    try {
+      final url = Uri.parse('$baseUrl/saves/$storyId');
+      print('🌐 DELETE $url');
+
+      final response = await client.delete(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+
+      // 204 = success, 404 = already deleted (both OK)
+      if (response.statusCode != 204 && response.statusCode != 404) {
+        throw NarrativeApiException(
+          'Failed to delete save: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+      print('✅ Save deleted for story: $storyId');
+    } catch (e) {
+      print('❌ Error in deleteSaveFromBackend(): $e');
+      rethrow;
     }
   }
 

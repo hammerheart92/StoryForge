@@ -25,7 +25,8 @@ class SaveInfo {
       characterName: json['characterName'] as String,
       messageCount: json['messageCount'] as int,
       lastPlayed: DateTime.parse(json['lastPlayed'] as String),
-      isCompleted: json['isCompleted'] as bool? ?? false,
+      // Handle both backend ('completed') and local cache ('isCompleted') formats
+      isCompleted: json['completed'] as bool? ?? json['isCompleted'] as bool? ?? false,
     );
   }
 
