@@ -25,6 +25,7 @@ import java.util.Map;
  * REST controller for narrative interactions.
  * ⭐ SESSION 21: Added storyId support for multi-story system
  * ⭐ SESSION 26: Integrated StorySaveService for persistent multi-story saves
+ * ⭐ SESSION 29: Added save slot management endpoints
  */
 @RestController
 @RequestMapping("/api/narrative")
@@ -318,12 +319,14 @@ public class NarrativeController {
         return ResponseEntity.ok(choices);
     }
 
-    // SAVE MANAGEMENT ENDPOINTS (SESSION 28)
+    // ═══════════════════════════════════════════════════════════════════════════
+// SAVE MANAGEMENT ENDPOINTS (SESSION 28 + SESSION 29)
 // ═══════════════════════════════════════════════════════════════════════════
 
     /**
      * Get all saves for the current user.
      * Used by Story Library screen to display all stories with progress.
+     * ⭐ SESSION 29: UPDATED to include saveSlot
      */
     @GetMapping("/saves")
     public ResponseEntity<List<SaveInfoDTO>> getAllSaves() {
@@ -335,6 +338,7 @@ public class NarrativeController {
             List<SaveInfoDTO> dtos = saves.stream()
                     .map(save -> new SaveInfoDTO(
                             save.storyId,
+                            save.saveSlot,  // ⭐ NEW: Include slot number
                             save.currentSpeaker,
                             save.currentSpeaker,  // characterName = currentSpeaker for now
                             save.messageCount,
@@ -353,8 +357,9 @@ public class NarrativeController {
     }
 
     /**
-     * Get a specific save by storyId.
+     * Get a specific save by storyId (defaults to slot 1).
      * Used by Story Library to check if save exists for a story.
+     * ⭐ SESSION 29: UPDATED to include saveSlot
      */
     @GetMapping("/saves/{storyId}")
     public ResponseEntity<SaveInfoDTO> getSaveByStory(@PathVariable String storyId) {
@@ -368,6 +373,7 @@ public class NarrativeController {
 
             SaveInfoDTO dto = new SaveInfoDTO(
                     save.storyId,
+                    save.saveSlot,  // ⭐ NEW: Include slot number
                     save.currentSpeaker,
                     save.currentSpeaker,  // characterName = currentSpeaker for now
                     save.messageCount,
@@ -385,14 +391,14 @@ public class NarrativeController {
     }
 
     /**
-     * Delete a specific save by storyId.
+     * Delete a specific save by storyId (defaults to slot 1).
      * Used by Story Library when user long-presses to delete a save.
      */
     @DeleteMapping("/saves/{storyId}")
     public ResponseEntity<Void> deleteSave(@PathVariable String storyId) {
         try {
             String userId = "default";  // Future: get from authentication
-            boolean deleted = storySaveService.deleteSaveByStoryId(userId, storyId);
+            boolean deleted = storySaveService.deleteSaveByStoryId(userId, storyId);  // ⭐ FIXED
 
             if (deleted) {
                 logger.info("🗑️ Deleted save for story: {}", storyId);
@@ -404,6 +410,77 @@ public class NarrativeController {
 
         } catch (Exception e) {
             logger.error("❌ Error deleting save for {}: {}", storyId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * ⭐ NEW: SESSION 29 - Get all saves for a specific story (all slots 1-5).
+     * Used by Story Slot Selection screen to show all available saves for one story.
+     *
+     * GET /api/narrative/saves/story/{storyId}
+     *
+     * Example: curl http://localhost:8080/api/narrative/saves/story/pirates
+     * Returns: [
+     *   {storyId: "pirates", saveSlot: 1, messageCount: 45, ...},
+     *   {storyId: "pirates", saveSlot: 2, messageCount: 12, ...}
+     * ]
+     */
+    @GetMapping("/saves/story/{storyId}")
+    public ResponseEntity<List<SaveInfoDTO>> getSavesForStory(@PathVariable String storyId) {
+        try {
+            String userId = "default";  // Future: get from authentication
+            List<StorySaveService.SaveInfo> saves = storySaveService.getAllSavesForStory(userId, storyId);
+
+            // Convert SaveInfo to SaveInfoDTO
+            List<SaveInfoDTO> dtos = saves.stream()
+                    .map(save -> new SaveInfoDTO(
+                            save.storyId,
+                            save.saveSlot,  // Include slot number
+                            save.currentSpeaker,
+                            save.currentSpeaker,  // characterName = currentSpeaker for now
+                            save.messageCount,
+                            LocalDateTime.parse(save.lastPlayedAt),
+                            save.isCompleted
+                    ))
+                    .collect(Collectors.toList());
+
+            logger.info("📋 Returning {} saves for story: {}", dtos.size(), storyId);
+            return ResponseEntity.ok(dtos);
+
+        } catch (Exception e) {
+            logger.error("❌ Error fetching saves for story {}: {}", storyId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * ⭐ NEW: SESSION 29 - Delete a specific save slot.
+     * Used by Story Slot Selection screen when user deletes individual slot.
+     *
+     * DELETE /api/narrative/saves/{storyId}/{saveSlot}
+     *
+     * Example: curl -X DELETE http://localhost:8080/api/narrative/saves/pirates/2
+     */
+    @DeleteMapping("/saves/{storyId}/{saveSlot}")
+    public ResponseEntity<Void> deleteSaveSlot(
+            @PathVariable String storyId,
+            @PathVariable int saveSlot
+    ) {
+        try {
+            String userId = "default";  // Future: get from authentication
+            boolean deleted = storySaveService.deleteSave(storyId, saveSlot);
+
+            if (deleted) {
+                logger.info("🗑️ Deleted save for story: {} slot: {}", storyId, saveSlot);
+                return ResponseEntity.noContent().build();
+            } else {
+                logger.warn("⚠️ No save found to delete for story: {} slot: {}", storyId, saveSlot);
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (Exception e) {
+            logger.error("❌ Error deleting save for {} slot {}: {}", storyId, saveSlot, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

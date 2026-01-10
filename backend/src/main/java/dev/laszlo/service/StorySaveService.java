@@ -413,8 +413,57 @@ public class StorySaveService {
      * Used by REST API for simpler frontend integration.
      */
     public boolean deleteSaveByStoryId(String userId, String storyId) {
-        return deleteSave(storyId, 1);  // Default to slot 1
+        return deleteSave(storyId, 1);  // Defaults to slot 1
     }
+
+    /**
+     * Get all saves for a specific story across all slots (1-5).
+     * Used by REST API for save slot management UI.
+     */
+    public List<SaveInfo> getAllSavesForStory(String userId, String storyId) {
+        String sql = """
+        SELECT story_id, save_slot, created_at, last_played_at,
+               current_speaker, message_count, choice_count, is_completed
+        FROM story_saves
+        WHERE user_id = ? AND story_id = ?
+        ORDER BY save_slot ASC
+        """;
+
+        List<SaveInfo> saves = new ArrayList<>();
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+            pstmt.setString(2, storyId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                saves.add(new SaveInfo(
+                        rs.getString("story_id"),
+                        rs.getInt("save_slot"),
+                        rs.getString("created_at"),
+                        rs.getString("last_played_at"),
+                        rs.getString("current_speaker"),
+                        rs.getInt("message_count"),
+                        rs.getInt("choice_count"),
+                        rs.getBoolean("is_completed")
+                ));
+            }
+
+            logger.info("📋 Retrieved {} saves for story {} (user: {})", saves.size(), storyId, userId);
+
+        } catch (SQLException e) {
+            logger.error("❌ Failed to get saves for story {}: {}", storyId, e.getMessage());
+        }
+
+        return saves;
+    }
+
+/**
+ * Delete save by storyId and specific slot.
+ * Used by REST API for slot-specific deletion.
+ */
 
     // ═══════════════════════════════════════════════════════════════════════════
     // INNER CLASSES
