@@ -72,17 +72,15 @@ public class NarrativeController {
      * Each story maintains independent conversation context.
      * Now persists across server restarts!
      */
-    private ConversationHistory getHistoryForStory(String storyId) {
-        // Try to load existing save from database
-        ConversationHistory history = storySaveService.loadStoryProgress(storyId, 1);
+    private ConversationHistory getHistoryForStory(String storyId, int saveSlot) {
+        ConversationHistory history = storySaveService.loadStoryProgress(storyId, saveSlot);
 
         if (history != null) {
-            logger.info("📂 Loaded existing save for story: {} ({} messages)",
-                    storyId, history.getMessageCount());
+            logger.info("📂 Loaded existing save for story: {} slot: {} ({} messages)",
+                    storyId, saveSlot, history.getMessageCount());
             return history;
         } else {
-            // No save exists, create new history
-            logger.info("📖 Creating new conversation history for story: {}", storyId);
+            logger.info("📖 Creating new conversation history for story: {} slot: {}", storyId, saveSlot);
             return new ConversationHistory();
         }
     }
@@ -91,14 +89,14 @@ public class NarrativeController {
      * ⭐ SESSION 26: NEW - Save conversation progress to database.
      * Called after each user interaction to persist state.
      */
-    private void saveHistoryForStory(String storyId, ConversationHistory history, String currentSpeaker) {
-        boolean saved = storySaveService.saveStoryProgress(storyId, 1, history, currentSpeaker);
+    private void saveHistoryForStory(String storyId, int saveSlot, ConversationHistory history, String currentSpeaker) {
+        boolean saved = storySaveService.saveStoryProgress(storyId, saveSlot, history, currentSpeaker);
 
         if (saved) {
-            logger.debug("💾 Auto-saved progress for story: {} ({} messages)",
-                    storyId, history.getMessageCount());
+            logger.debug("💾 Auto-saved progress for story: {} slot: {} ({} messages)",
+                    storyId, saveSlot, history.getMessageCount());
         } else {
-            logger.warn("⚠️ Failed to save progress for story: {}", storyId);
+            logger.warn("⚠️ Failed to save progress for story: {} slot: {}", storyId, saveSlot);
         }
     }
 
@@ -171,6 +169,7 @@ public class NarrativeController {
         String userMessage = request.get("message");
         String speakerId = request.get("speaker");
         String storyId = request.get("storyId");  // ⭐ NEW: Get storyId from request
+        int saveSlot = Integer.parseInt(request.getOrDefault("saveSlot", "1"));
 
         // Validate input
         if (userMessage == null || userMessage.isBlank()) {
@@ -200,7 +199,7 @@ public class NarrativeController {
         }
 
         // ⭐ SESSION 26: Load story-specific history from database
-        ConversationHistory history = getHistoryForStory(storyId);
+        ConversationHistory history = getHistoryForStory(storyId, saveSlot);
 
         NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
                 userMessage,
@@ -214,7 +213,7 @@ public class NarrativeController {
         databaseService.saveMessage(currentSessionId, speakerId, response.getDialogue());
 
         // ⭐ SESSION 26: Auto-save progress to database
-        saveHistoryForStory(storyId, history, response.getSpeaker());
+        saveHistoryForStory(storyId, saveSlot, history, response.getSpeaker());
 
         logger.info("✅ {} responded with {} choices (progress auto-saved)",
                 response.getSpeakerName(),
@@ -244,6 +243,7 @@ public class NarrativeController {
         String choiceLabel = request.get("label");
         String nextSpeaker = request.get("nextSpeaker");
         String storyId = request.get("storyId");  // ⭐ NEW: Get storyId from request
+        int saveSlot = Integer.parseInt(request.getOrDefault("saveSlot", "1"));
 
         // Validate input
         if (choiceId == null || nextSpeaker == null) {
@@ -271,7 +271,7 @@ public class NarrativeController {
         String transitionMessage = "You chose: " + choiceLabel;
 
         // ⭐ SESSION 26: Load story-specific history from database
-        ConversationHistory history = getHistoryForStory(storyId);
+        ConversationHistory history = getHistoryForStory(storyId, saveSlot);
 
         NarrativeResponse response = narrativeEngine.generateResponseWithChoices(
                 transitionMessage,
@@ -285,7 +285,7 @@ public class NarrativeController {
         databaseService.saveMessage(currentSessionId, nextSpeaker, response.getDialogue());
 
         // ⭐ SESSION 26: Auto-save progress to database
-        saveHistoryForStory(storyId, history, response.getSpeaker());
+        saveHistoryForStory(storyId, saveSlot, history, response.getSpeaker());
 
         logger.info("✅ {} responded after choice with {} new choices (progress auto-saved)",
                 response.getSpeakerName(),

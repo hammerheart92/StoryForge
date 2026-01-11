@@ -38,3 +38,12 @@ final sortOrderProvider = StateProvider<String>((ref) => 'lastPlayed');
 
 /// Filter for story library: 'all', 'inProgress', 'completed'
 final filterProvider = StateProvider<String>((ref) => 'all');
+
+// ==================== SESSION 29: Multi-Slot Support ====================
+
+/// Provider to fetch all saves for a specific story (all slots 1-5)
+/// Usage: ref.watch(storySavesProvider('pirates'))
+final storySavesProvider = FutureProvider.family<List<SaveInfo>, String>((ref, storyId) async {
+  final service = ref.watch(saveServiceProvider);
+  return service.getSavesForStory(storyId);
+});

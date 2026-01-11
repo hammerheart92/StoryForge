@@ -28,12 +28,12 @@ class NarrativeService {
   ///   'narrator'
   /// );
   /// ```
-  Future<NarrativeResponse> speak(String message, String speaker, String storyId) async {  // ⭐ Added storyId parameter
+  Future<NarrativeResponse> speak(String message, String speaker, String storyId, int saveSlot) async {  // Session 29: Added saveSlot
     try {
       final url = Uri.parse('$baseUrl/speak');
 
       print('🌐 POST $url');
-      print('📤 Request: message="$message", speaker="$speaker", storyId="$storyId"');  // ⭐ Updated log
+      print('📤 Request: message="$message", speaker="$speaker", storyId="$storyId", saveSlot=$saveSlot');
 
       final response = await client.post(
         url,
@@ -43,7 +43,8 @@ class NarrativeService {
         body: jsonEncode({
           'message': message,
           'speaker': speaker,
-          'storyId': storyId,  // ⭐ NEW: Include storyId in request
+          'storyId': storyId,
+          'saveSlot': saveSlot.toString(),  // Session 29: Multi-slot support
         }),
       );
 
@@ -87,12 +88,12 @@ class NarrativeService {
   /// ```dart
   /// final response = await narrativeService.choose(choice);
   /// ```
-  Future<NarrativeResponse> choose(Choice choice, String storyId) async {  // ⭐ Added storyId parameter
+  Future<NarrativeResponse> choose(Choice choice, String storyId, int saveSlot) async {  // Session 29: Added saveSlot
     try {
       final url = Uri.parse('$baseUrl/choose');
 
       print('🌐 POST $url');
-      print('📤 Request: choice="${choice.label}", nextSpeaker="${choice.nextSpeaker}", storyId="$storyId"');  // ⭐ Updated log
+      print('📤 Request: choice="${choice.label}", nextSpeaker="${choice.nextSpeaker}", storyId="$storyId", saveSlot=$saveSlot');
 
       final response = await client.post(
         url,
@@ -100,8 +101,9 @@ class NarrativeService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          ...choice.toJson(),  // ⭐ Spread existing choice data
-          'storyId': storyId,  // ⭐ Add storyId to request
+          ...choice.toJson(),
+          'storyId': storyId,
+          'saveSlot': saveSlot.toString(),  // Session 29: Multi-slot support
         }),
       );
 
@@ -236,6 +238,65 @@ class NarrativeService {
       print('✅ Save deleted for story: $storyId');
     } catch (e) {
       print('❌ Error in deleteSaveFromBackend(): $e');
+      rethrow;
+    }
+  }
+
+  // ==================== SESSION 29: Multi-Slot Save API ====================
+
+  /// Get all saves for a specific story (all slots 1-5)
+  Future<List<SaveInfo>> getSavesForStory(String storyId) async {
+    try {
+      final url = Uri.parse('$baseUrl/saves/story/$storyId');
+      print('🌐 GET $url');
+
+      final response = await client.get(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> json = jsonDecode(response.body);
+        final saves = json.map((item) => SaveInfo.fromJson(item as Map<String, dynamic>)).toList();
+        print('✅ Success: ${saves.length} saves loaded for story $storyId');
+        return saves;
+      } else {
+        throw NarrativeApiException(
+          'Failed to load saves for story: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+    } catch (e) {
+      print('❌ Error in getSavesForStory(): $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a specific save slot
+  Future<void> deleteSaveSlot(String storyId, int saveSlot) async {
+    try {
+      final url = Uri.parse('$baseUrl/saves/$storyId/$saveSlot');
+      print('🌐 DELETE $url');
+
+      final response = await client.delete(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+
+      // 204 = success, 404 = already deleted (both OK)
+      if (response.statusCode != 204 && response.statusCode != 404) {
+        throw NarrativeApiException(
+          'Failed to delete save slot: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+      print('✅ Deleted save slot $saveSlot for story: $storyId');
+    } catch (e) {
+      print('❌ Error in deleteSaveSlot(): $e');
       rethrow;
     }
   }

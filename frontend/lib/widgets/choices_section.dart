@@ -12,11 +12,13 @@ import 'choice_button.dart';
 class ChoicesSection extends ConsumerWidget {
   final List<Choice> choices;
   final String storyId;
+  final int saveSlot;  // Session 29: Multi-slot support
 
   const ChoicesSection({
     super.key,
     required this.choices,
     required this.storyId,
+    this.saveSlot = 1,  // Default to slot 1 for backward compatibility
   });
 
   @override
@@ -67,7 +69,7 @@ class ChoicesSection extends ConsumerWidget {
             isLoading: isLoading,
             onPressed: () {
               // Call the notifier to select this choice
-              ref.read(narrativeStateProvider.notifier).selectChoice(choice, storyId);
+              ref.read(narrativeStateProvider.notifier).selectChoice(choice, storyId, saveSlot);
             },
           )),
 

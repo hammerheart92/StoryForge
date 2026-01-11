@@ -58,6 +58,34 @@ class SaveService {
     return saves.isNotEmpty;
   }
 
+  // ==================== SESSION 29: Multi-Slot Support ====================
+
+  /// Get all saves for a specific story (all slots 1-5)
+  Future<List<SaveInfo>> getSavesForStory(String storyId) async {
+    try {
+      final saves = await _narrativeService.getSavesForStory(storyId);
+      print('📋 Fetched ${saves.length} saves for story: $storyId');
+      return saves;
+    } catch (e) {
+      print('❌ Error fetching saves for story $storyId: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a specific save slot
+  Future<void> deleteSaveSlot(String storyId, int saveSlot) async {
+    try {
+      await _narrativeService.deleteSaveSlot(storyId, saveSlot);
+      print('🗑️ Deleted save slot $saveSlot for story: $storyId');
+
+      // Clear from local state storage for this specific slot
+      await StoryStateService.clearStateForStory(storyId, saveSlot: saveSlot);
+    } catch (e) {
+      print('❌ Error deleting save slot: $e');
+      rethrow;
+    }
+  }
+
   // ==================== Local Cache Helpers ====================
 
   /// Cache saves to local storage
@@ -120,8 +148,10 @@ class SaveService {
 
   /// Update or create save metadata locally (called after each choice)
   /// Backend auto-saves on speak/choose, this is for UI responsiveness
+  /// Session 29: Added saveSlot for multi-slot support
   static Future<void> updateSave({
     required String storyId,
+    int saveSlot = 1,  // Session 29: Default to slot 1 for backward compatibility
     required String characterId,
     required int messageCount,
     bool isCompleted = false,
@@ -143,6 +173,7 @@ class SaveService {
 
       final saveInfo = SaveInfo(
         storyId: storyId,
+        saveSlot: saveSlot,  // Session 29: Multi-slot support
         characterId: characterId,
         characterName: character.name,
         messageCount: messageCount,
@@ -150,10 +181,11 @@ class SaveService {
         isCompleted: isCompleted,
       );
 
-      savesMap[storyId] = saveInfo.toJson();
+      // Session 29: Use slot-specific key for multi-slot support
+      savesMap['${storyId}_$saveSlot'] = saveInfo.toJson();
       await prefs.setString(_keySaveMetadata, jsonEncode(savesMap));
 
-      print('💾 SaveService: Updated local save for $storyId ($messageCount messages)');
+      print('💾 SaveService: Updated local save for $storyId slot $saveSlot ($messageCount messages)');
     } catch (e) {
       print('Error updating save: $e');
     }

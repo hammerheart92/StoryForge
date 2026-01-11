@@ -5,15 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/story_info.dart';
 import '../models/save_info.dart';
-import '../models/narrative_message.dart';
 import '../providers/save_providers.dart';
-import '../services/save_service.dart';
-import '../services/story_state_service.dart';
 import '../widgets/saved_story_card.dart';
-import '../widgets/save_confirm_dialog.dart';
 import '../theme/tokens/colors.dart';
-import 'character_selection_screen.dart';
-import 'narrative_screen.dart';
+import 'story_slot_selection_screen.dart';
 
 class StoryLibraryScreen extends ConsumerStatefulWidget {
   const StoryLibraryScreen({super.key});
@@ -156,9 +151,11 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
             ],
           ),
           SizedBox(height: 12),
-          // Filter chips
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Filter chips - use Wrap to allow wrapping on narrow screens
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               FilterChip(
                 label: Text('All'),
@@ -167,7 +164,6 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
                 checkmarkColor: DesignColors.highlightTeal,
                 onSelected: (_) => ref.read(filterProvider.notifier).state = 'all',
               ),
-              SizedBox(width: 8),
               FilterChip(
                 label: Text('In Progress'),
                 selected: filter == 'inProgress',
@@ -175,7 +171,6 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
                 checkmarkColor: DesignColors.highlightTeal,
                 onSelected: (_) => ref.read(filterProvider.notifier).state = 'inProgress',
               ),
-              SizedBox(width: 8),
               FilterChip(
                 label: Text('Completed'),
                 selected: filter == 'completed',
@@ -287,94 +282,20 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
     );
   }
 
+  // Session 29: Navigate to slot selection screen for all story interactions
   Future<void> _handleContinue(StoryInfo story, SaveInfo? save) async {
-    if (save == null) {
-      // No save, start new game
-      _handleNewGame(story, null);
-      return;
-    }
-
-    // Load full conversation state
-    final savedState = await StoryStateService.loadStateForStory(story.id);
-
-    if (savedState == null) {
-      // Edge case: metadata exists but conversation data is missing
-      // Just start fresh
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Save data not found. Starting new game.'),
-            backgroundColor: DesignColors.dWarning,
-          ),
-        );
-        await ref.read(saveServiceProvider).deleteSave(story.id);
-        ref.invalidate(saveListProvider);
-        _navigateToCharacterSelection(story.id);
-      }
-      return;
-    }
-
-    if (!mounted) return;
-
-    // Navigate to narrative with restored state
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NarrativeScreen(
-          restoredMessages: savedState['messages'] as List<NarrativeMessage>,
-          lastCharacter: savedState['lastCharacter'] as String,
-          storyId: story.id,
-        ),
-      ),
-    );
-
-    // Refresh library after returning
-    ref.invalidate(saveListProvider);
+    await _navigateToSlotSelection(story);
   }
 
   Future<void> _handleNewGame(StoryInfo story, SaveInfo? existingSave) async {
-    // If save exists, show confirmation dialog
-    if (existingSave != null) {
-      final confirmed = await SaveConfirmDialog.show(
-        context: context,
-        storyTitle: story.title,
-      );
-
-      if (!confirmed || !mounted) return;
-
-      // Delete existing save
-      await ref.read(saveServiceProvider).deleteSave(story.id);
-      ref.invalidate(saveListProvider);
-    }
-
-    if (!mounted) return;
-
-    _navigateToCharacterSelection(story.id);
+    await _navigateToSlotSelection(story);
   }
 
-  Future<void> _navigateToCharacterSelection(String storyId) async {
-    // Navigate to character selection
-    final selectedCharacterId = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CharacterSelectionScreen(storyId: storyId),
-      ),
-    );
-
-    if (selectedCharacterId == null || !mounted) {
-      // User backed out
-      return;
-    }
-
-    // Navigate to narrative screen
+  Future<void> _navigateToSlotSelection(StoryInfo story) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NarrativeScreen(
-          restoredMessages: null,
-          startingCharacter: selectedCharacterId,
-          storyId: storyId,
-        ),
+        builder: (context) => StorySlotSelectionScreen(story: story),
       ),
     );
 

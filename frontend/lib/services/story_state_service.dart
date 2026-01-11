@@ -19,7 +19,9 @@ class StoryStateService {
   static const String _keyStoryId = 'story_id';
 
   // Multi-story key prefixes (Session 27)
+  // Session 29: Added saveSlot for multi-slot support
   static String _storyKey(String storyId, String suffix) => 'story_${storyId}_$suffix';
+  static String _slotKey(String storyId, int saveSlot, String suffix) => 'story_${storyId}_slot${saveSlot}_$suffix';
 
   /// Check if there is a saved story state
   static Future<bool> hasSavedState() async {
@@ -140,13 +142,15 @@ class StoryStateService {
   // ==================== SESSION 27: Multi-Story Support ====================
 
   /// Save state for a specific story (multi-story support)
+  /// Session 29: Added saveSlot for multi-slot support
   static Future<void> saveStateForStory({
     required String storyId,
     required List<NarrativeMessage> messages,
     required String lastCharacter,
+    int saveSlot = 1,  // Session 29: Default to slot 1 for backward compatibility
   }) async {
     try {
-      print('💾 StoryStateService.saveStateForStory($storyId) with ${messages.length} messages');
+      print('💾 StoryStateService.saveStateForStory($storyId, slot $saveSlot) with ${messages.length} messages');
       final prefs = await SharedPreferences.getInstance();
 
       final messagesJson = messages.map((msg) => {
@@ -159,56 +163,82 @@ class StoryStateService {
         'choices': msg.choices?.map((choice) => choice.toStorageJson()).toList(),
       }).toList();
 
-      // Save to story-specific keys
+      // Session 29: Save to slot-specific keys
+      await prefs.setString(_slotKey(storyId, saveSlot, 'history'), jsonEncode(messagesJson));
+      await prefs.setString(_slotKey(storyId, saveSlot, 'character'), lastCharacter);
+      await prefs.setString(_slotKey(storyId, saveSlot, 'save_time'), DateTime.now().toIso8601String());
+
+      // Also save to legacy story-specific keys for backward compatibility
       await prefs.setString(_storyKey(storyId, 'history'), jsonEncode(messagesJson));
       await prefs.setString(_storyKey(storyId, 'character'), lastCharacter);
       await prefs.setString(_storyKey(storyId, 'save_time'), DateTime.now().toIso8601String());
 
-      // Also save to legacy keys for backward compatibility
+      // Also save to legacy global keys for backward compatibility
       await prefs.setString(_keyConversationHistory, jsonEncode(messagesJson));
       await prefs.setString(_keyLastCharacter, lastCharacter);
       await prefs.setString(_keyLastSaveTime, DateTime.now().toIso8601String());
       await prefs.setString(_keyStoryId, storyId);
 
-      print('💾 Story state saved for $storyId: ${messages.length} messages');
+      print('💾 Story state saved for $storyId slot $saveSlot: ${messages.length} messages');
     } catch (e) {
-      print('❌ Error saving state for story $storyId: $e');
+      print('❌ Error saving state for story $storyId slot $saveSlot: $e');
     }
   }
 
   /// Load state for a specific story (multi-story support)
-  static Future<Map<String, dynamic>?> loadStateForStory(String storyId) async {
+  /// Session 29: Added saveSlot for multi-slot support
+  static Future<Map<String, dynamic>?> loadStateForStory(String storyId, {int saveSlot = 1}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // First try story-specific keys
-      String? historyJson = prefs.getString(_storyKey(storyId, 'history'));
-      String? lastCharacter = prefs.getString(_storyKey(storyId, 'character'));
-      String? lastSaveTime = prefs.getString(_storyKey(storyId, 'save_time'));
+      // Session 29: First try slot-specific keys
+      String? historyJson = prefs.getString(_slotKey(storyId, saveSlot, 'history'));
+      String? lastCharacter = prefs.getString(_slotKey(storyId, saveSlot, 'character'));
+      String? lastSaveTime = prefs.getString(_slotKey(storyId, saveSlot, 'save_time'));
 
-      // Fallback to legacy keys if this is the current story
-      if (historyJson == null) {
+      // Fallback to story-specific keys (pre-Session 29 saves)
+      if (historyJson == null && saveSlot == 1) {
+        historyJson = prefs.getString(_storyKey(storyId, 'history'));
+        lastCharacter = prefs.getString(_storyKey(storyId, 'character'));
+        lastSaveTime = prefs.getString(_storyKey(storyId, 'save_time'));
+
+        // Migrate to slot-specific format if data exists
+        if (historyJson != null && historyJson.isNotEmpty) {
+          await prefs.setString(_slotKey(storyId, saveSlot, 'history'), historyJson);
+          if (lastCharacter != null) {
+            await prefs.setString(_slotKey(storyId, saveSlot, 'character'), lastCharacter);
+          }
+          if (lastSaveTime != null) {
+            await prefs.setString(_slotKey(storyId, saveSlot, 'save_time'), lastSaveTime);
+          }
+          print('🔄 Migrated story-specific save to slot-specific keys for $storyId slot $saveSlot');
+        }
+      }
+
+      // Fallback to legacy global keys if this is the current story (slot 1 only)
+      if (historyJson == null && saveSlot == 1) {
         final legacyStoryId = prefs.getString(_keyStoryId);
         if (legacyStoryId == storyId) {
           historyJson = prefs.getString(_keyConversationHistory);
           lastCharacter = prefs.getString(_keyLastCharacter);
           lastSaveTime = prefs.getString(_keyLastSaveTime);
 
-          // Migrate to new format if data exists
+          // Migrate to slot-specific format if data exists
           if (historyJson != null && historyJson.isNotEmpty) {
-            await prefs.setString(_storyKey(storyId, 'history'), historyJson);
+            await prefs.setString(_slotKey(storyId, saveSlot, 'history'), historyJson);
             if (lastCharacter != null) {
-              await prefs.setString(_storyKey(storyId, 'character'), lastCharacter);
+              await prefs.setString(_slotKey(storyId, saveSlot, 'character'), lastCharacter);
             }
             if (lastSaveTime != null) {
-              await prefs.setString(_storyKey(storyId, 'save_time'), lastSaveTime);
+              await prefs.setString(_slotKey(storyId, saveSlot, 'save_time'), lastSaveTime);
             }
-            print('🔄 Migrated legacy save data to story-specific keys for $storyId');
+            print('🔄 Migrated legacy save data to slot-specific keys for $storyId slot $saveSlot');
           }
         }
       }
 
       if (historyJson == null || historyJson.isEmpty) {
+        print('📖 No saved state found for story $storyId slot $saveSlot');
         return null;
       }
 
@@ -232,7 +262,7 @@ class StoryStateService {
         );
       }).toList();
 
-      print('📖 Loaded state for story $storyId: ${messages.length} messages');
+      print('📖 Loaded state for story $storyId slot $saveSlot: ${messages.length} messages');
 
       return {
         'messages': messages,
@@ -241,29 +271,47 @@ class StoryStateService {
         'storyId': storyId,
       };
     } catch (e) {
-      print('❌ Error loading state for story $storyId: $e');
+      print('❌ Error loading state for story $storyId slot $saveSlot: $e');
       return null;
     }
   }
 
   /// Clear state for a specific story
-  static Future<void> clearStateForStory(String storyId) async {
+  /// Session 29: Added saveSlot for multi-slot support
+  static Future<void> clearStateForStory(String storyId, {int? saveSlot}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_storyKey(storyId, 'history'));
-      await prefs.remove(_storyKey(storyId, 'character'));
-      await prefs.remove(_storyKey(storyId, 'save_time'));
 
-      // Also clear legacy if it matches
-      final legacyStoryId = prefs.getString(_keyStoryId);
-      if (legacyStoryId == storyId) {
-        await prefs.remove(_keyConversationHistory);
-        await prefs.remove(_keyLastCharacter);
-        await prefs.remove(_keyLastSaveTime);
-        await prefs.remove(_keyStoryId);
+      if (saveSlot != null) {
+        // Clear specific slot
+        await prefs.remove(_slotKey(storyId, saveSlot, 'history'));
+        await prefs.remove(_slotKey(storyId, saveSlot, 'character'));
+        await prefs.remove(_slotKey(storyId, saveSlot, 'save_time'));
+        print('🗑️ Cleared state for story $storyId slot $saveSlot');
+      } else {
+        // Clear all slots for this story (1-5)
+        for (int slot = 1; slot <= 5; slot++) {
+          await prefs.remove(_slotKey(storyId, slot, 'history'));
+          await prefs.remove(_slotKey(storyId, slot, 'character'));
+          await prefs.remove(_slotKey(storyId, slot, 'save_time'));
+        }
+
+        // Also clear legacy story-specific keys
+        await prefs.remove(_storyKey(storyId, 'history'));
+        await prefs.remove(_storyKey(storyId, 'character'));
+        await prefs.remove(_storyKey(storyId, 'save_time'));
+
+        // Also clear legacy global keys if they match
+        final legacyStoryId = prefs.getString(_keyStoryId);
+        if (legacyStoryId == storyId) {
+          await prefs.remove(_keyConversationHistory);
+          await prefs.remove(_keyLastCharacter);
+          await prefs.remove(_keyLastSaveTime);
+          await prefs.remove(_keyStoryId);
+        }
+
+        print('🗑️ Cleared all state for story $storyId');
       }
-
-      print('🗑️ Cleared state for story $storyId');
     } catch (e) {
       print('❌ Error clearing state for story $storyId: $e');
     }

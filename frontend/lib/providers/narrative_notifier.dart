@@ -18,16 +18,16 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
   NarrativeNotifier(this._service) : super(NarrativeState.initial());
 
   /// Send a message and get narrative response with choices
-  /// ⭐ UPDATED: Added storyId parameter
-  Future<void> sendMessage(String message, String speaker, String storyId) async {
+  /// Session 29: Added saveSlot parameter for multi-slot support
+  Future<void> sendMessage(String message, String speaker, String storyId, int saveSlot) async {
     // Set loading state
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      print('📤 Sending message: "$message" to $speaker');
+      print('📤 Sending message: "$message" to $speaker (slot $saveSlot)');
 
-      // ⭐ UPDATED: Call API with storyId
-      final response = await _service.speak(message, speaker, storyId);
+      // Call API with storyId and saveSlot
+      final response = await _service.speak(message, speaker, storyId, saveSlot);
 
       // Create history message from response
       final historyMessage = NarrativeMessage.fromResponse(response);
@@ -49,10 +49,12 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
         storyId: storyId,
         messages: newHistory,
         lastCharacter: response.speaker,
+        saveSlot: saveSlot,  // Session 29: Multi-slot support
       );
-      // Update Story Library metadata
+      // Update Story Library metadata with slot
       await SaveService.updateSave(
         storyId: storyId,
+        saveSlot: saveSlot,
         characterId: response.speaker,
         messageCount: newHistory.length,
       );
@@ -68,9 +70,9 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
   }
 
   /// Select a choice and continue the narrative
-  /// ⭐ UPDATED: Added storyId parameter
-  Future<void> selectChoice(Choice choice, String storyId) async {
-    print('🎯 User selected choice: "${choice.label}" -> ${choice.nextSpeaker}');
+  /// Session 29: Added saveSlot parameter for multi-slot support
+  Future<void> selectChoice(Choice choice, String storyId, int saveSlot) async {
+    print('🎯 User selected choice: "${choice.label}" -> ${choice.nextSpeaker} (slot $saveSlot)');
 
     // Set loading state
     state = state.copyWith(isLoading: true, clearError: true);
@@ -79,8 +81,8 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
       // Add user's choice to history
       final choiceMessage = NarrativeMessage.userChoice(choice.label);
 
-      // ⭐ UPDATED: Call API with storyId
-      final response = await _service.choose(choice, storyId);
+      // Call API with storyId and saveSlot
+      final response = await _service.choose(choice, storyId, saveSlot);
 
       // Create history message from response
       final responseMessage = NarrativeMessage.fromResponse(response);
@@ -102,10 +104,12 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
         storyId: storyId,
         messages: newHistory,
         lastCharacter: response.speaker,
+        saveSlot: saveSlot,  // Session 29: Multi-slot support
       );
-      // Update Story Library metadata
+      // Update Story Library metadata with slot
       await SaveService.updateSave(
         storyId: storyId,
+        saveSlot: saveSlot,
         characterId: response.speaker,
         messageCount: newHistory.length,
       );

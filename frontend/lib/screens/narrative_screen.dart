@@ -26,12 +26,16 @@ class NarrativeScreen extends ConsumerStatefulWidget {
   /// Story ID for the current narrative ('observatory' or 'illidan')
   final String storyId;
 
+  /// Session 29: Save slot number (1-5) for multi-slot support
+  final int saveSlot;
+
   const NarrativeScreen({
     super.key,
     this.restoredMessages,
     this.lastCharacter,
     this.startingCharacter,
     required this.storyId,
+    this.saveSlot = 1,  // Default to slot 1 for backward compatibility
   });
 
   @override
@@ -93,13 +97,14 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
     // Use the selected character, default to 'narrator' if not specified
     final character = widget.startingCharacter ?? 'narrator';
 
-    print('🎭 Starting narrative with character: $character (story: ${widget.storyId})');
+    print('🎭 Starting narrative with character: $character (story: ${widget.storyId}, slot: ${widget.saveSlot})');
 
     // Send initial message to begin the story
     ref.read(narrativeStateProvider.notifier).sendMessage(
       'I approach the ancient observatory',
       character,
       widget.storyId,
+      widget.saveSlot,  // Session 29: Multi-slot support
     );
   }
 
@@ -236,6 +241,7 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
                   child: ChoicesSection(
                     choices: state.currentResponse!.choices,
                     storyId: widget.storyId,
+                    saveSlot: widget.saveSlot,  // Session 29: Multi-slot support
                   ),
                 ),
             ],
