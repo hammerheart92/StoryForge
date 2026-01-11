@@ -176,40 +176,87 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
 
   Widget _buildProgress() {
     final save = widget.save!;
-    final progress = (save.messageCount / 50).clamp(0.0, 1.0); // Estimate ~50 messages per story
+    final isCompleted = save.isCompleted;
 
+    // Character info row (same for both states)
+    final characterRow = Row(
+      children: [
+        Icon(
+          Icons.person,
+          size: 14,
+          color: widget.story.accentColor,
+        ),
+        SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            save.characterName,
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: DesignColors.dPrimaryText,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          _formatTimeAgo(save.lastPlayed),
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 11,
+            color: DesignColors.dSecondaryText,
+          ),
+        ),
+      ],
+    );
+
+    if (isCompleted) {
+      // COMPLETED: Show badge instead of progress bar
+      return Column(
+        children: [
+          characterRow,
+          SizedBox(height: 10),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: DesignColors.dSuccess.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: DesignColors.dSuccess),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, color: DesignColors.dSuccess, size: 16),
+                SizedBox(width: 4),
+                Text(
+                  'Completed',
+                  style: TextStyle(
+                    color: DesignColors.dSuccess,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            '${save.messageCount} messages',
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 10,
+              color: DesignColors.dSecondaryText,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // IN PROGRESS: Show progress bar
+    final progress = (save.messageCount / 50).clamp(0.0, 1.0);
     return Column(
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.person,
-              size: 14,
-              color: widget.story.accentColor,
-            ),
-            SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                save.characterName,
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: DesignColors.dPrimaryText,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Text(
-              _formatTimeAgo(save.lastPlayed),
-              style: TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 11,
-                color: DesignColors.dSecondaryText,
-              ),
-            ),
-          ],
-        ),
+        characterRow,
         SizedBox(height: 10),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),

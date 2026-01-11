@@ -124,11 +124,108 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
     );
   }
 
+  Widget _buildSortFilterControls() {
+    final sortOrder = ref.watch(sortOrderProvider);
+    final filter = ref.watch(filterProvider);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          // Sort dropdown
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Sort by:', style: TextStyle(color: DesignColors.dSecondaryText)),
+              SizedBox(width: 8),
+              DropdownButton<String>(
+                value: sortOrder,
+                dropdownColor: DesignColors.dSurfaces,
+                style: TextStyle(color: DesignColors.dPrimaryText),
+                underline: Container(
+                  height: 1,
+                  color: DesignColors.dSecondaryText.withValues(alpha: 0.3),
+                ),
+                items: [
+                  DropdownMenuItem(value: 'lastPlayed', child: Text('Last Played')),
+                  DropdownMenuItem(value: 'alphabetical', child: Text('Alphabetical')),
+                  DropdownMenuItem(value: 'completion', child: Text('Completion')),
+                ],
+                onChanged: (value) => ref.read(sortOrderProvider.notifier).state = value!,
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          // Filter chips
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FilterChip(
+                label: Text('All'),
+                selected: filter == 'all',
+                selectedColor: DesignColors.highlightTeal.withValues(alpha: 0.3),
+                checkmarkColor: DesignColors.highlightTeal,
+                onSelected: (_) => ref.read(filterProvider.notifier).state = 'all',
+              ),
+              SizedBox(width: 8),
+              FilterChip(
+                label: Text('In Progress'),
+                selected: filter == 'inProgress',
+                selectedColor: DesignColors.highlightTeal.withValues(alpha: 0.3),
+                checkmarkColor: DesignColors.highlightTeal,
+                onSelected: (_) => ref.read(filterProvider.notifier).state = 'inProgress',
+              ),
+              SizedBox(width: 8),
+              FilterChip(
+                label: Text('Completed'),
+                selected: filter == 'completed',
+                selectedColor: DesignColors.highlightTeal.withValues(alpha: 0.3),
+                checkmarkColor: DesignColors.highlightTeal,
+                onSelected: (_) => ref.read(filterProvider.notifier).state = 'completed',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLibrary(List<SaveInfo> saves, bool isDesktop) {
     final stories = StoryInfo.all;
+    final sortOrder = ref.watch(sortOrderProvider);
+    final filter = ref.watch(filterProvider);
 
     // Create a map for quick lookup of saves by storyId
     final saveMap = {for (var s in saves) s.storyId: s};
+
+    // Get stories with saves, apply filter and sort
+    var storiesWithSaves = stories.where((s) => saveMap.containsKey(s.id)).toList();
+    var storiesWithoutSaves = stories.where((s) => !saveMap.containsKey(s.id)).toList();
+
+    // Apply filter to saves
+    if (filter == 'inProgress') {
+      storiesWithSaves = storiesWithSaves.where((s) => !(saveMap[s.id]?.isCompleted ?? false)).toList();
+    } else if (filter == 'completed') {
+      storiesWithSaves = storiesWithSaves.where((s) => saveMap[s.id]?.isCompleted ?? false).toList();
+    }
+
+    // Apply sort to stories with saves
+    if (sortOrder == 'lastPlayed') {
+      storiesWithSaves.sort((a, b) => saveMap[b.id]!.lastPlayed.compareTo(saveMap[a.id]!.lastPlayed));
+    } else if (sortOrder == 'alphabetical') {
+      storiesWithSaves.sort((a, b) => a.title.compareTo(b.title));
+      storiesWithoutSaves.sort((a, b) => a.title.compareTo(b.title));
+    } else if (sortOrder == 'completion') {
+      storiesWithSaves.sort((a, b) {
+        final aCompleted = saveMap[a.id]?.isCompleted ?? false;
+        final bCompleted = saveMap[b.id]?.isCompleted ?? false;
+        if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
+        return saveMap[b.id]!.lastPlayed.compareTo(saveMap[a.id]!.lastPlayed);
+      });
+    }
+
+    // Combine: saves first (sorted), then unsaved stories
+    final orderedStories = [...storiesWithSaves, ...storiesWithoutSaves];
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(24),
@@ -136,13 +233,15 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSubheading(saves),
+          SizedBox(height: 16),
+          _buildSortFilterControls(),
           SizedBox(height: 24),
           Center(
             child: Wrap(
               spacing: 24,
               runSpacing: 24,
               alignment: WrapAlignment.center,
-              children: stories.map((story) {
+              children: orderedStories.map((story) {
                 final save = saveMap[story.id];
                 return SavedStoryCard(
                   story: story,

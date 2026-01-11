@@ -32,3 +32,9 @@ final hasAnySavesProvider = FutureProvider<bool>((ref) async {
   final service = ref.watch(saveServiceProvider);
   return service.hasAnySaves();
 });
+
+/// Sort order for story library: 'lastPlayed', 'alphabetical', 'completion'
+final sortOrderProvider = StateProvider<String>((ref) => 'lastPlayed');
+
+/// Filter for story library: 'all', 'inProgress', 'completed'
+final filterProvider = StateProvider<String>((ref) => 'all');
