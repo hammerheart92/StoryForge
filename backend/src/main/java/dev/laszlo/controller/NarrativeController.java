@@ -6,6 +6,7 @@ import dev.laszlo.model.Character;
 import dev.laszlo.model.NarrativeResponse;
 import dev.laszlo.model.Session;
 import dev.laszlo.service.ConversationHistory;
+import dev.laszlo.service.CurrencyService;
 import dev.laszlo.service.NarrativeEngine;
 import dev.laszlo.service.StorySaveService;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class NarrativeController {
     private final CharacterDatabase characterDb;
     private final DatabaseService databaseService;
     private final StorySaveService storySaveService;  // ⭐ SESSION 26: Database save service
+    private final CurrencyService currencyService;
 
     private int currentSessionId;
 
@@ -49,12 +51,14 @@ public class NarrativeController {
             NarrativeEngine narrativeEngine,
             CharacterDatabase characterDb,
             DatabaseService databaseService,
-            StorySaveService storySaveService  // ⭐ NEW
+            StorySaveService storySaveService,  // ⭐ NEW
+            CurrencyService currencyService
     ) {
         this.narrativeEngine = narrativeEngine;
         this.characterDb = characterDb;
         this.databaseService = databaseService;
         this.storySaveService = storySaveService;  // ⭐ NEW
+        this.currencyService = currencyService;
 
         // Initialize with a default session
         List<Session> sessions = databaseService.getAllSessions();
@@ -286,6 +290,20 @@ public class NarrativeController {
 
         // ⭐ SESSION 26: Auto-save progress to database
         saveHistoryForStory(storyId, saveSlot, history, response.getSpeaker());
+
+        // ⭐ PHASE 1 GALLERY: Handle story completion and gem awards
+        String userId = "default";
+
+        if (response.getChoices().isEmpty()) {
+            // Story completed - award completion bonus
+            storySaveService.markStoryCompleted(storyId, saveSlot, userId);
+            currencyService.awardGems(userId, 100, "story_completed", storyId);
+            logger.info("🏆 Story {} completed! +100 gem bonus", storyId);
+        } else {
+            // Story continues - award per-choice gems
+            currencyService.awardGems(userId, 5, "choice_made", storyId);
+            logger.debug("💎 +5 gems for choice in {}", storyId);
+        }
 
         logger.info("✅ {} responded after choice with {} new choices (progress auto-saved)",
                 response.getSpeakerName(),

@@ -33,6 +33,13 @@ public class DatabaseService {
         createMessagesTable();
         createUserChoicesTable();  // NEW: Session 14 addition
         createStorySavesTable();   // ⭐ SESSION 26: Multi-story save system
+
+        // ⭐ PHASE 1 GALLERY: Gallery system tables
+        createUserCurrencyTable();
+        createGemTransactionsTable();
+        createStoryContentTable();
+        createUserUnlocksTable();
+
         logger.info("✅ Database initialized successfully");
     }
 
@@ -124,6 +131,113 @@ public class DatabaseService {
         executeSQL(indexUser);
 
         logger.debug("💾 story_saves table ready");
+    }
+
+    /**
+     * ⭐ PHASE 1 GALLERY: Create table to track user's gem balance
+     */
+    private void createUserCurrencyTable() {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS user_currency (
+                user_id TEXT PRIMARY KEY,
+                gem_balance INTEGER DEFAULT 0 NOT NULL,
+                total_earned INTEGER DEFAULT 0 NOT NULL,
+                total_spent INTEGER DEFAULT 0 NOT NULL,
+                last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+
+        executeSQL(sql);
+        logger.debug("💰 user_currency table ready");
+
+        // Initialize default user with 100 starting gems
+        String initSql = """
+            INSERT OR IGNORE INTO user_currency (user_id, gem_balance, total_earned, total_spent)
+            VALUES ('default', 100, 0, 0)
+            """;
+        executeSQL(initSql);
+    }
+
+    /**
+     * ⭐ PHASE 1 GALLERY: Create table to log all gem transactions
+     */
+    private void createGemTransactionsTable() {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS gem_transactions (
+                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                amount INTEGER NOT NULL,
+                transaction_type TEXT NOT NULL CHECK(transaction_type IN ('earn', 'spend')),
+                source TEXT,
+                story_id TEXT,
+                content_id INTEGER,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES user_currency(user_id)
+            )
+            """;
+
+        executeSQL(sql);
+        logger.debug("💎 gem_transactions table ready");
+    }
+
+    /**
+     * ⭐ PHASE 1 GALLERY: Create catalog of unlockable content
+     */
+    private void createStoryContentTable() {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS story_content (
+                content_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                story_id TEXT NOT NULL,
+                content_type TEXT NOT NULL CHECK(content_type IN ('scene', 'character', 'lore', 'extra')),
+                content_category TEXT,
+                title TEXT NOT NULL,
+                description TEXT,
+                unlock_cost INTEGER NOT NULL,
+                rarity TEXT DEFAULT 'common' CHECK(rarity IN ('common', 'rare', 'epic', 'legendary')),
+                unlock_condition TEXT,
+                content_url TEXT,
+                thumbnail_url TEXT,
+                display_order INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+
+        executeSQL(sql);
+        logger.debug("🖼️ story_content table ready");
+
+        // Insert 3 sample content items for pirates story
+        String sampleContent = """
+            INSERT OR IGNORE INTO story_content 
+            (content_id, story_id, content_type, title, description, unlock_cost, rarity, content_url, thumbnail_url, display_order)
+            VALUES 
+            (1, 'pirates', 'lore', 'The Pirate Code', 'Ancient rules that govern the seas', 30, 'common', 
+             'https://placeholder.com/code.jpg', 'https://placeholder.com/code_blur.jpg', 1),
+            (2, 'pirates', 'scene', 'The Storm', 'The ship battles against nature''s fury', 50, 'rare',
+             'https://placeholder.com/storm.jpg', 'https://placeholder.com/storm_blur.jpg', 2),
+            (3, 'pirates', 'character', 'Captain Isla Portrait', 'Full portrait of Captain Isla Blackwater', 75, 'epic',
+             'https://placeholder.com/isla.jpg', 'https://placeholder.com/isla_blur.jpg', 3)
+            """;
+        executeSQL(sampleContent);
+        logger.info("📦 Inserted 3 sample gallery items for pirates story");
+    }
+
+    /**
+     * ⭐ PHASE 1 GALLERY: Track which content each user has unlocked
+     */
+    private void createUserUnlocksTable() {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS user_unlocks (
+                user_id TEXT NOT NULL,
+                content_id INTEGER NOT NULL,
+                unlocked_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, content_id),
+                FOREIGN KEY (content_id) REFERENCES story_content(content_id)
+            )
+            """;
+
+        executeSQL(sql);
+        logger.debug("🔓 user_unlocks table ready");
     }
 
     private void executeSQL(String sql) {

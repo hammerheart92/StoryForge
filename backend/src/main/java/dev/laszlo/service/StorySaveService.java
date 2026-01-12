@@ -1,5 +1,8 @@
 package dev.laszlo.service;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -351,6 +354,40 @@ public class StorySaveService {
             logger.error("❌ Failed to delete save: {}", e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 🏆 Mark a story as completed
+     *
+     * @param storyId Story identifier
+     * @param saveSlot Slot number
+     * @param userId User identifier
+     * @return true if successful
+     */
+    public boolean markStoryCompleted(String storyId, int saveSlot, String userId) {
+        String sql = """
+            UPDATE story_saves
+            SET is_completed = 1, last_played_at = ?
+            WHERE story_id = ? AND save_slot = ? AND user_id = ?
+            """;
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, LocalDateTime.now().toString());
+            pstmt.setString(2, storyId);
+            pstmt.setInt(3, saveSlot);
+            pstmt.setString(4, userId);
+
+            int updated = pstmt.executeUpdate();
+            if (updated > 0) {
+                logger.info("🏆 Story marked as completed: {} slot {}", storyId, saveSlot);
+                return true;
+            }
+        } catch (SQLException e) {
+            logger.error("❌ Failed to mark story completed: {}", e.getMessage());
+        }
+        return false;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
