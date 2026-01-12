@@ -1,16 +1,20 @@
 // lib/screens/gallery_screen.dart
-// Phase A: Basic gallery screen with grid of unlockable content
+// Phase B: Gallery screen with polished UI and confirmation dialogs
 
 import 'package:flutter/material.dart';
 import '../models/gallery_content.dart';
 import '../services/gallery_service.dart';
+import '../widgets/gallery_content_card.dart';
+import '../widgets/gem_counter_widget.dart';
+import '../widgets/unlock_confirmation_dialog.dart';
 
 /// Gallery screen displaying unlockable content for a story.
 ///
-/// Phase A: Basic functionality with simple UI.
-/// - Fetches content from backend
-/// - Shows gem balance
-/// - Allows unlocking items
+/// Features:
+/// - Beautiful cards with rarity borders and blur effects
+/// - Gem counter in app bar
+/// - Confirmation dialog before spending gems
+/// - Loading and error states
 ///
 /// Usage:
 /// ```dart
@@ -53,7 +57,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
     });
 
     try {
-      // Fetch content and balance
       final response = await _galleryService.getGalleryContent(widget.storyId);
 
       setState(() {
@@ -77,12 +80,19 @@ class _GalleryScreenState extends State<GalleryScreen> {
       return;
     }
 
-    // Check if enough gems
-    if (_gemBalance < item.unlockCost) {
-      _showMessage('Not enough gems! Need ${item.unlockCost}, have $_gemBalance');
-      return;
-    }
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => UnlockConfirmationDialog(
+        content: item,
+        currentBalance: _gemBalance,
+      ),
+    );
 
+    // User cancelled or dismissed dialog
+    if (confirmed != true) return;
+
+    // Proceed with unlock
     try {
       final result = await _galleryService.unlockContent(_userId, item.contentId);
 
@@ -112,37 +122,15 @@ class _GalleryScreenState extends State<GalleryScreen> {
       appBar: AppBar(
         title: Text('Gallery - ${widget.storyId}'),
         actions: [
-          // Gem balance badge
+          // Gem counter widget
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade700,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.diamond, size: 18, color: Colors.white),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$_gemBalance',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(child: GemCounterWidget(gemBalance: _gemBalance)),
           ),
         ],
       ),
       body: _buildBody(),
-      // Temporary FAB for testing - refresh data
+      // Refresh FAB (useful for testing)
       floatingActionButton: FloatingActionButton(
         onPressed: _loadGalleryData,
         tooltip: 'Refresh',
@@ -197,8 +185,23 @@ class _GalleryScreenState extends State<GalleryScreen> {
     }
 
     if (_content.isEmpty) {
-      return const Center(
-        child: Text('No content available for this story'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_not_supported, size: 64, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              'No content available',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Check back later for unlockable content!',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
       );
     }
 
@@ -213,213 +216,13 @@ class _GalleryScreenState extends State<GalleryScreen> {
       itemCount: _content.length,
       itemBuilder: (context, index) {
         final item = _content[index];
-        final isUnlocked = _unlockedIds.contains(item.contentId);
-        return _GalleryItemCard(
-          item: item,
-          isUnlocked: isUnlocked,
-          canAfford: _gemBalance >= item.unlockCost,
-          onUnlock: () => _handleUnlock(item),
+        return GalleryContentCard(
+          content: item,
+          isUnlocked: _unlockedIds.contains(item.contentId),
+          hasEnoughGems: _gemBalance >= item.unlockCost,
+          onUnlockTap: () => _handleUnlock(item),
         );
       },
     );
   }
 }
-
-/// Card widget for a single gallery content item
-class _GalleryItemCard extends StatelessWidget {
-  final GalleryContent item;
-  final bool isUnlocked;
-  final bool canAfford;
-  final VoidCallback onUnlock;
-
-  const _GalleryItemCard({
-    required this.item,
-    required this.isUnlocked,
-    required this.canAfford,
-    required this.onUnlock,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Thumbnail area
-          Expanded(
-            flex: 3,
-            child: Container(
-              color: _getRarityColor().withOpacity(0.2),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Placeholder icon based on content type
-                  Center(
-                    child: Icon(
-                      _getContentTypeIcon(),
-                      size: 48,
-                      color: _getRarityColor(),
-                    ),
-                  ),
-                  // Locked overlay
-                  if (!isUnlocked)
-                    Container(
-                      color: Colors.black54,
-                      child: const Center(
-                        child: Icon(
-                          Icons.lock,
-                          size: 32,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ),
-                  // Unlocked checkmark
-                  if (isUnlocked)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  // Rarity badge
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _getRarityColor(),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        item.rarity.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Info area
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    item.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  // Status/Action row
-                  if (isUnlocked)
-                    const Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 16, color: Colors.green),
-                        SizedBox(width: 4),
-                        Text(
-                          'Unlocked',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: canAfford ? onUnlock : null,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          textStyle: const TextStyle(fontSize: 11),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.diamond, size: 14),
-                            const SizedBox(width: 4),
-                            Text('${item.unlockCost}'),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getRarityColor() {
-    switch (item.rarity.toLowerCase()) {
-      case 'legendary':
-        return Colors.orange;
-      case 'epic':
-        return Colors.purple;
-      case 'rare':
-        return Colors.blue;
-      case 'common':
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getContentTypeIcon() {
-    switch (item.contentType.toLowerCase()) {
-      case 'scene':
-        return Icons.landscape;
-      case 'character':
-        return Icons.person;
-      case 'lore':
-        return Icons.menu_book;
-      case 'extra':
-        return Icons.star;
-      default:
-        return Icons.image;
-    }
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TEMPORARY: Add this FAB to any existing screen to test navigation
-// ═══════════════════════════════════════════════════════════════════════════
-// floatingActionButton: FloatingActionButton(
-//   onPressed: () => Navigator.push(
-//     context,
-//     MaterialPageRoute(
-//       builder: (_) => const GalleryScreen(storyId: 'pirates'),
-//     ),
-//   ),
-//   child: const Icon(Icons.image),
-// ),
-// ═══════════════════════════════════════════════════════════════════════════

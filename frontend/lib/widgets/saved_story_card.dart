@@ -12,6 +12,7 @@ class SavedStoryCard extends StatefulWidget {
   final VoidCallback onContinue;
   final VoidCallback onNewGame;
   final VoidCallback? onDelete;
+  final VoidCallback? onGallery;  // Phase B: Gallery navigation
 
   const SavedStoryCard({
     super.key,
@@ -20,6 +21,7 @@ class SavedStoryCard extends StatefulWidget {
     required this.onContinue,
     required this.onNewGame,
     this.onDelete,
+    this.onGallery,
   });
 
   @override
@@ -143,6 +145,19 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             ],
           ),
         ),
+        // Phase B: Gallery icon button
+        if (widget.onGallery != null)
+          Padding(
+            padding: EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: Icon(Icons.photo_library, size: 20),
+              color: widget.story.accentColor.withValues(alpha: 0.7),
+              tooltip: 'Gallery',
+              onPressed: widget.onGallery,
+              constraints: BoxConstraints(minWidth: 36, minHeight: 36),
+              padding: EdgeInsets.all(6),
+            ),
+          ),
         if (widget.save?.isCompleted == true)
           Container(
             padding: EdgeInsets.all(6),

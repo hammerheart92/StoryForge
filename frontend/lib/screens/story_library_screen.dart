@@ -50,20 +50,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
         error: (error, stack) => _buildError(error),
         data: (saves) => _buildLibrary(saves, isDesktop),
       ),
-      // ⭐ TEMPORARY TEST BUTTON - Remove in Phase B
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const GalleryScreen(storyId: 'pirates'),
-            ),
-          );
-        },
-        backgroundColor: DesignColors.highlightTeal,
-        child: const Icon(Icons.photo_library),
-        tooltip: 'Test Gallery',
-      ),
+      // Phase B: FAB removed - gallery access is now via story card icons
     );
   }
 
@@ -261,6 +248,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
                   onDelete: save != null
                       ? () => _handleDelete(story.id)
                       : null,
+                  onGallery: () => _handleGallery(story.id),
                 );
               }).toList(),
             ),
@@ -331,5 +319,15 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
         ),
       );
     }
+  }
+
+  // Phase B: Navigate to gallery for a story
+  void _handleGallery(String storyId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GalleryScreen(storyId: storyId),
+      ),
+    );
   }
 }
