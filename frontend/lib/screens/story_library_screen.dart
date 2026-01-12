@@ -9,6 +9,7 @@ import '../providers/save_providers.dart';
 import '../widgets/saved_story_card.dart';
 import '../theme/tokens/colors.dart';
 import 'story_slot_selection_screen.dart';
+import 'gallery_screen.dart';
 
 class StoryLibraryScreen extends ConsumerStatefulWidget {
   const StoryLibraryScreen({super.key});
@@ -48,6 +49,20 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
         loading: () => _buildLoading(),
         error: (error, stack) => _buildError(error),
         data: (saves) => _buildLibrary(saves, isDesktop),
+      ),
+      // ⭐ TEMPORARY TEST BUTTON - Remove in Phase B
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const GalleryScreen(storyId: 'pirates'),
+            ),
+          );
+        },
+        backgroundColor: DesignColors.highlightTeal,
+        child: const Icon(Icons.photo_library),
+        tooltip: 'Test Gallery',
       ),
     );
   }
