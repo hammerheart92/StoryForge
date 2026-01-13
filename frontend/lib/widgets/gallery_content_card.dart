@@ -93,12 +93,12 @@ class GalleryContentCard extends StatelessWidget {
           children: [
             // Thumbnail area (60% of card)
             Expanded(
-              flex: 3,
+              flex: 5,
               child: _buildThumbnailArea(rarityColor),
             ),
             // Info area (40% of card)
             Expanded(
-              flex: 2,
+              flex: 4,
               child: _buildInfoArea(context),
             ),
           ],
@@ -267,11 +267,11 @@ class GalleryContentCard extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: hasEnoughGems ? onUnlockTap : null,
+        onPressed: onUnlockTap,  // ← FIXED: Always allow tap, dialog handles the check
         style: ElevatedButton.styleFrom(
           backgroundColor: hasEnoughGems ? Colors.amber.shade700 : Colors.grey,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
