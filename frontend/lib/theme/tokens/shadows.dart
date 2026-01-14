@@ -112,4 +112,58 @@ class DesignShadows {
       offset: Offset(0, 4),
     ),
   ];
+
+  // ==================== HOVER STATE SHADOWS ====================
+  // Enhanced shadows for interactive hover states
+
+  /// Small hover shadow
+  /// Use for: Subtle hover effect on small elements
+  static const List<BoxShadow> smHover = [
+    BoxShadow(
+      color: Color(0x1A000000), // 10% black
+      blurRadius: 6,
+      offset: Offset(0, 2),
+    ),
+  ];
+
+  /// Medium hover shadow
+  /// Use for: Standard hover effect on cards/buttons
+  static const List<BoxShadow> mdHover = [
+    BoxShadow(
+      color: Color(0x26000000), // 15% black
+      blurRadius: 12,
+      offset: Offset(0, 4),
+    ),
+  ];
+
+  /// Large hover shadow
+  /// Use for: Prominent hover effect on important elements
+  static const List<BoxShadow> lgHover = [
+    BoxShadow(
+      color: Color(0x33000000), // 20% black
+      blurRadius: 20,
+      offset: Offset(0, 6),
+    ),
+  ];
+
+  // ==================== GLOW EFFECTS ====================
+  // Colored glow effects for highlights and emphasis
+
+  /// Creates a colored glow shadow
+  /// Use for: Character highlights, rarity indicators, focus states
+  static List<BoxShadow> glow(Color color, {double opacity = 0.4, double blur = 20}) => [
+    BoxShadow(
+      color: color.withValues(alpha: opacity),
+      blurRadius: blur,
+      offset: Offset.zero,
+    ),
+  ];
+
+  /// Creates a soft colored glow (less intense)
+  /// Use for: Subtle emphasis, background accents
+  static List<BoxShadow> glowSoft(Color color) => glow(color, opacity: 0.2, blur: 16);
+
+  /// Creates an intense colored glow
+  /// Use for: Important highlights, legendary rarity
+  static List<BoxShadow> glowIntense(Color color) => glow(color, opacity: 0.6, blur: 24);
 }

@@ -129,6 +129,30 @@ class StoryForgeTheme {
   /// Avatar radius
   static const avatarRadius = 20.0;
 
+  /// Additional border radii for comprehensive design system
+  static const double chipRadius = 4.0;
+  static const double badgeRadius = 6.0;
+  static const double inputRadius = 8.0;
+  static const double pillRadius = 16.0;
+  static const double largeCardRadius = 20.0;
+  static const double heroCardRadius = 24.0;
+
+  // ==================== ICON SIZES ====================
+
+  static const double iconSizeSmall = 14.0;
+  static const double iconSizeRegular = 20.0;
+  static const double iconSizeMedium = 24.0;
+  static const double iconSizeLarge = 32.0;
+  static const double iconSizeXL = 64.0;
+
+  // ==================== CARD DIMENSIONS ====================
+
+  static const double characterCardWidth = 320.0;
+  static const double characterCardHeight = 480.0;
+  static const double storyCardWidth = 360.0;
+  static const double storyCardLargeWidth = 400.0;
+  static const double storyCardLargeHeight = 500.0;
+
   // ==================== HOME SCREEN DESIGN TOKENS ====================
 
   /// Narrator teal color (matching CharacterStyleHelper)

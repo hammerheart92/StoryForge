@@ -64,4 +64,21 @@ class DesignColors {
     highlightPeach,
     highlightNavy,
   ];
+
+  // ==================== RARITY COLORS ====================
+  // Used for gallery content rarity indicators
+
+  static const Color rarityCommon = Color(0xFF9E9E9E);      // Grey
+  static const Color rarityRare = Color(0xFF2196F3);        // Blue
+  static const Color rarityEpic = Color(0xFFFFC107);        // Amber
+  static const Color rarityLegendary = Color(0xFF9C27B0);   // Purple
+
+  // ==================== APP GRADIENT ====================
+  // Standard dark background gradient used across screens
+
+  static const List<Color> appGradient = [
+    Color(0xFF1A1A2E),   // Top
+    Color(0xFF121417),   // Middle
+    Color(0xFF0D0D0D),   // Bottom
+  ];
 }
