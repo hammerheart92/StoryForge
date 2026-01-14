@@ -7,7 +7,10 @@ import '../models/story_info.dart';
 import '../models/save_info.dart';
 import '../providers/save_providers.dart';
 import '../widgets/saved_story_card.dart';
+import '../theme/storyforge_theme.dart';
 import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/typography.dart';
 import 'story_slot_selection_screen.dart';
 import 'gallery_screen.dart';
 
@@ -38,7 +41,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
           'Story Library',
           style: TextStyle(
             fontFamily: 'Merriweather',
-            fontSize: 24,
+            fontSize: DesignTypography.headingMedium.fontSize,
             fontWeight: FontWeight.bold,
             color: DesignColors.dPrimaryText,
           ),
@@ -62,12 +65,12 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
           CircularProgressIndicator(
             color: DesignColors.highlightTeal,
           ),
-          SizedBox(height: 16),
+          SizedBox(height: DesignSpacing.md),
           Text(
             'Loading your stories...',
             style: TextStyle(
               color: DesignColors.dSecondaryText,
-              fontSize: 14,
+              fontSize: 14, // Helper text size
             ),
           ),
         ],
@@ -78,34 +81,34 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
   Widget _buildError(Object error) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(32),
+        padding: EdgeInsets.all(DesignSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.error_outline,
               color: DesignColors.dDanger,
-              size: 48,
+              size: StoryForgeTheme.iconSizeLarge + 16, // 48
             ),
-            SizedBox(height: 16),
+            SizedBox(height: DesignSpacing.md),
             Text(
               'Failed to load saves',
               style: TextStyle(
                 color: DesignColors.dPrimaryText,
-                fontSize: 18,
+                fontSize: 18, // Body text size
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: DesignSpacing.sm),
             Text(
               error.toString(),
               style: TextStyle(
                 color: DesignColors.dSecondaryText,
-                fontSize: 14,
+                fontSize: 14, // Helper text size
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 24),
+            SizedBox(height: DesignSpacing.lg),
             ElevatedButton.icon(
               onPressed: () => ref.invalidate(saveListProvider),
               icon: Icon(Icons.refresh),
@@ -126,7 +129,10 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
     final filter = ref.watch(filterProvider);
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: DesignSpacing.md,
+        vertical: DesignSpacing.sm,
+      ),
       child: Column(
         children: [
           // Sort dropdown
@@ -134,7 +140,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('Sort by:', style: TextStyle(color: DesignColors.dSecondaryText)),
-              SizedBox(width: 8),
+              SizedBox(width: DesignSpacing.sm),
               DropdownButton<String>(
                 value: sortOrder,
                 dropdownColor: DesignColors.dSurfaces,
@@ -152,12 +158,12 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
               ),
             ],
           ),
-          SizedBox(height: 12),
+          SizedBox(height: DesignSpacing.sm + 4), // 12
           // Filter chips - use Wrap to allow wrapping on narrow screens
           Wrap(
             alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
+            spacing: DesignSpacing.sm,
+            runSpacing: DesignSpacing.sm,
             children: [
               FilterChip(
                 label: Text('All'),
@@ -225,18 +231,18 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
     final orderedStories = [...storiesWithSaves, ...storiesWithoutSaves];
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(DesignSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSubheading(saves),
-          SizedBox(height: 16),
+          SizedBox(height: DesignSpacing.md),
           _buildSortFilterControls(),
-          SizedBox(height: 24),
+          SizedBox(height: DesignSpacing.lg),
           Center(
             child: Wrap(
-              spacing: 24,
-              runSpacing: 24,
+              spacing: DesignSpacing.lg,
+              runSpacing: DesignSpacing.lg,
               alignment: WrapAlignment.center,
               children: orderedStories.map((story) {
                 final save = saveMap[story.id];
@@ -253,7 +259,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
               }).toList(),
             ),
           ),
-          SizedBox(height: 48),
+          SizedBox(height: DesignSpacing.xxl),
         ],
       ),
     );
@@ -279,7 +285,7 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
         subtext,
         style: TextStyle(
           color: DesignColors.dSecondaryText,
-          fontSize: 14,
+          fontSize: 14, // Helper text size
         ),
       ),
     );

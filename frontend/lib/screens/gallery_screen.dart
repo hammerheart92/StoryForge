@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import '../models/gallery_content.dart';
 import '../services/gallery_service.dart';
+import '../theme/storyforge_theme.dart';
+import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
 import '../theme/tokens/typography.dart';
 import '../widgets/gallery_content_card.dart';
@@ -195,7 +197,7 @@ class _GalleryScreenState extends State<GalleryScreen>
         actions: [
           // Gem counter widget
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.only(right: DesignSpacing.md),
             child: Center(child: GemCounterWidget(gemBalance: _gemBalance)),
           ),
         ],
@@ -231,13 +233,13 @@ class _GalleryScreenState extends State<GalleryScreen>
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading gallery...'),
+            const CircularProgressIndicator(),
+            SizedBox(height: DesignSpacing.md),
+            const Text('Loading gallery...'),
           ],
         ),
       );
@@ -246,23 +248,27 @@ class _GalleryScreenState extends State<GalleryScreen>
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(DesignSpacing.lg),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
+              Icon(
+                Icons.error_outline,
+                size: StoryForgeTheme.iconSizeXL,
+                color: Colors.red,
+              ),
+              SizedBox(height: DesignSpacing.md),
               Text(
                 'Failed to load gallery',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: DesignSpacing.sm),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(color: DesignColors.dSecondaryText),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: DesignSpacing.lg),
               ElevatedButton.icon(
                 onPressed: _loadGalleryData,
                 icon: const Icon(Icons.refresh),
@@ -279,11 +285,15 @@ class _GalleryScreenState extends State<GalleryScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.image_not_supported, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
+            Icon(
+              Icons.image_not_supported,
+              size: StoryForgeTheme.iconSizeXL,
+              color: DesignColors.dSecondaryText.withValues(alpha: 0.6),
+            ),
+            SizedBox(height: DesignSpacing.md),
             Text(
               _getEmptyStateMessage(),
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: DesignColors.dSecondaryText),
               textAlign: TextAlign.center,
             ),
           ],
@@ -292,11 +302,11 @@ class _GalleryScreenState extends State<GalleryScreen>
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      padding: EdgeInsets.all(DesignSpacing.md),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: DesignSpacing.sm + 4, // 12
+        mainAxisSpacing: DesignSpacing.sm + 4, // 12
         childAspectRatio: 0.75,
       ),
       itemCount: _filteredContent.length,

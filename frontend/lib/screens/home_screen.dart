@@ -56,7 +56,7 @@ class HomeScreen extends StatelessWidget {
                             shadows: [
                               // Subtle text glow for drama
                               Shadow(
-                                color: Colors.white.withOpacity(0.3),
+                                color: DesignColors.dPrimaryText.withOpacity(0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 0),
                               ),
@@ -82,7 +82,11 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
 
-                        SizedBox(height: isDesktop ? 80 : 64),
+                        SizedBox(
+                          height: isDesktop
+                              ? DesignSpacing.xxl + DesignSpacing.xl // 80
+                              : DesignSpacing.xxl + DesignSpacing.md, // 64
+                        ),
 
                         // Story Library Button
                         _StoryLibraryButton(
@@ -129,7 +133,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(StoryForgeTheme.heroCardRadius),
                     splashColor: DesignColors.highlightTeal.withOpacity(0.3),
                     child: Container(
                       width: 48,
@@ -145,7 +149,7 @@ class HomeScreen extends StatelessWidget {
                       child: Icon(
                         Icons.person_outline,
                         color: DesignColors.highlightTeal,
-                        size: 24,
+                        size: StoryForgeTheme.iconSizeMedium,
                       ),
                     ),
                   ),
@@ -175,7 +179,7 @@ class _StoryLibraryButton extends StatelessWidget {
         width: StoryForgeTheme.homeButtonWidth,
         height: StoryForgeTheme.homeButtonHeight,
         decoration: BoxDecoration(
-          color: const Color(0xFF1A2828),
+          color: DesignColors.dSurfaces,
           borderRadius: BorderRadius.circular(
             StoryForgeTheme.homeButtonRadius,
           ),
@@ -219,23 +223,23 @@ class _StoryLibraryButton extends StatelessWidget {
                   Icon(
                     Icons.library_books,
                     color: StoryForgeTheme.narratorTeal,
-                    size: 22,
+                    size: StoryForgeTheme.iconSizeRegular + 2, // 22
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: DesignSpacing.sm + 4), // 12
                   Text(
                     'Story Library',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 18, // Button text size
                       fontWeight: FontWeight.w600,
                       color: DesignColors.dPrimaryText,
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: DesignSpacing.sm + 4), // 12
                   Icon(
                     Icons.arrow_forward,
                     color: StoryForgeTheme.narratorTeal,
-                    size: 22,
+                    size: StoryForgeTheme.iconSizeRegular + 2, // 22
                   ),
                 ],
               ),
