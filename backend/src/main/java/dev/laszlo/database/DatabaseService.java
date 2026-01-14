@@ -138,24 +138,24 @@ public class DatabaseService {
      */
     private void createUserCurrencyTable() {
         String sql = """
-            CREATE TABLE IF NOT EXISTS user_currency (
-                user_id TEXT PRIMARY KEY,
-                gem_balance INTEGER DEFAULT 0 NOT NULL,
-                total_earned INTEGER DEFAULT 0 NOT NULL,
-                total_spent INTEGER DEFAULT 0 NOT NULL,
-                last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-            """;
+                CREATE TABLE IF NOT EXISTS user_currency (
+                    user_id TEXT PRIMARY KEY,
+                    gem_balance INTEGER DEFAULT 0 NOT NULL,
+                    total_earned INTEGER DEFAULT 0 NOT NULL,
+                    total_spent INTEGER DEFAULT 0 NOT NULL,
+                    last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+                """;
 
         executeSQL(sql);
         logger.debug("💰 user_currency table ready");
 
         // Initialize default user with 100 starting gems
         String initSql = """
-            INSERT OR IGNORE INTO user_currency (user_id, gem_balance, total_earned, total_spent)
-            VALUES ('default', 100, 0, 0)
-            """;
+                INSERT OR IGNORE INTO user_currency (user_id, gem_balance, total_earned, total_spent)
+                VALUES ('default', 100, 0, 0)
+                """;
         executeSQL(initSql);
     }
 
@@ -164,18 +164,18 @@ public class DatabaseService {
      */
     private void createGemTransactionsTable() {
         String sql = """
-            CREATE TABLE IF NOT EXISTS gem_transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
-                amount INTEGER NOT NULL,
-                transaction_type TEXT NOT NULL CHECK(transaction_type IN ('earn', 'spend')),
-                source TEXT,
-                story_id TEXT,
-                content_id INTEGER,
-                timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES user_currency(user_id)
-            )
-            """;
+                CREATE TABLE IF NOT EXISTS gem_transactions (
+                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    transaction_type TEXT NOT NULL CHECK(transaction_type IN ('earn', 'spend')),
+                    source TEXT,
+                    story_id TEXT,
+                    content_id INTEGER,
+                    timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES user_currency(user_id)
+                )
+                """;
 
         executeSQL(sql);
         logger.debug("💎 gem_transactions table ready");
@@ -186,40 +186,54 @@ public class DatabaseService {
      */
     private void createStoryContentTable() {
         String sql = """
-            CREATE TABLE IF NOT EXISTS story_content (
-                content_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                story_id TEXT NOT NULL,
-                content_type TEXT NOT NULL CHECK(content_type IN ('scene', 'character', 'lore', 'extra')),
-                content_category TEXT,
-                title TEXT NOT NULL,
-                description TEXT,
-                unlock_cost INTEGER NOT NULL,
-                rarity TEXT DEFAULT 'common' CHECK(rarity IN ('common', 'rare', 'epic', 'legendary')),
-                unlock_condition TEXT,
-                content_url TEXT,
-                thumbnail_url TEXT,
-                display_order INTEGER DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-            """;
+                CREATE TABLE IF NOT EXISTS story_content (
+                    content_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    story_id TEXT NOT NULL,
+                    content_type TEXT NOT NULL CHECK(content_type IN ('scene', 'character', 'lore', 'extra')),
+                    content_category TEXT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    unlock_cost INTEGER NOT NULL,
+                    rarity TEXT DEFAULT 'common' CHECK(rarity IN ('common', 'rare', 'epic', 'legendary')),
+                    unlock_condition TEXT,
+                    content_url TEXT,
+                    thumbnail_url TEXT,
+                    display_order INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+                """;
 
         executeSQL(sql);
         logger.debug("🖼️ story_content table ready");
 
         // Insert 3 sample content items for pirates story
         String sampleContent = """
-            INSERT OR IGNORE INTO story_content 
-            (content_id, story_id, content_type, title, description, unlock_cost, rarity, content_url, thumbnail_url, display_order)
-            VALUES 
-            (1, 'pirates', 'lore', 'The Pirate Code', 'Ancient rules that govern the seas', 30, 'common', 
-             'https://placeholder.com/code.jpg', 'https://placeholder.com/code_blur.jpg', 1),
-            (2, 'pirates', 'scene', 'The Storm', 'The ship battles against nature''s fury', 50, 'rare',
-             'https://placeholder.com/storm.jpg', 'https://placeholder.com/storm_blur.jpg', 2),
-            (3, 'pirates', 'character', 'Captain Isla Portrait', 'Full portrait of Captain Isla Blackwater', 75, 'epic',
-             'https://placeholder.com/isla.jpg', 'https://placeholder.com/isla_blur.jpg', 3)
-            """;
+                INSERT OR IGNORE INTO story_content 
+                (content_id, story_id, content_type, title, description, unlock_cost, rarity, content_url, thumbnail_url, display_order)
+                VALUES 
+                (1, 'pirates', 'lore', 'The Pirate Code', 'Ancient rules that govern the seas', 30, 'common', 
+                 'https://placeholder.com/code.jpg', 'https://placeholder.com/code_blur.jpg', 1),
+                (2, 'pirates', 'scene', 'The Storm', 'The ship battles against nature''s fury', 50, 'rare',
+                 'https://placeholder.com/storm.jpg', 'https://placeholder.com/storm_blur.jpg', 2),
+                (3, 'pirates', 'character', 'Captain Isla Portrait', 'Full portrait of Captain Isla Blackwater', 75, 'epic',
+                 'https://placeholder.com/isla.jpg', 'https://placeholder.com/isla_blur.jpg', 3),
+                (4, 'pirates', 'scene', 'The Kraken Attack', 'Witness the terrifying battle with the legendary sea monster', 80, 'epic',
+                 'https://placeholder.com/kraken.jpg', 'https://placeholder.com/kraken_blur.jpg', 4),
+                (5, 'pirates', 'scene', 'Treasure Island Discovery', 'The crew''s first glimpse of the fabled treasure island', 45, 'rare',
+                 'https://placeholder.com/island.jpg', 'https://placeholder.com/island_blur.jpg', 5),
+                (6, 'pirates', 'character', 'First Mate Rodriguez', 'Loyal first mate with a mysterious past', 60, 'rare',
+                 'https://placeholder.com/rodriguez.jpg', 'https://placeholder.com/rodriguez_blur.jpg', 6),
+                (7, 'pirates', 'character', 'The Sea Witch', 'Ancient sorceress who commands the ocean''s fury', 120, 'legendary',
+                 'https://placeholder.com/witch.jpg', 'https://placeholder.com/witch_blur.jpg', 7),
+                (8, 'pirates', 'lore', 'Tales of the Flying Dutchman', 'Legends of the ghost ship cursed to sail forever', 25, 'common',
+                 'https://placeholder.com/dutchman.jpg', 'https://placeholder.com/dutchman_blur.jpg', 8),
+                (9, 'pirates', 'extra', 'Ship Blueprint: The Black Pearl', 'Detailed schematics of the legendary pirate ship', 85, 'epic',
+                 'https://placeholder.com/blueprint.jpg', 'https://placeholder.com/blueprint_blur.jpg', 9),
+                (10, 'pirates', 'extra', 'Soundtrack: Ocean''s Embrace', 'Haunting melody of the open seas', 20, 'common',
+                 'https://placeholder.com/soundtrack.jpg', 'https://placeholder.com/soundtrack_blur.jpg', 10)
+                """;
         executeSQL(sampleContent);
-        logger.info("📦 Inserted 3 sample gallery items for pirates story");
+        logger.info("📦 Inserted 10 sample gallery items for pirates story");
     }
 
     /**
@@ -227,14 +241,14 @@ public class DatabaseService {
      */
     private void createUserUnlocksTable() {
         String sql = """
-            CREATE TABLE IF NOT EXISTS user_unlocks (
-                user_id TEXT NOT NULL,
-                content_id INTEGER NOT NULL,
-                unlocked_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (user_id, content_id),
-                FOREIGN KEY (content_id) REFERENCES story_content(content_id)
-            )
-            """;
+                CREATE TABLE IF NOT EXISTS user_unlocks (
+                    user_id TEXT NOT NULL,
+                    content_id INTEGER NOT NULL,
+                    unlocked_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, content_id),
+                    FOREIGN KEY (content_id) REFERENCES story_content(content_id)
+                )
+                """;
 
         executeSQL(sql);
         logger.debug("🔓 user_unlocks table ready");

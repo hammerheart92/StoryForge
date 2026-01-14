@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import '../models/gallery_content.dart';
 import '../services/gallery_service.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/typography.dart';
 import '../widgets/gallery_content_card.dart';
 import '../widgets/gem_counter_widget.dart';
 import '../widgets/unlock_confirmation_dialog.dart';
@@ -34,20 +36,88 @@ class GalleryScreen extends StatefulWidget {
   State<GalleryScreen> createState() => _GalleryScreenState();
 }
 
-class _GalleryScreenState extends State<GalleryScreen> {
+class _GalleryScreenState extends State<GalleryScreen>
+    with SingleTickerProviderStateMixin {
   final GalleryService _galleryService = GalleryService();
   final String _userId = 'default';
 
   bool _isLoading = true;
   String? _error;
-  List<GalleryContent> _content = [];
   Set<int> _unlockedIds = {};
   int _gemBalance = 0;
+
+  // Tab navigation state
+  late TabController _tabController;
+  int _selectedTabIndex = 0;
+  List<GalleryContent> _allContent = [];
+  List<GalleryContent> _filteredContent = [];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(_onTabChanged);
     _loadGalleryData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    setState(() {
+      _selectedTabIndex = _tabController.index;
+      _filterContent();
+    });
+  }
+
+  void _filterContent() {
+    switch (_selectedTabIndex) {
+      case 0: // All
+        _filteredContent = List.from(_allContent);
+        break;
+      case 1: // Scenes
+        _filteredContent = _allContent
+            .where((c) => c.contentType.toLowerCase() == 'scene')
+            .toList();
+        break;
+      case 2: // Characters
+        _filteredContent = _allContent
+            .where((c) => c.contentType.toLowerCase() == 'character')
+            .toList();
+        break;
+      case 3: // Lore
+        _filteredContent = _allContent
+            .where((c) => c.contentType.toLowerCase() == 'lore')
+            .toList();
+        break;
+      case 4: // Extras
+        _filteredContent = _allContent
+            .where((c) => c.contentType.toLowerCase() == 'extra')
+            .toList();
+        break;
+    }
+  }
+
+  String _getEmptyStateMessage() {
+    switch (_selectedTabIndex) {
+      case 0:
+        return 'No content available yet.\nComplete stories to earn gems!';
+      case 1:
+        return 'No scenes unlocked yet.\nKeep playing to discover epic moments!';
+      case 2:
+        return 'No characters unlocked yet.\nMeet the crew by progressing through stories!';
+      case 3:
+        return 'No lore unlocked yet.\nUncover the world\'s secrets!';
+      case 4:
+        return 'No extras unlocked yet.\nCollect special content as you play!';
+      default:
+        return 'No content available';
+    }
   }
 
   Future<void> _loadGalleryData() async {
@@ -60,9 +130,10 @@ class _GalleryScreenState extends State<GalleryScreen> {
       final response = await _galleryService.getGalleryContent(widget.storyId);
 
       setState(() {
-        _content = response.content;
+        _allContent = response.content;
         _unlockedIds = response.unlockedIds.toSet();
         _gemBalance = response.gemBalance;
+        _filterContent();
         _isLoading = false;
       });
     } catch (e) {
@@ -128,6 +199,25 @@ class _GalleryScreenState extends State<GalleryScreen> {
             child: Center(child: GemCounterWidget(gemBalance: _gemBalance)),
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+          labelStyle: DesignTypography.ctaBold.copyWith(fontSize: 14),
+          unselectedLabelStyle: DesignTypography.bodyRegular.copyWith(fontSize: 14),
+          labelPadding: const EdgeInsets.symmetric(horizontal: DesignSpacing.lg),
+          indicatorWeight: 3.0,
+          indicatorSize: TabBarIndicatorSize.label,
+          tabs: const [
+            Tab(text: 'All'),
+            Tab(text: 'Scenes'),
+            Tab(text: 'Characters'),
+            Tab(text: 'Lore'),
+            Tab(text: 'Extras'),
+          ],
+        ),
       ),
       body: _buildBody(),
       // Refresh FAB (useful for testing)
@@ -184,7 +274,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
       );
     }
 
-    if (_content.isEmpty) {
+    if (_filteredContent.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -192,13 +282,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
             Icon(Icons.image_not_supported, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
-              'No content available',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Check back later for unlockable content!',
+              _getEmptyStateMessage(),
               style: TextStyle(color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -213,9 +299,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
         mainAxisSpacing: 12,
         childAspectRatio: 0.75,
       ),
-      itemCount: _content.length,
+      itemCount: _filteredContent.length,
       itemBuilder: (context, index) {
-        final item = _content[index];
+        final item = _filteredContent[index];
         return GalleryContentCard(
           content: item,
           isUnlocked: _unlockedIds.contains(item.contentId),

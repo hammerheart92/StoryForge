@@ -23,6 +23,7 @@ frontend/.metadata
 **/.claude/
 backend/claude_tasks/
 tmpclaude-0d94-cwd
+tmpclaude-a2c5-cwd
 
 # Documentation files
 docs/SESSION_16_SUMMARY.md
