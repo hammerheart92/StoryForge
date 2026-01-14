@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/character_info.dart';
 import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/typography.dart';
 import '../widgets/character_card.dart';
 
 class CharacterSelectionScreen extends StatelessWidget {
@@ -15,11 +17,11 @@ class CharacterSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Choose Your Guide',
           style: TextStyle(
             fontFamily: 'Merriweather',
-            fontSize: 24,
+            fontSize: DesignTypography.headingMedium.fontSize,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -45,7 +47,9 @@ class CharacterSelectionScreen extends StatelessWidget {
 
                   return isMobile
                       ? SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(vertical: 40),
+                    padding: EdgeInsets.symmetric(
+                      vertical: DesignSpacing.xl + 8, // 40
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: _buildCharacterCards(context),
@@ -69,7 +73,7 @@ class CharacterSelectionScreen extends StatelessWidget {
 
     return storyCharacters.map((character) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(DesignSpacing.md),
         child: CharacterCard(
           character: character,
           onSelect: () => _handleCharacterSelection(context, character),

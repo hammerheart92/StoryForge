@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/story_info.dart';
 import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/typography.dart';
 import '../widgets/story_card.dart';
 
 class StorySelectionScreen extends StatelessWidget {
@@ -10,11 +12,11 @@ class StorySelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Choose Your Story',
           style: TextStyle(
             fontFamily: 'Merriweather',
-            fontSize: 24,
+            fontSize: DesignTypography.headingMedium.fontSize,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -42,7 +44,9 @@ class StorySelectionScreen extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: 600),
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(vertical: 40),
+                    padding: EdgeInsets.symmetric(
+                      vertical: DesignSpacing.xl + 8, // 40
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: _buildStoryCards(context),
@@ -54,7 +58,10 @@ class StorySelectionScreen extends StatelessWidget {
                 child: SingleChildScrollView(
                   // ⭐ Horizontal scroll - no width constraint!
                   scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                  padding: EdgeInsets.symmetric(
+                    vertical: DesignSpacing.xl + 8, // 40
+                    horizontal: DesignSpacing.md,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: _buildStoryCards(context),
@@ -76,7 +83,7 @@ class StorySelectionScreen extends StatelessWidget {
 
     return StoryInfo.all.map((story) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(DesignSpacing.md),
         child: StoryCard(
           story: story,
           onSelect: () => _handleStorySelection(context, story),

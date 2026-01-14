@@ -11,6 +11,9 @@ import '../widgets/character_message_card.dart';
 import '../widgets/choices_section.dart';
 import '../widgets/loading_overlay.dart';
 import '../theme/storyforge_theme.dart';
+import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/typography.dart';
 import 'debug_screen.dart';
 
 class NarrativeScreen extends ConsumerStatefulWidget {
@@ -215,7 +218,7 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
                   child: state.hasHistory
                       ? ListView.builder(
                           controller: _scrollController,
-                          padding: const EdgeInsets.only(top: 16, bottom: 16),
+                          padding: EdgeInsets.symmetric(vertical: DesignSpacing.md),
                           itemCount: state.history.length,
                           itemBuilder: (context, index) {
                             final message = state.history[index];
@@ -282,15 +285,15 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(
             Icons.auto_stories,
-            size: 64,
-            color: Colors.grey.shade400,
+            size: StoryForgeTheme.iconSizeXL,
+            color: DesignColors.dSecondaryText,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: DesignSpacing.md),
           Text(
             'Starting your adventure...',
             style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
+              fontSize: DesignTypography.bodyMedium.fontSize,
+              color: DesignColors.dSecondaryText,
             ),
           ),
         ],
@@ -321,15 +324,15 @@ class _ErrorBanner extends StatelessWidget {
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(DesignSpacing.md),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline,
                   color: Colors.white,
-                  size: 24,
+                  size: StoryForgeTheme.iconSizeMedium,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: DesignSpacing.sm + 4), // 12
                 Expanded(
                   child: Text(
                     error,

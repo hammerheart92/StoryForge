@@ -9,7 +9,9 @@ import '../models/save_info.dart';
 import '../models/narrative_message.dart';
 import '../providers/save_providers.dart';
 import '../widgets/save_slot_card.dart';
+import '../theme/storyforge_theme.dart';
 import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
 import '../services/story_state_service.dart';
 import 'character_selection_screen.dart';
 import 'narrative_screen.dart';
@@ -39,7 +41,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
           story.title,
           style: TextStyle(
             fontFamily: 'Merriweather',
-            fontSize: 20,
+            fontSize: 20.0, // Subheading size (between md 24 and bodyMedium 18)
             fontWeight: FontWeight.bold,
             color: DesignColors.dPrimaryText,
           ),
@@ -52,7 +54,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircularProgressIndicator(color: story.accentColor),
-              SizedBox(height: 16),
+              SizedBox(height: DesignSpacing.md),
               Text(
                 'Loading save slots...',
                 style: TextStyle(color: DesignColors.dSecondaryText),
@@ -69,27 +71,27 @@ class StorySlotSelectionScreen extends ConsumerWidget {
   Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(32),
+        padding: EdgeInsets.all(DesignSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_off, size: 64, color: DesignColors.dSecondaryText),
-            SizedBox(height: 16),
+            Icon(Icons.cloud_off, size: StoryForgeTheme.iconSizeXL, color: DesignColors.dSecondaryText),
+            SizedBox(height: DesignSpacing.md),
             Text(
               'Unable to load save slots',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18, // Body text size
                 fontWeight: FontWeight.bold,
                 color: DesignColors.dPrimaryText,
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: DesignSpacing.sm),
             Text(
               'Check your connection and try again',
               style: TextStyle(color: DesignColors.dSecondaryText),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 24),
+            SizedBox(height: DesignSpacing.lg),
             ElevatedButton.icon(
               onPressed: () => ref.invalidate(storySavesProvider(story.id)),
               icon: Icon(Icons.refresh),
@@ -115,7 +117,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
     }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(DesignSpacing.lg),
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 500),
@@ -127,16 +129,16 @@ class StorySlotSelectionScreen extends ConsumerWidget {
                   'Choose a save slot or start a new story',
                   style: TextStyle(
                     color: DesignColors.dSecondaryText,
-                    fontSize: 14,
+                    fontSize: 14, // Helper text size
                   ),
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: DesignSpacing.lg),
               ...List.generate(5, (index) {
                 final slot = index + 1;
                 final save = slotMap[slot];
                 return Padding(
-                  padding: EdgeInsets.only(bottom: 16),
+                  padding: EdgeInsets.only(bottom: DesignSpacing.md),
                   child: SaveSlotCard(
                     story: story,
                     slotNumber: slot,
@@ -147,7 +149,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
                   ),
                 );
               }),
-              SizedBox(height: 24),
+              SizedBox(height: DesignSpacing.lg),
             ],
           ),
         ),
@@ -233,7 +235,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         backgroundColor: DesignColors.dSurfaces,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
         ),
         title: Text(
           'Delete Save Slot $saveSlot?',
