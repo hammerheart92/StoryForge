@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/story_info.dart';
+import '../theme/tokens/colors.dart';
 import '../widgets/story_card.dart';
 
 class StorySelectionScreen extends StatelessWidget {
@@ -28,11 +29,7 @@ class StorySelectionScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A2E),
-              Color(0xFF121417),
-              Color(0xFF0D0D0D),
-            ],
+            colors: DesignColors.appGradient,
           ),
         ),
         child: SafeArea(

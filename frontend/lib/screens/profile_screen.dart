@@ -8,6 +8,7 @@ import '../services/stats_service.dart';
 import '../services/story_state_service.dart';
 import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
+import '../theme/storyforge_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -55,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF23272C),
+          backgroundColor: DesignColors.dSurfaces,
           title: const Text(
             'Animation Speed',
             style: TextStyle(color: DesignColors.dPrimaryText),
@@ -81,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 '${speed.round()}ms per character',
                 style: const TextStyle(color: DesignColors.dPrimaryText),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: DesignSpacing.sm),
               Text(
                 speed == 0
                     ? 'Instant'
@@ -130,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF23272C),
+        backgroundColor: DesignColors.dSurfaces,
         title: const Text(
           'Text Size',
           style: TextStyle(color: DesignColors.dPrimaryText),
@@ -179,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF23272C),
+        backgroundColor: DesignColors.dSurfaces,
         title: const Text(
           'Language',
           style: TextStyle(color: DesignColors.dPrimaryText),
@@ -224,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF23272C),
+        backgroundColor: DesignColors.dSurfaces,
         title: const Text(
           'Clear All Data?',
           style: TextStyle(color: DesignColors.dPrimaryText),
@@ -283,7 +284,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF23272C),
+        backgroundColor: DesignColors.dSurfaces,
         title: const Text(
           'About StoryForge',
           style: TextStyle(color: DesignColors.dPrimaryText),
@@ -296,12 +297,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'Version 1.0.0',
               style: TextStyle(color: DesignColors.dPrimaryText),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignSpacing.md),
             const Text(
               'AI-powered interactive storytelling',
               style: TextStyle(color: DesignColors.dPrimaryText),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignSpacing.md),
             Text(
               'Built with Flutter & Claude API',
               style: TextStyle(color: DesignColors.dSecondaryText),
@@ -357,11 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A2E), // Dark blue-gray (top)
-              Color(0xFF121417), // Near black (middle)
-              Color(0xFF0D0D0D), // Deeper black (bottom)
-            ],
+            colors: DesignColors.appGradient,
             stops: [0.0, 0.5, 1.0],
           ),
         ),
@@ -422,7 +419,7 @@ class _ProfileHeader extends StatelessWidget {
       padding: const EdgeInsets.all(DesignSpacing.lg),
       decoration: BoxDecoration(
         color: DesignColors.dSurfaces,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
         border: Border.all(
           color: DesignColors.highlightTeal.withOpacity(0.3),
           width: 1,
@@ -465,7 +462,7 @@ class _ProfileHeader extends StatelessWidget {
                     color: DesignColors.dPrimaryText,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: DesignSpacing.xs),
                 Text(
                   '$totalStories ${totalStories == 1 ? 'Story' : 'Stories'}',
                   style: TextStyle(
@@ -574,7 +571,7 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: DesignColors.dSurfaces,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
         border: Border.all(
           color: accentColor.withOpacity(0.3),
           width: 1,
@@ -591,7 +588,7 @@ class _StatCard extends StatelessWidget {
               color: DesignColors.dPrimaryText,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: DesignSpacing.xs),
           Text(
             label,
             style: TextStyle(
@@ -669,7 +666,7 @@ class _SettingsList extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: DesignColors.dSurfaces,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
           ),
           child: Column(
             children: [
@@ -767,7 +764,7 @@ class _SettingsItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: DesignSpacing.md,
