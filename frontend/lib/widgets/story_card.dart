@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/story_info.dart';
 import '../models/character_info.dart';
+import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/shadows.dart';
+import '../theme/storyforge_theme.dart';
 
 class StoryCard extends StatefulWidget {
   final StoryInfo story;
@@ -30,40 +34,29 @@ class _StoryCardState extends State<StoryCard> {
           ..setEntry(0, 0, _isHovered ? 1.05 : 1.0)
           ..setEntry(1, 1, _isHovered ? 1.05 : 1.0),
         transformAlignment: Alignment.center,
-        width: 400,
-        height: 500,
+        width: StoryForgeTheme.storyCardLargeWidth,
+        height: StoryForgeTheme.storyCardLargeHeight,
         child: Container(
           decoration: BoxDecoration(
-            color: Color(0xFF23272C),
-            borderRadius: BorderRadius.circular(24),
+            color: DesignColors.dSurfaces,
+            borderRadius: BorderRadius.circular(StoryForgeTheme.heroCardRadius),
             border: Border.all(
               color: widget.story.accentColor.withValues(alpha: 0.5),
               width: 2,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: widget.story.accentColor
-                    .withValues(alpha: _isHovered ? 0.4 : 0.2),
-                blurRadius: _isHovered ? 30 : 20,
-                spreadRadius: _isHovered ? 3 : 1,
-              ),
-              BoxShadow(
-                color: widget.story.accentColor
-                    .withValues(alpha: _isHovered ? 0.3 : 0.1),
-                blurRadius: _isHovered ? 50 : 40,
-                spreadRadius: _isHovered ? 5 : 2,
-              ),
-            ],
+            boxShadow: _isHovered
+                ? DesignShadows.glowIntense(widget.story.accentColor)
+                : DesignShadows.glowSoft(widget.story.accentColor),
           ),
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.all(DesignSpacing.lg),
           child: Column(
             children: [
               _buildStoryIcon(),
-              SizedBox(height: 16),
+              SizedBox(height: DesignSpacing.md),
               Expanded(
                 child: _buildStoryInfo(),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: DesignSpacing.md),
               _buildSelectButton(),
             ],
           ),
@@ -79,13 +72,7 @@ class _StoryCardState extends State<StoryCard> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: widget.story.accentColor.withValues(alpha: 0.2),
-        boxShadow: [
-          BoxShadow(
-            color: widget.story.accentColor.withValues(alpha: 0.5),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
+        boxShadow: DesignShadows.glowSoft(widget.story.accentColor),
       ),
       child: Icon(
         widget.story.icon,
@@ -108,11 +95,11 @@ class _StoryCardState extends State<StoryCard> {
               fontFamily: 'Merriweather',
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFF1F3F5),
+              color: DesignColors.dPrimaryText,
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 8),
+          SizedBox(height: DesignSpacing.sm),
           Text(
             widget.story.tagline,
             style: TextStyle(
@@ -123,23 +110,23 @@ class _StoryCardState extends State<StoryCard> {
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 16),
+          SizedBox(height: DesignSpacing.md),
           Text(
             widget.story.description,
             style: TextStyle(
               fontFamily: 'Roboto',
               fontSize: 14,
               height: 1.5,
-              color: Color(0xFFB0B3B8),
+              color: DesignColors.dSecondaryText,
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 16),
+          SizedBox(height: DesignSpacing.md),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: DesignSpacing.md, vertical: DesignSpacing.sm),
             decoration: BoxDecoration(
               color: widget.story.accentColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
               border: Border.all(
                 color: widget.story.accentColor.withValues(alpha: 0.5),
                 width: 1,
@@ -155,13 +142,13 @@ class _StoryCardState extends State<StoryCard> {
               ),
             ),
           ),
-          SizedBox(height: 12),
+          SizedBox(height: DesignSpacing.sm + 4), // 12
           Text(
             characterNames,
             style: TextStyle(
               fontFamily: 'Roboto',
               fontSize: 12,
-              color: Color(0xFFB0B3B8),
+              color: DesignColors.dSecondaryText,
             ),
             textAlign: TextAlign.center,
           ),
@@ -182,7 +169,7 @@ class _StoryCardState extends State<StoryCard> {
           elevation: _isHovered ? 8 : 4,
           shadowColor: widget.story.accentColor.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
           ),
         ),
         child: Text(

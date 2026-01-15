@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import '../models/story_info.dart';
 import '../models/save_info.dart';
 import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/shadows.dart';
+import '../theme/storyforge_theme.dart';
 
 class SavedStoryCard extends StatefulWidget {
   final StoryInfo story;
@@ -48,36 +51,31 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             ..setEntry(0, 0, _isHovered ? 1.02 : 1.0)
             ..setEntry(1, 1, _isHovered ? 1.02 : 1.0),
           transformAlignment: Alignment.center,
-          width: 360,
+          width: StoryForgeTheme.storyCardWidth,
           child: Container(
             decoration: BoxDecoration(
               color: DesignColors.dSurfaces,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(StoryForgeTheme.largeCardRadius),
               border: Border.all(
                 color: widget.story.accentColor.withValues(alpha: 0.4),
                 width: 2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.story.accentColor
-                      .withValues(alpha: _isHovered ? 0.3 : 0.15),
-                  blurRadius: _isHovered ? 24 : 16,
-                  spreadRadius: _isHovered ? 2 : 0,
-                ),
-              ],
+              boxShadow: _isHovered
+                  ? DesignShadows.glowIntense(widget.story.accentColor)
+                  : DesignShadows.glowSoft(widget.story.accentColor),
             ),
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(20), // Non-standard spacing (20px)
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildHeader(),
-                SizedBox(height: 16),
+                SizedBox(height: DesignSpacing.md),
                 _buildStoryInfo(),
                 if (hasSave) ...[
-                  SizedBox(height: 16),
+                  SizedBox(height: DesignSpacing.md),
                   _buildProgress(),
                 ],
-                SizedBox(height: 20),
+                SizedBox(height: 20), // Non-standard spacing (20px)
                 _buildButtons(),
               ],
             ),
@@ -96,12 +94,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: widget.story.accentColor.withValues(alpha: 0.2),
-            boxShadow: [
-              BoxShadow(
-                color: widget.story.accentColor.withValues(alpha: 0.4),
-                blurRadius: 12,
-              ),
-            ],
+            boxShadow: DesignShadows.glowSoft(widget.story.accentColor),
           ),
           child: Icon(
             widget.story.icon,
@@ -109,7 +102,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             color: widget.story.accentColor,
           ),
         ),
-        SizedBox(width: 16),
+        SizedBox(width: DesignSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,12 +118,12 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: 4),
+              SizedBox(height: DesignSpacing.xs),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm, vertical: 2),
                 decoration: BoxDecoration(
                   color: widget.story.accentColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
                 ),
                 child: Text(
                   widget.story.theme,
@@ -148,26 +141,26 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
         // Phase B: Gallery icon button
         if (widget.onGallery != null)
           Padding(
-            padding: EdgeInsets.only(right: 4),
+            padding: EdgeInsets.only(right: DesignSpacing.xs),
             child: IconButton(
-              icon: Icon(Icons.photo_library, size: 20),
+              icon: Icon(Icons.photo_library, size: StoryForgeTheme.iconSizeRegular),
               color: widget.story.accentColor.withValues(alpha: 0.7),
               tooltip: 'Gallery',
               onPressed: widget.onGallery,
               constraints: BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.all(6),
+              padding: EdgeInsets.all(6), // Non-standard badge padding
             ),
           ),
         if (widget.save?.isCompleted == true)
           Container(
-            padding: EdgeInsets.all(6),
+            padding: EdgeInsets.all(6), // Non-standard badge padding
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: DesignColors.dSuccess.withValues(alpha: 0.2),
             ),
             child: Icon(
               Icons.check_circle,
-              size: 20,
+              size: StoryForgeTheme.iconSizeRegular,
               color: DesignColors.dSuccess,
             ),
           ),
@@ -198,10 +191,10 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
       children: [
         Icon(
           Icons.person,
-          size: 14,
+          size: StoryForgeTheme.iconSizeSmall,
           color: widget.story.accentColor,
         ),
-        SizedBox(width: 6),
+        SizedBox(width: DesignSpacing.xs + 2), // 6
         Expanded(
           child: Text(
             save.characterName,
@@ -230,19 +223,19 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
       return Column(
         children: [
           characterRow,
-          SizedBox(height: 10),
+          SizedBox(height: DesignSpacing.sm + 2), // 10
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm + 4, vertical: DesignSpacing.xs + 2), // 12, 6
             decoration: BoxDecoration(
               color: DesignColors.dSuccess.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
               border: Border.all(color: DesignColors.dSuccess),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.check_circle, color: DesignColors.dSuccess, size: 16),
-                SizedBox(width: 4),
+                Icon(Icons.check_circle, color: DesignColors.dSuccess, size: 16), // Non-standard icon size
+                SizedBox(width: DesignSpacing.xs),
                 Text(
                   'Completed',
                   style: TextStyle(
@@ -254,7 +247,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
               ],
             ),
           ),
-          SizedBox(height: 4),
+          SizedBox(height: DesignSpacing.xs),
           Text(
             '${save.messageCount} messages',
             style: TextStyle(
@@ -272,9 +265,9 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
     return Column(
       children: [
         characterRow,
-        SizedBox(height: 10),
+        SizedBox(height: DesignSpacing.sm + 2), // 10
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(StoryForgeTheme.chipRadius),
           child: LinearProgressIndicator(
             value: progress,
             backgroundColor: DesignColors.dBackground,
@@ -282,7 +275,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             minHeight: 6,
           ),
         ),
-        SizedBox(height: 4),
+        SizedBox(height: DesignSpacing.xs),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -320,7 +313,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
         height: 48,
         child: ElevatedButton.icon(
           onPressed: widget.onNewGame,
-          icon: Icon(Icons.play_arrow, size: 20),
+          icon: Icon(Icons.play_arrow, size: StoryForgeTheme.iconSizeRegular),
           label: Text(
             'Start Story',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -330,9 +323,9 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             foregroundColor: Colors.black,
             elevation: _isHovered ? 6 : 3,
             shadowColor: widget.story.accentColor.withValues(alpha: 0.5),
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: DesignSpacing.md, vertical: DesignSpacing.sm + 4), // 16, 12
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
             ),
           ),
         ),
@@ -348,7 +341,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             height: 48,
             child: ElevatedButton.icon(
               onPressed: widget.onContinue,
-              icon: Icon(isCompleted ? Icons.replay : Icons.play_arrow, size: 18),
+              icon: Icon(isCompleted ? Icons.replay : Icons.play_arrow, size: 18), // Non-standard icon size
               label: Text(
                 isCompleted ? 'Play Again' : 'Continue',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -358,15 +351,15 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
                 foregroundColor: Colors.black,
                 elevation: _isHovered ? 6 : 3,
                 shadowColor: widget.story.accentColor.withValues(alpha: 0.5),
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm + 4, vertical: DesignSpacing.sm + 4), // 12, 12
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
                 ),
               ),
             ),
           ),
         ),
-        SizedBox(width: 10),
+        SizedBox(width: DesignSpacing.sm + 2), // 10
         Expanded(
           flex: 2,
           child: SizedBox(
@@ -375,13 +368,13 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
               onPressed: widget.onNewGame,
               style: OutlinedButton.styleFrom(
                 foregroundColor: DesignColors.dSecondaryText,
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm + 4, vertical: DesignSpacing.sm + 4), // 12, 12
                 side: BorderSide(
                   color: DesignColors.dSecondaryText.withValues(alpha: 0.5),
                   width: 1.5,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
                 ),
               ),
               child: Text(
@@ -418,7 +411,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
       builder: (context) => AlertDialog(
         backgroundColor: DesignColors.dSurfaces,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
         ),
         title: Text(
           'Delete Save?',
