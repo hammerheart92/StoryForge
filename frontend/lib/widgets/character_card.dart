@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/character_info.dart';
+import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/shadows.dart';
+import '../theme/storyforge_theme.dart';
 
 class CharacterCard extends StatelessWidget {
   final CharacterInfo character;
@@ -14,40 +18,29 @@ class CharacterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 320,
-      height: 480,
+      width: StoryForgeTheme.characterCardWidth,
+      height: StoryForgeTheme.characterCardHeight,
       decoration: BoxDecoration(
-        color: Color(0xFF23272C),
-        borderRadius: BorderRadius.circular(24),
+        color: DesignColors.dSurfaces,
+        borderRadius: BorderRadius.circular(StoryForgeTheme.heroCardRadius),
         border: Border.all(
           color: character.accentColor.withOpacity(0.5),
           width: 2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: character.accentColor.withOpacity(0.2),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-          BoxShadow(
-            color: character.accentColor.withOpacity(0.1),
-            blurRadius: 40,
-            spreadRadius: 5,
-          ),
-        ],
+        boxShadow: DesignShadows.glowIntense(character.accentColor),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(DesignSpacing.lg),
         child: Column(
           children: [
             _buildCharacterIcon(),
-            SizedBox(height: 16),
+            SizedBox(height: DesignSpacing.md),
             Expanded(
               child: _buildCharacterInfo(),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: DesignSpacing.md),
             _buildTraits(),
-            SizedBox(height: 16),
+            SizedBox(height: DesignSpacing.md),
             _buildSelectButton(),
           ],
         ),
@@ -67,13 +60,7 @@ class CharacterCard extends StatelessWidget {
             color: character.accentColor.withOpacity(0.5),
             width: 2,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: character.accentColor.withOpacity(0.3),
-              blurRadius: 20,
-              spreadRadius: 2,
-            ),
-          ],
+          boxShadow: DesignShadows.glowSoft(character.accentColor),
         ),
         child: ClipOval(
           child: Image.asset(
@@ -102,13 +89,7 @@ class CharacterCard extends StatelessWidget {
           color: character.accentColor.withOpacity(0.3),
           width: 2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: character.accentColor.withOpacity(0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
+        boxShadow: DesignShadows.glowSoft(character.accentColor),
       ),
       child: Icon(
         character.icon,
@@ -128,11 +109,11 @@ class CharacterCard extends StatelessWidget {
               fontFamily: 'Merriweather',
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFF1F3F5),
+              color: DesignColors.dPrimaryText,
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 8),
+          SizedBox(height: DesignSpacing.sm),
           Text(
             character.tagline,
             style: TextStyle(
@@ -143,14 +124,14 @@ class CharacterCard extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 16),
+          SizedBox(height: DesignSpacing.md),
           Text(
             character.description,
             style: TextStyle(
               fontFamily: 'Roboto',
               fontSize: 14,
               height: 1.5,
-              color: Color(0xFFB0B3B8),
+              color: DesignColors.dSecondaryText,
             ),
             textAlign: TextAlign.center,
           ),
@@ -161,15 +142,15 @@ class CharacterCard extends StatelessWidget {
 
   Widget _buildTraits() {
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: DesignSpacing.sm,
+      runSpacing: DesignSpacing.sm,
       alignment: WrapAlignment.center,
       children: character.traits.map((trait) {
         return Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm + 4, vertical: DesignSpacing.xs + 2), // 12, 6
           decoration: BoxDecoration(
             color: character.accentColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
             border: Border.all(
               color: character.accentColor.withOpacity(0.3),
               width: 1,
@@ -197,7 +178,7 @@ class CharacterCard extends StatelessWidget {
         foregroundColor: Colors.black,
         minimumSize: Size(double.infinity, 50),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(StoryForgeTheme.buttonRadius),
         ),
         elevation: 0,
         shadowColor: character.accentColor.withOpacity(0.5),

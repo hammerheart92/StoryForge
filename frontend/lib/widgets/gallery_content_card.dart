@@ -4,6 +4,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/gallery_content.dart';
+import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/shadows.dart';
+import '../theme/storyforge_theme.dart';
 
 /// Beautiful card for displaying gallery content items.
 ///
@@ -41,14 +45,14 @@ class GalleryContentCard extends StatelessWidget {
   Color _getRarityColor() {
     switch (content.rarity.toLowerCase()) {
       case 'legendary':
-        return Colors.purple;
+        return DesignColors.rarityLegendary;
       case 'epic':
-        return Colors.amber;
+        return DesignColors.rarityEpic;
       case 'rare':
-        return Colors.blue;
+        return DesignColors.rarityRare;
       case 'common':
       default:
-        return Colors.grey.shade600;
+        return DesignColors.rarityCommon;
     }
   }
 
@@ -73,18 +77,12 @@ class GalleryContentCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
         border: Border.all(
           color: rarityColor,
           width: 3,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: rarityColor.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: DesignShadows.glowSoft(rarityColor),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(9), // 12 - 3 (border width)
@@ -128,20 +126,14 @@ class GalleryContentCard extends StatelessWidget {
 
         // Rarity badge (top-left, always visible)
         Positioned(
-          top: 8,
-          left: 8,
+          top: DesignSpacing.sm,
+          left: DesignSpacing.sm,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Non-standard badge padding
             decoration: BoxDecoration(
               color: rarityColor,
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(StoryForgeTheme.chipRadius),
+              boxShadow: DesignShadows.sm,
             ),
             child: Text(
               content.rarity.toUpperCase(),
@@ -158,24 +150,18 @@ class GalleryContentCard extends StatelessWidget {
         // Unlocked checkmark (top-right)
         if (isUnlocked)
           Positioned(
-            top: 8,
-            right: 8,
+            top: DesignSpacing.sm,
+            right: DesignSpacing.sm,
             child: Container(
-              padding: const EdgeInsets.all(4),
+              padding: EdgeInsets.all(DesignSpacing.xs),
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: DesignColors.lSuccess,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.5),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                boxShadow: DesignShadows.glowSoft(DesignColors.lSuccess),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check,
-                size: 14,
+                size: StoryForgeTheme.iconSizeSmall,
                 color: Colors.white,
               ),
             ),
@@ -192,14 +178,14 @@ class GalleryContentCard extends StatelessWidget {
           color: Colors.black.withOpacity(0.4),
           child: Center(
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(DesignSpacing.sm + 4), // 12
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.5),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.lock,
-                size: 32,
+                size: StoryForgeTheme.iconSizeLarge,
                 color: Colors.white70,
               ),
             ),
@@ -211,7 +197,7 @@ class GalleryContentCard extends StatelessWidget {
 
   Widget _buildInfoArea(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(DesignSpacing.sm),
       color: Theme.of(context).cardColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,21 +227,21 @@ class GalleryContentCard extends StatelessWidget {
 
   Widget _buildUnlockedStatus() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm, vertical: DesignSpacing.xs),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.green.withOpacity(0.3)),
+        color: DesignColors.lSuccess.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
+        border: Border.all(color: DesignColors.lSuccess.withOpacity(0.3)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle, size: 14, color: Colors.green),
-          SizedBox(width: 4),
+          Icon(Icons.check_circle, size: StoryForgeTheme.iconSizeSmall, color: DesignColors.lSuccess),
+          SizedBox(width: DesignSpacing.xs),
           Text(
             'Unlocked',
             style: TextStyle(
-              color: Colors.green,
+              color: DesignColors.lSuccess,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -269,13 +255,13 @@ class GalleryContentCard extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: onUnlockTap,  // ← FIXED: Always allow tap, dialog handles the check
+        onPressed: onUnlockTap,  // Always allow tap, dialog handles the check
         style: ElevatedButton.styleFrom(
-          backgroundColor: hasEnoughGems ? Colors.amber.shade700 : Colors.grey,
+          backgroundColor: hasEnoughGems ? DesignColors.rarityEpic : Colors.grey,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: EdgeInsets.symmetric(vertical: DesignSpacing.xs),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
           ),
           elevation: hasEnoughGems ? 2 : 0,
         ),
@@ -283,8 +269,8 @@ class GalleryContentCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.diamond, size: 14),
-            const SizedBox(width: 4),
+            Icon(Icons.diamond, size: StoryForgeTheme.iconSizeSmall),
+            SizedBox(width: DesignSpacing.xs),
             Text(
               '${content.unlockCost}',
               style: const TextStyle(

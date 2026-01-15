@@ -11,7 +11,9 @@ import 'package:flutter/material.dart';
 import '../models/narrative_message.dart';
 import '../services/settings_service.dart';
 import '../theme/storyforge_theme.dart';
+import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
+import '../theme/tokens/shadows.dart';
 import 'character_style_helper.dart';
 import 'typewriter_text.dart';
 
@@ -38,13 +40,13 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
   double _textSize = 16.0;       // Default: Medium (16px)
 
   // Fantasia-style color palette
-  static const Color _darkCardBackground = Color(0xFF1A1A1A);     // Dark gray
+  static const Color _darkCardBackground = Color(0xFF1A1A1A);     // Dark gray (darker than dSurfaces for contrast)
   static const Color _cardBorder = Color(0xFF2A2A2A);             // Subtle border
-  static const Color _textPrimary = Color(0xFFE8E8E8);            // Light text
-  static const Color _actionTextGray = Color(0xFFB0B0B0);         // Gray for action text
-  static const Color _userCardBackground = Color(0xFFE8EEF5);     // Light blue for user
-  static const Color _userTextDark = Color(0xFF1A1A1A);           // Dark text for user
-  static const Color _userActionDark = Color(0xFF2A2A2A);         // Dark action for user
+  static final Color _textPrimary = DesignColors.dPrimaryText;    // Light text
+  static final Color _actionTextGray = DesignColors.dSecondaryText; // Gray for action text
+  static final Color _userCardBackground = DesignColors.lSurfaces; // Light blue for user
+  static final Color _userTextDark = DesignColors.lPrimaryText;    // Dark text for user
+  static final Color _userActionDark = DesignColors.lSecondaryText; // Dark action for user
 
   // Typewriter timing constant (pause between action and dialogue)
   static const int _pauseBetweenMs = 150;
@@ -106,13 +108,7 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      boxShadow: DesignShadows.sm,
                     ),
                     child: CircleAvatar(
                       radius: StoryForgeTheme.avatarRadius,
@@ -131,7 +127,7 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                   const SizedBox(width: DesignSpacing.sm),
 
                   // Character name - dark background pill
-                  Flexible(  // ⭐ ADDED: Wrapper for long names
+                  Flexible(  // Wrapper for long names
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: DesignSpacing.sm,
@@ -139,18 +135,12 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                       ),
                       decoration: BoxDecoration(
                         color: _darkCardBackground.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
                         border: Border.all(
                           color: _cardBorder.withOpacity(0.6),
                           width: 1,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
+                        boxShadow: DesignShadows.sm,
                       ),
                       child: Text(
                         widget.message.speakerName,
@@ -173,7 +163,7 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
 
               const SizedBox(height: DesignSpacing.sm),
 
-              // ⭐ UPDATED: Message content card - now shows actionText + dialogue
+              // Message content card - shows actionText + dialogue
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(DesignSpacing.md),
@@ -192,11 +182,7 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                   ),
                   // Soft shadow + character glow
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
+                    ...DesignShadows.md,
                     // Character-specific glow
                     if (!isUser)
                       BoxShadow(
@@ -214,7 +200,7 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                     // ⭐ PHASE 4: Uses user's text size setting
                     if (widget.message.hasActionText && widget.message.actionText != null)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: EdgeInsets.only(bottom: DesignSpacing.sm + 4), // 12
                         child: (widget.shouldAnimate && !_isInstantMode)
                             ? TypewriterText(
                                 text: widget.message.actionText!,
@@ -297,7 +283,7 @@ class _MoodIndicator extends StatelessWidget {
     // Safe mood color retrieval with fallback
     final moodColor = mood.isNotEmpty
         ? StoryForgeTheme.getMoodColor(mood)
-        : Colors.grey;
+        : DesignColors.dSecondaryText;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -307,7 +293,7 @@ class _MoodIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         // Light background with mood color tint
         color: moodColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
         border: Border.all(
           color: moodColor.withOpacity(0.4),
           width: 1.5,
