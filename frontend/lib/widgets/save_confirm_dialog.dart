@@ -3,6 +3,8 @@
 
 import 'package:flutter/material.dart';
 import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/storyforge_theme.dart';
 
 class SaveConfirmDialog extends StatelessWidget {
   final String storyTitle;
@@ -34,12 +36,12 @@ class SaveConfirmDialog extends StatelessWidget {
     return AlertDialog(
       backgroundColor: DesignColors.dSurfaces,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.largeCardRadius),
       ),
       title: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: EdgeInsets.all(DesignSpacing.sm),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: DesignColors.dWarning.withValues(alpha: 0.2),
@@ -47,10 +49,10 @@ class SaveConfirmDialog extends StatelessWidget {
             child: Icon(
               Icons.warning_amber_rounded,
               color: DesignColors.dWarning,
-              size: 24,
+              size: StoryForgeTheme.iconSizeMedium,
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: DesignSpacing.sm + 4), // 12
           Text(
             'Start New Game?',
             style: TextStyle(
@@ -73,7 +75,7 @@ class SaveConfirmDialog extends StatelessWidget {
               fontSize: 14,
             ),
           ),
-          SizedBox(height: 4),
+          SizedBox(height: DesignSpacing.xs),
           Text(
             '"$storyTitle"',
             style: TextStyle(
@@ -82,7 +84,7 @@ class SaveConfirmDialog extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 4),
+          SizedBox(height: DesignSpacing.xs),
           Text(
             'will be lost. This cannot be undone.',
             style: TextStyle(
@@ -92,7 +94,7 @@ class SaveConfirmDialog extends StatelessWidget {
           ),
         ],
       ),
-      actionsPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+      actionsPadding: EdgeInsets.fromLTRB(DesignSpacing.md, 0, DesignSpacing.md, DesignSpacing.md),
       actions: [
         Row(
           children: [
@@ -105,14 +107,14 @@ class SaveConfirmDialog extends StatelessWidget {
                     color: DesignColors.dSecondaryText.withValues(alpha: 0.5),
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: DesignSpacing.sm + 4), // 12
                 ),
                 child: Text('Cancel'),
               ),
             ),
-            SizedBox(width: 12),
+            SizedBox(width: DesignSpacing.sm + 4), // 12
             Expanded(
               child: ElevatedButton(
                 onPressed: onConfirm,
@@ -120,9 +122,9 @@ class SaveConfirmDialog extends StatelessWidget {
                   backgroundColor: DesignColors.dWarning,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: DesignSpacing.sm + 4), // 12
                 ),
                 child: Text(
                   'Start New',

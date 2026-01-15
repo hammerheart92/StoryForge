@@ -50,7 +50,7 @@ class ChoiceButton extends StatelessWidget {
             // Icon based on speaker
             Icon(
               _getIconForSpeaker(choice.nextSpeaker),
-              size: 20,
+              size: StoryForgeTheme.iconSizeRegular,
               color: Colors.white,
             ),
 
@@ -65,9 +65,9 @@ class ChoiceButton extends StatelessWidget {
             ),
 
             // Arrow icon
-            const Icon(
+            Icon(
               Icons.arrow_forward,
-              size: 20,
+              size: StoryForgeTheme.iconSizeRegular,
               color: Colors.white,
             ),
           ],

@@ -2,6 +2,10 @@
 // Compact gem balance display widget for AppBar
 
 import 'package:flutter/material.dart';
+import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/tokens/shadows.dart';
+import '../theme/storyforge_theme.dart';
 
 /// Displays user's gem balance with diamond icon.
 /// Designed for use in AppBar actions.
@@ -25,27 +29,21 @@ class GemCounterWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm + 4, vertical: DesignSpacing.xs + 2), // 12, 6
       decoration: BoxDecoration(
-        color: Colors.amber.shade700,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.amber.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: DesignColors.rarityEpic,
+        borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
+        boxShadow: DesignShadows.glowSoft(DesignColors.rarityEpic),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.diamond,
-            size: 18,
+            size: 18, // Non-standard icon size
             color: Colors.white,
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: DesignSpacing.xs),
           Text(
             '$gemBalance',
             style: const TextStyle(

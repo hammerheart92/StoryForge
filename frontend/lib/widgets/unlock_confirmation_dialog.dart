@@ -3,6 +3,9 @@
 
 import 'package:flutter/material.dart';
 import '../models/gallery_content.dart';
+import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/storyforge_theme.dart';
 
 /// Dialog that confirms user wants to spend gems to unlock content.
 /// Shows item details, cost, current balance, and balance after unlock.
@@ -35,14 +38,14 @@ class UnlockConfirmationDialog extends StatelessWidget {
   Color _getRarityColor() {
     switch (content.rarity.toLowerCase()) {
       case 'legendary':
-        return Colors.purple;
+        return DesignColors.rarityLegendary;
       case 'epic':
-        return Colors.amber;
+        return DesignColors.rarityEpic;
       case 'rare':
-        return Colors.blue;
+        return DesignColors.rarityRare;
       case 'common':
       default:
-        return Colors.grey.shade600;
+        return DesignColors.rarityCommon;
     }
   }
 
@@ -76,18 +79,18 @@ class UnlockConfirmationDialog extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(DesignSpacing.sm),
                 decoration: BoxDecoration(
                   color: _getRarityColor().withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
                 ),
                 child: Icon(
                   _getContentTypeIcon(),
-                  size: 32,
+                  size: StoryForgeTheme.iconSizeLarge,
                   color: _getRarityColor(),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: DesignSpacing.sm + 4), // 12
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,15 +101,15 @@ class UnlockConfirmationDialog extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: DesignSpacing.xs),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: DesignSpacing.xs + 2, // 6
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color: _getRarityColor(),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(StoryForgeTheme.chipRadius),
                       ),
                       child: Text(
                         content.rarity.toUpperCase(),
@@ -122,17 +125,17 @@ class UnlockConfirmationDialog extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: DesignSpacing.md),
           const Divider(),
-          const SizedBox(height: 16),
+          SizedBox(height: DesignSpacing.md),
           // Cost info
           _buildInfoRow(
             'Cost:',
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.diamond, size: 18, color: Colors.amber.shade700),
-                const SizedBox(width: 4),
+                Icon(Icons.diamond, size: 18, color: DesignColors.rarityEpic), // Non-standard icon size
+                SizedBox(width: DesignSpacing.xs),
                 Text(
                   '${content.unlockCost}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
@@ -198,14 +201,14 @@ class UnlockConfirmationDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: canAfford ? () => Navigator.pop(context, true) : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.amber.shade700,
+            backgroundColor: DesignColors.rarityEpic,
             foregroundColor: Colors.white,
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.lock_open, size: 18),
-              SizedBox(width: 4),
+              Icon(Icons.lock_open, size: 18), // Non-standard icon size
+              SizedBox(width: DesignSpacing.xs),
               Text('Unlock'),
             ],
           ),

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import '../models/story_info.dart';
 import '../models/save_info.dart';
 import '../theme/tokens/colors.dart';
+import '../theme/tokens/spacing.dart';
+import '../theme/storyforge_theme.dart';
 
 class SaveSlotCard extends StatelessWidget {
   final StoryInfo story;
@@ -30,10 +32,10 @@ class SaveSlotCard extends StatelessWidget {
     final isEmpty = save == null;
 
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(DesignSpacing.md),
       decoration: BoxDecoration(
         color: DesignColors.dSurfaces,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
         border: Border.all(
           color: isEmpty
               ? DesignColors.dSecondaryText.withValues(alpha: 0.3)
@@ -46,10 +48,10 @@ class SaveSlotCard extends StatelessWidget {
         children: [
           _buildHeader(),
           if (!isEmpty) ...[
-            SizedBox(height: 12),
+            SizedBox(height: DesignSpacing.sm + 4), // 12
             _buildSaveInfo(),
           ],
-          SizedBox(height: 12),
+          SizedBox(height: DesignSpacing.sm + 4), // 12
           _buildActions(),
         ],
       ),
@@ -60,10 +62,10 @@ class SaveSlotCard extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm, vertical: DesignSpacing.xs),
           decoration: BoxDecoration(
             color: story.accentColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(StoryForgeTheme.badgeRadius),
           ),
           child: Text(
             'Slot $slotNumber',
@@ -74,7 +76,7 @@ class SaveSlotCard extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: 8),
+        SizedBox(width: DesignSpacing.sm),
         if (save != null)
           Expanded(
             child: Text(
@@ -111,35 +113,35 @@ class SaveSlotCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.message, size: 12, color: DesignColors.dSecondaryText),
-            SizedBox(width: 4),
+            Icon(Icons.message, size: 12, color: DesignColors.dSecondaryText), // Non-standard icon size
+            SizedBox(width: DesignSpacing.xs),
             Text(
               '$messageCount messages',
               style: TextStyle(color: DesignColors.dSecondaryText, fontSize: 12),
             ),
-            SizedBox(width: 12),
-            Icon(Icons.schedule, size: 12, color: DesignColors.dSecondaryText),
-            SizedBox(width: 4),
+            SizedBox(width: DesignSpacing.sm + 4), // 12
+            Icon(Icons.schedule, size: 12, color: DesignColors.dSecondaryText), // Non-standard icon size
+            SizedBox(width: DesignSpacing.xs),
             Text(
               timeAgo,
               style: TextStyle(color: DesignColors.dSecondaryText, fontSize: 12),
             ),
           ],
         ),
-        SizedBox(height: 8),
+        SizedBox(height: DesignSpacing.sm),
         if (isCompleted)
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm, vertical: DesignSpacing.xs),
             decoration: BoxDecoration(
               color: DesignColors.dSuccess.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
               border: Border.all(color: DesignColors.dSuccess),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.check_circle, color: DesignColors.dSuccess, size: 14),
-                SizedBox(width: 4),
+                Icon(Icons.check_circle, color: DesignColors.dSuccess, size: StoryForgeTheme.iconSizeSmall),
+                SizedBox(width: DesignSpacing.xs),
                 Text(
                   'Completed',
                   style: TextStyle(
@@ -173,7 +175,7 @@ class SaveSlotCard extends StatelessWidget {
         height: 44,
         child: ElevatedButton.icon(
           onPressed: onNewSave,
-          icon: Icon(Icons.add, size: 18),
+          icon: Icon(Icons.add, size: 18), // Non-standard icon size
           label: FittedBox(
             fit: BoxFit.scaleDown,
             child: Text('New Save'),
@@ -181,9 +183,9 @@ class SaveSlotCard extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: story.accentColor,
             foregroundColor: Colors.black,
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: DesignSpacing.md, vertical: DesignSpacing.sm),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
             ),
           ),
         ),
@@ -200,7 +202,7 @@ class SaveSlotCard extends StatelessWidget {
               onPressed: onContinue,
               icon: Icon(
                 save!.isCompleted ? Icons.replay : Icons.play_arrow,
-                size: 18,
+                size: 18, // Non-standard icon size
               ),
               label: FittedBox(
                 fit: BoxFit.scaleDown,
@@ -209,15 +211,15 @@ class SaveSlotCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: story.accentColor,
                 foregroundColor: Colors.black,
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm + 4, vertical: DesignSpacing.sm), // 12, 8
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
                 ),
               ),
             ),
           ),
         ),
-        SizedBox(width: 8),
+        SizedBox(width: DesignSpacing.sm),
         SizedBox(
           height: 44,
           width: 44,
@@ -228,7 +230,7 @@ class SaveSlotCard extends StatelessWidget {
             style: IconButton.styleFrom(
               backgroundColor: DesignColors.dDanger.withValues(alpha: 0.1),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(StoryForgeTheme.inputRadius),
               ),
             ),
           ),
