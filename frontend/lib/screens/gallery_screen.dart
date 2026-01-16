@@ -2,14 +2,19 @@
 // Phase B: Gallery screen with polished UI and confirmation dialogs
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/achievement.dart';
 import '../models/gallery_content.dart';
+import '../providers/tasks_providers.dart';
 import '../services/gallery_service.dart';
+import '../services/unlock_tracker_service.dart';
 import '../theme/storyforge_theme.dart';
 import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
 import '../theme/tokens/typography.dart';
 import '../widgets/gallery_content_card.dart';
 import '../widgets/gem_counter_widget.dart';
+import '../widgets/tasks_icon_button.dart';
 import '../widgets/unlock_confirmation_dialog.dart';
 
 /// Gallery screen displaying unlockable content for a story.
@@ -29,16 +34,16 @@ import '../widgets/unlock_confirmation_dialog.dart';
 ///   ),
 /// );
 /// ```
-class GalleryScreen extends StatefulWidget {
+class GalleryScreen extends ConsumerStatefulWidget {
   final String storyId;
 
   const GalleryScreen({required this.storyId, super.key});
 
   @override
-  State<GalleryScreen> createState() => _GalleryScreenState();
+  ConsumerState<GalleryScreen> createState() => _GalleryScreenState();
 }
 
-class _GalleryScreenState extends State<GalleryScreen>
+class _GalleryScreenState extends ConsumerState<GalleryScreen>
     with SingleTickerProviderStateMixin {
   final GalleryService _galleryService = GalleryService();
   final String _userId = 'default';
@@ -174,6 +179,20 @@ class _GalleryScreenState extends State<GalleryScreen>
           _unlockedIds.add(item.contentId);
           _gemBalance = result.newBalance ?? (_gemBalance - item.unlockCost);
         });
+
+        // Track for achievements
+        final newlyClaimable = await UnlockTrackerService.trackUnlock(item);
+
+        if (newlyClaimable.isNotEmpty) {
+          final achievement = Achievement.getById(newlyClaimable.first);
+          if (achievement != null) {
+            _showAchievementSnackbar(achievement);
+          }
+          // Refresh badge count and tasks data
+          ref.invalidate(tasksBadgeCountProvider);
+          ref.invalidate(tasksProvider);
+        }
+
         _showMessage('Unlocked "${item.title}"!');
       } else {
         _showMessage(result.message ?? 'Failed to unlock');
@@ -189,12 +208,47 @@ class _GalleryScreenState extends State<GalleryScreen>
     );
   }
 
+  void _showAchievementSnackbar(Achievement achievement) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              Icons.stars,
+              color: DesignColors.rarityEpic,
+              size: StoryForgeTheme.iconSizeMedium,
+            ),
+            SizedBox(width: DesignSpacing.sm),
+            Expanded(
+              child: Text(
+                'Achievement unlocked: ${achievement.title}!',
+                style: DesignTypography.bodyRegular.copyWith(
+                  color: DesignColors.dPrimaryText,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: DesignColors.dSurfaces,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'View',
+          textColor: DesignColors.rarityEpic,
+          onPressed: () => Navigator.pushNamed(context, '/tasks'),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Gallery - ${widget.storyId}'),
         actions: [
+          // Tasks icon with badge
+          const TasksIconButton(),
+          SizedBox(width: DesignSpacing.sm),
           // Gem counter widget
           Padding(
             padding: const EdgeInsets.only(right: DesignSpacing.md),

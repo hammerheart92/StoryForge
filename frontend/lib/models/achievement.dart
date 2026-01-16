@@ -35,6 +35,9 @@ class Achievement {
   });
 
   /// Static list of all 7 achievements in StoryForge
+  /// Updated with realistic targets based on actual gallery content:
+  /// - 3 scenes, 3 characters, 2 lore, 2 extras = 10 total items
+  /// - 1 legendary item (The Sea Witch)
   static const List<Achievement> all = [
     Achievement(
       id: 'first_steps',
@@ -48,47 +51,47 @@ class Achievement {
     Achievement(
       id: 'scene_explorer',
       title: 'Scene Explorer',
-      description: 'Unlock 5 scenes',
+      description: 'Unlock 3 scenes',
       gemReward: 50,
       rarity: AchievementRarity.common,
       trackingKey: 'scenes_unlocked',
-      targetCount: 5,
+      targetCount: 3, // Fixed: was 5, now matches actual 3 scenes
     ),
     Achievement(
       id: 'character_collector',
       title: 'Character Collector',
-      description: 'Unlock 4 characters',
+      description: 'Unlock 3 characters',
       gemReward: 100,
       rarity: AchievementRarity.rare,
       trackingKey: 'characters_unlocked',
-      targetCount: 4,
+      targetCount: 3, // Fixed: was 4, now matches actual 3 characters
     ),
     Achievement(
       id: 'lore_master',
       title: 'Lore Master',
-      description: 'Unlock 10 lore items',
+      description: 'Unlock 2 lore items',
       gemReward: 75,
       rarity: AchievementRarity.common,
       trackingKey: 'lore_unlocked',
-      targetCount: 10,
+      targetCount: 2, // Fixed: was 10, now matches actual 2 lore items
     ),
     Achievement(
       id: 'legendary_hunter',
       title: 'Legendary Hunter',
-      description: 'Unlock 3 legendary items',
+      description: 'Unlock 1 legendary item',
       gemReward: 150,
       rarity: AchievementRarity.epic,
       trackingKey: 'legendary_unlocked',
-      targetCount: 3,
+      targetCount: 1, // Fixed: was 3, now matches actual 1 legendary (The Sea Witch)
     ),
     Achievement(
       id: 'gallery_completionist',
       title: 'Gallery Completionist',
-      description: 'Unlock 50 total items',
+      description: 'Unlock 10 total items',
       gemReward: 300,
       rarity: AchievementRarity.legendary,
       trackingKey: 'total_unlocked',
-      targetCount: 50,
+      targetCount: 10, // Fixed: was 50, now matches actual 10 total items
     ),
     Achievement(
       id: 'story_starter',

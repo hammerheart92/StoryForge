@@ -14,6 +14,7 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class TasksController {
     private static final Logger logger = LoggerFactory.getLogger(TasksController.class);
+    private final Map<String, Integer> userGems = new HashMap<>();
 
     private final CurrencyService currencyService;
 
@@ -208,5 +209,21 @@ public class TasksController {
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Failed to get tasks status"));
         }
+    }
+
+    // Temporary debug method for adding gems
+    @PostMapping("/debug/add-gems")
+    public ResponseEntity<?> debugAddGems(@RequestParam(defaultValue = "100") int amount) {
+        String userId = "default";
+
+        // Simply add gems without any validation
+        userGems.put(userId, userGems.getOrDefault(userId, 0) + amount);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("gemsAwarded", amount);
+        response.put("newBalance", userGems.get(userId));
+
+        return ResponseEntity.ok(response);
     }
 }
