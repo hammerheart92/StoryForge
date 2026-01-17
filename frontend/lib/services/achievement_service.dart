@@ -234,6 +234,7 @@ class AchievementService {
       'lore_unlocked': 0,
       'legendary_unlocked': 0,
       'stories_started': 0,
+      'stories_completed': 0,
     };
   }
 }

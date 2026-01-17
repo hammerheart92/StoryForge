@@ -81,4 +81,24 @@ class UnlockTrackerService {
       return [];
     }
   }
+
+  /// Track a story completion (when reaching an ending)
+  ///
+  /// Returns list of achievement IDs that became claimable
+  static Future<List<String>> trackStoryCompletion() async {
+    try {
+      print('🏆 Tracking story completion');
+
+      final claimable = await AchievementService.incrementCounter('stories_completed');
+
+      if (claimable.isNotEmpty) {
+        print('🎯 Newly claimable achievements: $claimable');
+      }
+
+      return claimable;
+    } catch (e) {
+      print('❌ Error tracking story completion: $e');
+      return [];
+    }
+  }
 }

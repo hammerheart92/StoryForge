@@ -102,6 +102,15 @@ class Achievement {
       trackingKey: 'stories_started',
       targetCount: 3,
     ),
+    Achievement(
+      id: 'first_story',
+      title: 'First Story',
+      description: 'Complete 1 story',
+      gemReward: 10,
+      rarity: AchievementRarity.common,
+      trackingKey: 'stories_completed',
+      targetCount: 1,
+    ),
   ];
 
   /// Get achievement by ID
