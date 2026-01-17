@@ -38,7 +38,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   bool _isCheckInLoading = false;
   String? _claimingAchievementId;
   int _gemBalance = 0;
-  int _debugDay = 2; // Add this line - Start at day 2 (since day 1 is claimed)
 
   @override
   void initState() {
