@@ -16,6 +16,7 @@ class SavedStoryCard extends StatefulWidget {
   final VoidCallback onNewGame;
   final VoidCallback? onDelete;
   final VoidCallback? onGallery;  // Phase B: Gallery navigation
+  final VoidCallback? onViewEndings;  // Session 34: View endings navigation
 
   const SavedStoryCard({
     super.key,
@@ -25,6 +26,7 @@ class SavedStoryCard extends StatefulWidget {
     required this.onNewGame,
     this.onDelete,
     this.onGallery,
+    this.onViewEndings,
   });
 
   @override
@@ -148,7 +150,20 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
               tooltip: 'Gallery',
               onPressed: widget.onGallery,
               constraints: BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.all(6), // Non-standard badge padding
+              padding: EdgeInsets.all(6),
+            ),
+          ),
+        // Session 34: View endings icon button
+        if (widget.save != null && widget.onViewEndings != null)
+          Padding(
+            padding: EdgeInsets.only(right: DesignSpacing.xs),
+            child: IconButton(
+              icon: Icon(Icons.emoji_events, size: StoryForgeTheme.iconSizeRegular),
+              color: DesignColors.dSuccess.withValues(alpha: 0.7),
+              tooltip: 'View Endings',
+              onPressed: widget.onViewEndings,
+              constraints: BoxConstraints(minWidth: 36, minHeight: 36),
+              padding: EdgeInsets.all(6),
             ),
           ),
         if (widget.save?.isCompleted == true)

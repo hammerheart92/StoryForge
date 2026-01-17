@@ -13,6 +13,7 @@ import '../theme/tokens/spacing.dart';
 import '../theme/tokens/typography.dart';
 import 'story_slot_selection_screen.dart';
 import 'gallery_screen.dart';
+import 'story_endings_screen.dart';
 
 class StoryLibraryScreen extends ConsumerStatefulWidget {
   const StoryLibraryScreen({super.key});
@@ -255,6 +256,9 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
                       ? () => _handleDelete(story.id)
                       : null,
                   onGallery: () => _handleGallery(story.id),
+                  onViewEndings: save != null
+                      ? () => _handleViewEndings(story.id)
+                      : null,
                 );
               }).toList(),
             ),
@@ -333,6 +337,16 @@ class _StoryLibraryScreenState extends ConsumerState<StoryLibraryScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => GalleryScreen(storyId: storyId),
+      ),
+    );
+  }
+
+  // Session 34: Navigate to endings screen for a story
+  void _handleViewEndings(String storyId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StoryEndingsScreen(storyId: storyId),
       ),
     );
   }

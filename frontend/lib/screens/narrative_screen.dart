@@ -5,16 +5,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/narrative_message.dart';
+import '../models/story_ending.dart';
 import '../providers/narrative_provider.dart';
+import '../services/story_completion_service.dart';
+import '../services/unlock_tracker_service.dart';
 import '../widgets/character_background.dart';
 import '../widgets/character_message_card.dart';
 import '../widgets/choices_section.dart';
 import '../widgets/loading_overlay.dart';
+import '../widgets/story_completion_dialog.dart';
 import '../theme/storyforge_theme.dart';
 import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
 import '../theme/tokens/typography.dart';
 import 'debug_screen.dart';
+import 'story_endings_screen.dart';
+import 'story_library_screen.dart';
 
 class NarrativeScreen extends ConsumerStatefulWidget {
   /// Optional restored messages for "Continue Story" functionality
@@ -56,6 +62,9 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
   bool _isRevealActive = true;
   String? _lastSpeaker;
   Timer? _revealTimer;
+
+  /// Session 34: Track if completion dialog was already shown
+  bool _completionHandled = false;
 
   @override
   void initState() {
@@ -155,10 +164,17 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
     }
     _lastSpeaker = currentSpeaker;
 
-    // Auto-scroll when new messages arrive
+    // Auto-scroll when new messages arrive AND detect story completion
     ref.listen(narrativeStateProvider, (previous, next) {
       if (previous?.history.length != next.history.length) {
         _scrollToBottom();
+      }
+
+      // Session 34: Detect story completion
+      if (!_completionHandled &&
+          next.currentResponse?.isEnding == true &&
+          previous?.currentResponse?.isEnding != true) {
+        _handleStoryCompletion(next.currentResponse!.endingId);
       }
     });
 
@@ -265,6 +281,75 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
         ],
       ),
     );
+  }
+
+  /// Session 34: Handle story completion - show dialog and track achievement
+  Future<void> _handleStoryCompletion(String? endingId) async {
+    if (_completionHandled) return;
+    _completionHandled = true;
+
+    print('🏆 Story completion detected! Ending: $endingId');
+
+    // Fetch ending details
+    final service = StoryCompletionService();
+    final endings = await service.getStoryEndingsSafe(widget.storyId);
+
+    // Find the specific ending, or use a fallback
+    final ending = endings.isNotEmpty
+        ? endings.firstWhere(
+            (e) => e.id == endingId,
+            orElse: () => StoryEnding(
+              id: endingId ?? 'unknown',
+              title: 'Story Complete',
+              description: 'You have reached the end of this tale.',
+              discovered: true,
+            ),
+          )
+        : StoryEnding(
+            id: endingId ?? 'unknown',
+            title: 'Story Complete',
+            description: 'You have reached the end of this tale.',
+            discovered: true,
+          );
+
+    // Track completion for achievements
+    final claimableAchievements = await UnlockTrackerService.trackStoryCompletion();
+    final achievementUnlocked = claimableAchievements.isNotEmpty
+        ? claimableAchievements.first
+        : null;
+
+    if (achievementUnlocked != null) {
+      print('🎯 Achievement unlocked: $achievementUnlocked');
+    }
+
+    // Show completion dialog
+    if (mounted) {
+      final result = await StoryCompletionDialog.show(
+        context: context,
+        ending: ending,
+        gemsAwarded: 100,
+        achievementUnlocked: achievementUnlocked,
+      );
+
+      // Handle user choice
+      if (mounted) {
+        if (result == 'view_endings') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StoryEndingsScreen(storyId: widget.storyId),
+            ),
+          );
+        } else if (result == 'continue') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const StoryLibraryScreen(),
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
