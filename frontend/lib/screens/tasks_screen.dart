@@ -147,35 +147,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ),
         ),
         actions: [
-          // Debug: Add gems for testing
-          IconButton(
-            icon: const Icon(Icons.add_circle),
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-
-              try {
-                // Call debug endpoint directly
-                final response = await http.post(
-                  Uri.parse('http://localhost:8080/api/tasks/debug/add-gems?amount=100'),
-                  headers: {'Content-Type': 'application/json'},
-                );
-
-                if (response.statusCode == 200) {
-                  await _loadGemBalance();
-                  ref.invalidate(tasksProvider);
-
-                  messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Added 100 gems'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                }
-              } catch (e) {
-                print('Error: $e');
-              }
-            },
-          ),
           // Gem counter
           Padding(
             padding: EdgeInsets.only(right: DesignSpacing.md),

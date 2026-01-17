@@ -26,21 +26,21 @@ public class TasksController {
     /**
      * POST /api/tasks/check-in
      * Perform daily check-in and award gems
-     *
+     * <p>
      * Request body:
      * {
-     *   "userId": "default",
-     *   "day": 1,
-     *   "gemAmount": 20
+     * "userId": "default",
+     * "day": 1,
+     * "gemAmount": 20
      * }
-     *
+     * <p>
      * Response:
      * {
-     *   "success": true,
-     *   "gemsAwarded": 20,
-     *   "newBalance": 145,
-     *   "day": 1,
-     *   "source": "daily_check_in_day1"
+     * "success": true,
+     * "gemsAwarded": 20,
+     * "newBalance": 145,
+     * "day": 1,
+     * "source": "daily_check_in_day1"
      * }
      */
     @PostMapping("/check-in")
@@ -100,21 +100,21 @@ public class TasksController {
     /**
      * POST /api/tasks/claim-achievement
      * Claim achievement reward
-     *
+     * <p>
      * Request body:
      * {
-     *   "userId": "default",
-     *   "achievementId": "scene_explorer",
-     *   "gemAmount": 50
+     * "userId": "default",
+     * "achievementId": "scene_explorer",
+     * "gemAmount": 50
      * }
-     *
+     * <p>
      * Response:
      * {
-     *   "success": true,
-     *   "gemsAwarded": 50,
-     *   "newBalance": 195,
-     *   "achievementId": "scene_explorer",
-     *   "source": "achievement_scene_explorer"
+     * "success": true,
+     * "gemsAwarded": 50,
+     * "newBalance": 195,
+     * "achievementId": "scene_explorer",
+     * "source": "achievement_scene_explorer"
      * }
      */
     @PostMapping("/claim-achievement")
@@ -173,13 +173,13 @@ public class TasksController {
     /**
      * GET /api/tasks/status?userId=default
      * Get user's gem balance and stats
-     *
+     * <p>
      * Response:
      * {
-     *   "userId": "default",
-     *   "gemBalance": 145,
-     *   "totalEarned": 320,
-     *   "totalSpent": 175
+     * "userId": "default",
+     * "gemBalance": 145,
+     * "totalEarned": 320,
+     * "totalSpent": 175
      * }
      */
     @GetMapping("/status")
@@ -209,21 +209,5 @@ public class TasksController {
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Failed to get tasks status"));
         }
-    }
-
-    // Temporary debug method for adding gems
-    @PostMapping("/debug/add-gems")
-    public ResponseEntity<?> debugAddGems(@RequestParam(defaultValue = "100") int amount) {
-        String userId = "default";
-
-        // Simply add gems without any validation
-        userGems.put(userId, userGems.getOrDefault(userId, 0) + amount);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("gemsAwarded", amount);
-        response.put("newBalance", userGems.get(userId));
-
-        return ResponseEntity.ok(response);
     }
 }
