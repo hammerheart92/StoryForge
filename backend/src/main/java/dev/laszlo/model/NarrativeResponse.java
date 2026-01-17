@@ -6,6 +6,8 @@ import java.util.List;
 /**
  * Represents a complete narrative response including dialogue and available choices.
  * This is what the API returns to the frontend.
+ *
+ * ⭐ SESSION 34: Added isEnding and endingId for story completion detection.
  */
 public class NarrativeResponse {
     private String dialogue;            // The character's response text
@@ -15,6 +17,8 @@ public class NarrativeResponse {
     private String avatarUrl;           // URL to character avatar image (optional)
     private String actionText;          // Action/gesture description (NEW for Phase 2.3)
     private List<Choice> choices;       // Available choices for the user
+    private boolean isEnding = false;   // ⭐ SESSION 34: True if story has ended
+    private String endingId;            // ⭐ SESSION 34: Ending identifier (e.g., "good_ending")
 
     // Default constructor
     public NarrativeResponse() {
@@ -89,6 +93,23 @@ public class NarrativeResponse {
         this.actionText = actionText;
     }
 
+    // ⭐ SESSION 34: Ending detection getters/setters
+    public boolean isEnding() {
+        return isEnding;
+    }
+
+    public void setEnding(boolean ending) {
+        isEnding = ending;
+    }
+
+    public String getEndingId() {
+        return endingId;
+    }
+
+    public void setEndingId(String endingId) {
+        this.endingId = endingId;
+    }
+
     // Convenience method to add a single choice
     public void addChoice(Choice choice) {
         this.choices.add(choice);
@@ -101,7 +122,9 @@ public class NarrativeResponse {
                 ", mood='" + mood + '\'' +
                 ", choiceCount=" + (choices != null ? choices.size() : 0) +
                 ", dialogueLength=" + (dialogue != null ? dialogue.length() : 0) +
-                ", actionTextLength=" + (actionText != null ? actionText.length() : 0) +  // ADDED THIS LINE
+                ", actionTextLength=" + (actionText != null ? actionText.length() : 0) +
+                ", isEnding=" + isEnding +
+                ", endingId='" + endingId + '\'' +
                 '}';
     }
 }

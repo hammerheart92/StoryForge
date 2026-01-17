@@ -89,7 +89,7 @@ public class DatabaseService {
 
     /**
      * ⭐ SESSION 26: Create table to store conversation saves for each story.
-     * This enables users to maintain progress across multiple stories simultaneously.
+     * ⭐ SESSION 34: Added ending_id and completed_at for story completion tracking.
      */
     private void createStorySavesTable() {
         String sql = """
@@ -106,6 +106,8 @@ public class DatabaseService {
                     conversation_json TEXT NOT NULL,
                     progress_metadata TEXT,
                     is_completed BOOLEAN DEFAULT 0,
+                    ending_id TEXT,
+                    completed_at TIMESTAMP,
                     UNIQUE(story_id, save_slot, user_id)
                 )
                 """;

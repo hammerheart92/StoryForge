@@ -284,7 +284,8 @@ public class StorySaveService {
         String userId = "default";
         String sql = """
                 SELECT story_id, save_slot, created_at, last_played_at,
-                       current_speaker, message_count, choice_count, is_completed
+                       current_speaker, message_count, choice_count, is_completed,
+                       ending_id, completed_at
                 FROM story_saves
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
@@ -307,7 +308,9 @@ public class StorySaveService {
                         rs.getString("current_speaker"),
                         rs.getInt("message_count"),
                         rs.getInt("choice_count"),
-                        rs.getBoolean("is_completed")
+                        rs.getBoolean("is_completed"),
+                        rs.getString("ending_id"),
+                        rs.getString("completed_at")
                 );
             }
 
@@ -357,31 +360,39 @@ public class StorySaveService {
     }
 
     /**
-     * 🏆 Mark a story as completed
+     * 🏆 Mark a story as completed with ending information.
+     * ⭐ SESSION 34: Updated to accept endingId and set completed_at timestamp.
      *
      * @param storyId Story identifier
      * @param saveSlot Slot number
      * @param userId User identifier
+     * @param endingId The ending that was reached (e.g., "good_ending", "tragic_ending")
      * @return true if successful
      */
-    public boolean markStoryCompleted(String storyId, int saveSlot, String userId) {
+    public boolean markStoryCompleted(String storyId, int saveSlot, String userId, String endingId) {
+        String timestamp = LocalDateTime.now().toString();
         String sql = """
             UPDATE story_saves
-            SET is_completed = 1, last_played_at = ?
+            SET is_completed = 1,
+                ending_id = ?,
+                completed_at = ?,
+                last_played_at = ?
             WHERE story_id = ? AND save_slot = ? AND user_id = ?
             """;
 
         try (Connection conn = DriverManager.getConnection(DB_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, LocalDateTime.now().toString());
-            pstmt.setString(2, storyId);
-            pstmt.setInt(3, saveSlot);
-            pstmt.setString(4, userId);
+            pstmt.setString(1, endingId);
+            pstmt.setString(2, timestamp);
+            pstmt.setString(3, timestamp);
+            pstmt.setString(4, storyId);
+            pstmt.setInt(5, saveSlot);
+            pstmt.setString(6, userId);
 
             int updated = pstmt.executeUpdate();
             if (updated > 0) {
-                logger.info("🏆 Story marked as completed: {} slot {}", storyId, saveSlot);
+                logger.info("🏆 Story marked as completed: {} slot {} (ending: {})", storyId, saveSlot, endingId);
                 return true;
             }
         } catch (SQLException e) {
@@ -401,7 +412,8 @@ public class StorySaveService {
     public List<SaveInfo> getAllSavesForUser(String userId) {
         String sql = """
             SELECT story_id, save_slot, created_at, last_played_at,
-                   current_speaker, message_count, choice_count, is_completed
+                   current_speaker, message_count, choice_count, is_completed,
+                   ending_id, completed_at
             FROM story_saves
             WHERE user_id = ?
             ORDER BY last_played_at DESC
@@ -424,7 +436,9 @@ public class StorySaveService {
                         rs.getString("current_speaker"),
                         rs.getInt("message_count"),
                         rs.getInt("choice_count"),
-                        rs.getBoolean("is_completed")
+                        rs.getBoolean("is_completed"),
+                        rs.getString("ending_id"),
+                        rs.getString("completed_at")
                 ));
             }
 
@@ -460,7 +474,8 @@ public class StorySaveService {
     public List<SaveInfo> getAllSavesForStory(String userId, String storyId) {
         String sql = """
         SELECT story_id, save_slot, created_at, last_played_at,
-               current_speaker, message_count, choice_count, is_completed
+               current_speaker, message_count, choice_count, is_completed,
+               ending_id, completed_at
         FROM story_saves
         WHERE user_id = ? AND story_id = ?
         ORDER BY save_slot ASC
@@ -484,7 +499,9 @@ public class StorySaveService {
                         rs.getString("current_speaker"),
                         rs.getInt("message_count"),
                         rs.getInt("choice_count"),
-                        rs.getBoolean("is_completed")
+                        rs.getBoolean("is_completed"),
+                        rs.getString("ending_id"),
+                        rs.getString("completed_at")
                 ));
             }
 
@@ -509,6 +526,7 @@ public class StorySaveService {
     /**
      * Save metadata (without full conversation data).
      * Used for displaying save lists in UI.
+     * ⭐ SESSION 34: Added endingId and completedAt for story completion tracking.
      */
     public static class SaveInfo {
         public final String storyId;
@@ -519,6 +537,8 @@ public class StorySaveService {
         public final int messageCount;
         public final int choiceCount;
         public final boolean isCompleted;
+        public final String endingId;      // ⭐ SESSION 34
+        public final String completedAt;   // ⭐ SESSION 34
 
         public SaveInfo(
                 String storyId,
@@ -528,7 +548,9 @@ public class StorySaveService {
                 String currentSpeaker,
                 int messageCount,
                 int choiceCount,
-                boolean isCompleted
+                boolean isCompleted,
+                String endingId,
+                String completedAt
         ) {
             this.storyId = storyId;
             this.saveSlot = saveSlot;
@@ -538,12 +560,14 @@ public class StorySaveService {
             this.messageCount = messageCount;
             this.choiceCount = choiceCount;
             this.isCompleted = isCompleted;
+            this.endingId = endingId;
+            this.completedAt = completedAt;
         }
 
         @Override
         public String toString() {
-            return String.format("SaveInfo{story=%s, slot=%d, messages=%d, speaker=%s}",
-                    storyId, saveSlot, messageCount, currentSpeaker);
+            return String.format("SaveInfo{story=%s, slot=%d, messages=%d, speaker=%s, completed=%s, ending=%s}",
+                    storyId, saveSlot, messageCount, currentSpeaker, isCompleted, endingId);
         }
     }
 }

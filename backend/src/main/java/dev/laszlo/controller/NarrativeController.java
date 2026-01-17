@@ -12,6 +12,8 @@ import dev.laszlo.service.StorySaveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import dev.laszlo.dto.SaveInfoDTO;
+import dev.laszlo.dto.EndingSummary;
+import dev.laszlo.dto.CompletionStats;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
@@ -19,8 +21,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * REST controller for narrative interactions.
@@ -291,14 +295,14 @@ public class NarrativeController {
         // ⭐ SESSION 26: Auto-save progress to database
         saveHistoryForStory(storyId, saveSlot, history, response.getSpeaker());
 
-        // ⭐ PHASE 1 GALLERY: Handle story completion and gem awards
+        // ⭐ SESSION 34: Handle story completion and gem awards using ending detection
         String userId = "default";
 
-        if (response.getChoices().isEmpty()) {
-            // Story completed - award completion bonus
-            storySaveService.markStoryCompleted(storyId, saveSlot, userId);
+        if (response.isEnding() && response.getEndingId() != null) {
+            // Story completed with specific ending - award completion bonus
+            storySaveService.markStoryCompleted(storyId, saveSlot, userId, response.getEndingId());
             currencyService.awardGems(userId, 100, "story_completed", storyId);
-            logger.info("🏆 Story {} completed! +100 gem bonus", storyId);
+            logger.info("🏆 Story {} completed with ending '{}' ! +100 gem bonus", storyId, response.getEndingId());
         } else {
             // Story continues - award per-choice gems
             currencyService.awardGems(userId, 5, "choice_made", storyId);
@@ -352,16 +356,18 @@ public class NarrativeController {
             String userId = "default";  // Future: get from authentication
             List<StorySaveService.SaveInfo> saves = storySaveService.getAllSavesForUser(userId);
 
-            // Convert SaveInfo to SaveInfoDTO
+            // Convert SaveInfo to SaveInfoDTO (⭐ SESSION 34: Include endingId and completedAt)
             List<SaveInfoDTO> dtos = saves.stream()
                     .map(save -> new SaveInfoDTO(
                             save.storyId,
-                            save.saveSlot,  // ⭐ NEW: Include slot number
+                            save.saveSlot,
                             save.currentSpeaker,
                             save.currentSpeaker,  // characterName = currentSpeaker for now
                             save.messageCount,
                             LocalDateTime.parse(save.lastPlayedAt),
-                            save.isCompleted
+                            save.isCompleted,
+                            save.endingId,
+                            save.completedAt != null ? LocalDateTime.parse(save.completedAt) : null
                     ))
                     .collect(Collectors.toList());
 
@@ -389,14 +395,17 @@ public class NarrativeController {
                 return ResponseEntity.notFound().build();
             }
 
+            // ⭐ SESSION 34: Include endingId and completedAt
             SaveInfoDTO dto = new SaveInfoDTO(
                     save.storyId,
-                    save.saveSlot,  // ⭐ NEW: Include slot number
+                    save.saveSlot,
                     save.currentSpeaker,
                     save.currentSpeaker,  // characterName = currentSpeaker for now
                     save.messageCount,
                     LocalDateTime.parse(save.lastPlayedAt),
-                    save.isCompleted
+                    save.isCompleted,
+                    save.endingId,
+                    save.completedAt != null ? LocalDateTime.parse(save.completedAt) : null
             );
 
             logger.info("📂 Returning save for story: {}", storyId);
@@ -450,16 +459,18 @@ public class NarrativeController {
             String userId = "default";  // Future: get from authentication
             List<StorySaveService.SaveInfo> saves = storySaveService.getAllSavesForStory(userId, storyId);
 
-            // Convert SaveInfo to SaveInfoDTO
+            // Convert SaveInfo to SaveInfoDTO (⭐ SESSION 34: Include endingId and completedAt)
             List<SaveInfoDTO> dtos = saves.stream()
                     .map(save -> new SaveInfoDTO(
                             save.storyId,
-                            save.saveSlot,  // Include slot number
+                            save.saveSlot,
                             save.currentSpeaker,
                             save.currentSpeaker,  // characterName = currentSpeaker for now
                             save.messageCount,
                             LocalDateTime.parse(save.lastPlayedAt),
-                            save.isCompleted
+                            save.isCompleted,
+                            save.endingId,
+                            save.completedAt != null ? LocalDateTime.parse(save.completedAt) : null
                     ))
                     .collect(Collectors.toList());
 
@@ -501,5 +512,161 @@ public class NarrativeController {
             logger.error("❌ Error deleting save for {} slot {}: {}", storyId, saveSlot, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ⭐ SESSION 34: STORY COMPLETION & ENDINGS ENDPOINTS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * ⭐ SESSION 34: Get all endings for a story.
+     * Returns list of endings with discovered/undiscovered status.
+     *
+     * GET /api/narrative/{storyId}/endings
+     *
+     * Example: curl http://localhost:8080/api/narrative/pirates/endings
+     */
+    @GetMapping("/{storyId}/endings")
+    public ResponseEntity<List<EndingSummary>> getStoryEndings(@PathVariable String storyId) {
+        try {
+            String userId = "default";  // Future: get from authentication
+
+            // Get all completed saves for this story to find discovered endings
+            List<StorySaveService.SaveInfo> completedSaves = storySaveService.getAllSavesForStory(userId, storyId)
+                    .stream()
+                    .filter(save -> save.isCompleted && save.endingId != null)
+                    .collect(Collectors.toList());
+
+            // Build set of discovered ending IDs
+            Set<String> discoveredEndingIds = new HashSet<>();
+            Map<String, LocalDateTime> endingDiscoveredAt = new HashMap<>();
+
+            for (StorySaveService.SaveInfo save : completedSaves) {
+                if (save.endingId != null && !discoveredEndingIds.contains(save.endingId)) {
+                    discoveredEndingIds.add(save.endingId);
+                    if (save.completedAt != null) {
+                        endingDiscoveredAt.put(save.endingId, LocalDateTime.parse(save.completedAt));
+                    }
+                }
+            }
+
+            // Get available endings for this story and build response
+            List<EndingSummary> endings = getAvailableEndings(storyId).stream()
+                    .map(ending -> {
+                        boolean discovered = discoveredEndingIds.contains(ending.getId());
+                        return new EndingSummary(
+                                ending.getId(),
+                                discovered ? ending.getTitle() : "???",
+                                discovered ? ending.getDescription() : "Undiscovered ending",
+                                discovered,
+                                endingDiscoveredAt.get(ending.getId())
+                        );
+                    })
+                    .collect(Collectors.toList());
+
+            logger.info("📖 Returning {} endings for story {} ({} discovered)",
+                    endings.size(), storyId, discoveredEndingIds.size());
+            return ResponseEntity.ok(endings);
+
+        } catch (Exception e) {
+            logger.error("❌ Error fetching endings for {}: {}", storyId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * ⭐ SESSION 34: Get completion stats for a story.
+     * Returns overall completion progress.
+     *
+     * GET /api/narrative/{storyId}/completion-stats
+     *
+     * Example: curl http://localhost:8080/api/narrative/pirates/completion-stats
+     */
+    @GetMapping("/{storyId}/completion-stats")
+    public ResponseEntity<CompletionStats> getCompletionStats(@PathVariable String storyId) {
+        try {
+            String userId = "default";  // Future: get from authentication
+
+            // Get all saves for this story
+            List<StorySaveService.SaveInfo> allSaves = storySaveService.getAllSavesForStory(userId, storyId);
+
+            // Count completed saves
+            List<StorySaveService.SaveInfo> completedSaves = allSaves.stream()
+                    .filter(save -> save.isCompleted)
+                    .collect(Collectors.toList());
+
+            // Count unique endings discovered
+            Set<String> uniqueEndings = completedSaves.stream()
+                    .map(save -> save.endingId)
+                    .filter(id -> id != null)
+                    .collect(Collectors.toSet());
+
+            // Get total available endings for this story
+            int totalEndings = getAvailableEndings(storyId).size();
+
+            // Calculate completion percentage
+            double completionPercentage = totalEndings > 0
+                    ? (uniqueEndings.size() * 100.0 / totalEndings)
+                    : 0.0;
+
+            CompletionStats stats = new CompletionStats(
+                    allSaves.size(),
+                    completedSaves.size(),
+                    uniqueEndings.size(),
+                    totalEndings,
+                    Math.round(completionPercentage * 10.0) / 10.0  // Round to 1 decimal
+            );
+
+            logger.info("📊 Completion stats for {}: {} saves, {} completed, {}/{} endings ({}%)",
+                    storyId, stats.getTotalSaves(), stats.getCompletedSaves(),
+                    stats.getEndingsDiscovered(), stats.getTotalEndings(), stats.getCompletionPercentage());
+
+            return ResponseEntity.ok(stats);
+
+        } catch (Exception e) {
+            logger.error("❌ Error fetching completion stats for {}: {}", storyId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * ⭐ SESSION 34: Get available endings for a story.
+     * This defines all possible endings for each story.
+     * Future: Could be moved to database or config file.
+     */
+    private List<EndingSummary> getAvailableEndings(String storyId) {
+        // Define endings per story
+        return switch (storyId) {
+            case "pirates" -> List.of(
+                    new EndingSummary("romantic_ending", "Heart's True Course",
+                            "Blackwood and Isla navigate love on the high seas", false, null),
+                    new EndingSummary("treasure_ending", "Fortune's Favor",
+                            "The crew discovers legendary treasure beyond imagination", false, null),
+                    new EndingSummary("tragic_ending", "Lost at Sea",
+                            "The Kraken claims another ship to the depths", false, null),
+                    new EndingSummary("redemption_ending", "New Horizons",
+                            "Blackwood finds peace beyond the pirate life", false, null)
+            );
+            case "observatory" -> List.of(
+                    new EndingSummary("enlightenment_ending", "Cosmic Truth",
+                            "Ilyra unlocks the secrets hidden in the stars", false, null),
+                    new EndingSummary("tragic_ending", "The Price of Knowledge",
+                            "Obsession leads to an inevitable downfall", false, null),
+                    new EndingSummary("neutral_ending", "The Journey Continues",
+                            "Some mysteries are meant to remain unsolved", false, null)
+            );
+            case "illidan" -> List.of(
+                    new EndingSummary("redemption_ending", "The Betrayer's Sacrifice",
+                            "Illidan gives everything to save Azeroth", false, null),
+                    new EndingSummary("power_ending", "Embrace the Darkness",
+                            "Illidan becomes the demon lord he was destined to be", false, null),
+                    new EndingSummary("neutral_ending", "Eternal Vigil",
+                            "The warden's watch continues through eternity", false, null)
+            );
+            default -> List.of(
+                    new EndingSummary("default_ending", "The End",
+                            "Your journey has come to a close", false, null)
+            );
+        };
     }
 }

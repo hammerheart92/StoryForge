@@ -16,6 +16,8 @@ import java.util.regex.Pattern;
 /**
  * Service for generating narrative responses with character-specific voices and branching choices.
  * Uses layered prompts to give each character a distinct personality and speaking style.
+ *
+ * ⭐ SESSION 34: Added ending detection for story completion tracking.
  */
 @Service
 public class NarrativeEngine {
@@ -23,6 +25,11 @@ public class NarrativeEngine {
 
     private final ChatService chatService;
     private final CharacterDatabase characterDb;
+
+    // ⭐ SESSION 34: Pattern to detect story ending markers in Claude's response
+    // Matches [END:ending_id] where ending_id is lowercase letters/underscores
+    private static final Pattern ENDING_PATTERN =
+            Pattern.compile("\\[END:([a-z_]+)\\]", Pattern.CASE_INSENSITIVE);
 
     // Base narrative prompt - shared by all characters
     private static final String BASE_PROMPT = """
@@ -219,13 +226,56 @@ public class NarrativeEngine {
         logger.info("✅ Generated narrative response: {} with {} choices",
                 character.getName(), choices.size());
 
+        // ⭐ SESSION 34: Check for story ending markers
+        String endingId = detectEnding(dialogue, actionText);
+        if (endingId != null) {
+            response.setEnding(true);
+            response.setEndingId(endingId);
+            response.setChoices(new ArrayList<>()); // Clear choices - story is over
+            logger.info("🏆 Story ending detected: {} (ending: {})", activeCharacterId, endingId);
+        }
+
         // ⭐ DEBUG LOGGING: Verify final NarrativeResponse object
         logger.info("🔍 [{}] Final NarrativeResponse - dialogue: {}", activeCharacterId, response.getDialogue());
         logger.info("🔍 [{}] Final NarrativeResponse - actionText: {}", activeCharacterId, response.getActionText());
         logger.info("🔍 [{}] Final NarrativeResponse - speaker: {}", activeCharacterId, response.getSpeaker());
         logger.info("🔍 [{}] Final NarrativeResponse - speakerName: {}", activeCharacterId, response.getSpeakerName());
+        logger.info("🔍 [{}] Final NarrativeResponse - isEnding: {}, endingId: {}",
+                activeCharacterId, response.isEnding(), response.getEndingId());
 
         return response;
+    }
+
+    /**
+     * ⭐ SESSION 34: Detect ending markers in the narrative response.
+     * Looks for [END:ending_id] pattern in dialogue or actionText.
+     *
+     * @param dialogue The character's dialogue
+     * @param actionText The action/gesture text (may be null)
+     * @return The ending ID if found, null otherwise
+     */
+    private String detectEnding(String dialogue, String actionText) {
+        // Check dialogue first
+        if (dialogue != null) {
+            Matcher matcher = ENDING_PATTERN.matcher(dialogue);
+            if (matcher.find()) {
+                String endingId = matcher.group(1).toLowerCase();
+                logger.info("🏆 Found ending marker in dialogue: [END:{}]", endingId);
+                return endingId;
+            }
+        }
+
+        // Then check actionText
+        if (actionText != null) {
+            Matcher matcher = ENDING_PATTERN.matcher(actionText);
+            if (matcher.find()) {
+                String endingId = matcher.group(1).toLowerCase();
+                logger.info("🏆 Found ending marker in actionText: [END:{}]", endingId);
+                return endingId;
+            }
+        }
+
+        return null;
     }
 
     /**
