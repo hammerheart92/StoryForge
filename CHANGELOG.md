@@ -15,6 +15,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2026-01-18
+
+### Added
+
+#### Story Completion & Endings System
+- Story completion detection with ending markers (`[END:ending_id]`)
+- StoryCompletionDialog celebration modal
+  - Trophy icon with teal glow effect
+  - Ending title and description display
+  - +100 Chronicle Gems reward badge
+  - Achievement unlocked notification
+  - Navigation: "View Endings" or "Continue" to library
+- StoryEndingsScreen gallery
+  - Progress tracking (X/Y endings discovered)
+  - Discovered endings with full details and discovery date
+  - Undiscovered endings displayed as "???" with lock icon
+  - Trophy button on story library cards for quick access
+- Multiple endings per story:
+  - **Pirates**: romantic_ending, treasure_ending, tragic_ending, redemption_ending
+  - **Observatory**: enlightenment_ending, tragic_ending, neutral_ending
+  - **Illidan**: redemption_ending, power_ending, neutral_ending
+
+#### Backend Infrastructure
+- Completion tracking columns in `story_saves` table:
+  - `ending_id` (VARCHAR) - tracks which ending was discovered
+  - `completed_at` (TIMESTAMP) - completion timestamp
+  - `is_completed` (BOOLEAN) - already existed from Session 26
+- `NarrativeEngine` ending detection with regex pattern `[END:ending_id]`
+- `NarrativeResponse` fields: `isEnding`, `endingId`
+- `StorySaveService.markStoryCompleted()` updated to accept `endingId` parameter
+- New API endpoints:
+  - `GET /api/narrative/{storyId}/endings` - List all endings (discovered/undiscovered)
+  - `GET /api/narrative/{storyId}/completion-stats` - Completion statistics
+- New DTOs: `EndingSummary`, `CompletionStats`
+
+#### Frontend Services & Models
+- `StoryEnding` model (id, title, description, discovered, discoveredAt)
+- `CompletionStats` model with `fullyCompleted` computed property
+- `StoryCompletionService` with API methods:
+  - `getStoryEndings(storyId)` - Fetch endings for story
+  - `getCompletionStats(storyId)` - Fetch completion statistics
+- `UnlockTrackerService.trackStoryCompletion()` - Achievement tracking integration
+- "First Story" achievement (10 gems, common rarity, target: 1 completion)
+
+### Changed
+- Completion detection now uses `[END:ending_id]` markers instead of empty choices
+- 100 gems awarded on story completion (implementation formalized)
+- Story Library "Completed" filter now functional with actual data
+- Save slots display "Completed" badge when story is finished
+- Completion tracking integrated with achievements system
+
+### Fixed
+- JSON field mapping: backend `ending` field → frontend `isEnding` property
+- Completion dialog detection: removed overly-strict previous state check
+- Achievement counter initialization: added `stories_completed` to default counters
+
+---
+
 ## [0.7.0] - 2026-01-17
 
 ### Added
