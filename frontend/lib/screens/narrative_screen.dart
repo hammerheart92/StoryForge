@@ -171,9 +171,8 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
       }
 
       // Session 34: Detect story completion
-      if (!_completionHandled &&
-          next.currentResponse?.isEnding == true &&
-          previous?.currentResponse?.isEnding != true) {
+// FIXED: Removed previous state check - _completionHandled flag is sufficient
+      if (!_completionHandled && next.currentResponse?.isEnding == true) {
         _handleStoryCompletion(next.currentResponse!.endingId);
       }
     });

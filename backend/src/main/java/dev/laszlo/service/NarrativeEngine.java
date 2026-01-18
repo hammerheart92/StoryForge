@@ -228,6 +228,7 @@ public class NarrativeEngine {
 
         // ⭐ SESSION 34: Check for story ending markers
         String endingId = detectEnding(dialogue, actionText);
+
         if (endingId != null) {
             response.setEnding(true);
             response.setEndingId(endingId);

@@ -63,6 +63,8 @@ class NarrativeService {
         print('   actionText: ${json['actionText']}');
         print('   dialogue type: ${json['dialogue'].runtimeType}');
         print('   dialogue starts with {: ${json['dialogue'].toString().trim().startsWith('{')}');
+        print('   isEnding: ${json['isEnding']}');
+        print('   endingId: ${json['endingId']}');
         print('═══════════════════════════════════════════════════════════════');
 
         final narrativeResponse = NarrativeResponse.fromJson(json);
@@ -122,6 +124,8 @@ class NarrativeService {
         print('   actionText: ${json['actionText']}');
         print('   dialogue type: ${json['dialogue'].runtimeType}');
         print('   dialogue starts with {: ${json['dialogue'].toString().trim().startsWith('{')}');
+        print('   isEnding: ${json['isEnding']}');
+        print('   endingId: ${json['endingId']}');
         print('═══════════════════════════════════════════════════════════════');
 
         final narrativeResponse = NarrativeResponse.fromJson(json);

@@ -31,7 +31,7 @@ class NarrativeResponse {
       choices: (json['choices'] as List<dynamic>)
           .map((e) => Choice.fromJson(e as Map<String, dynamic>))
           .toList(),
-      isEnding: json['isEnding'] as bool?,
+      isEnding: json['ending'] as bool?,
       endingId: json['endingId'] as String?,
     );
   }
