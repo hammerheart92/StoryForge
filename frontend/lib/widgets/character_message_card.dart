@@ -20,11 +20,13 @@ import 'typewriter_text.dart';
 class CharacterMessageCard extends StatefulWidget {
   final NarrativeMessage message;
   final bool shouldAnimate;  // Control animation
+  final VoidCallback? onContentExpanding;  // Called when typewriter expands content
 
   const CharacterMessageCard({
     super.key,
     required this.message,
     this.shouldAnimate = true,  // Default to true
+    this.onContentExpanding,
   });
 
   @override
@@ -213,6 +215,7 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                                   fontFamily: characterStyle.fontFamily,
                                 ),
                                 msPerCharacter: _animationSpeed,  // ⭐ User setting
+                                onProgress: widget.onContentExpanding,  // Scroll as content expands
                                 onComplete: () {
                                   // After action text completes, pause then show dialogue
                                   Future.delayed(
@@ -252,6 +255,7 @@ class _CharacterMessageCardState extends State<CharacterMessageCard> {
                                 fontFamily: characterStyle.fontFamily,
                               ),
                               msPerCharacter: _animationSpeed,  // ⭐ User setting
+                              onProgress: widget.onContentExpanding,  // Scroll as content expands
                             )
                           : Text(
                               widget.message.dialogue,

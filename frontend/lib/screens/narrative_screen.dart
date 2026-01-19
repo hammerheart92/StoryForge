@@ -3,6 +3,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/narrative_message.dart';
 import '../models/story_ending.dart';
@@ -84,6 +85,12 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
 
         // Trigger reveal animation for restored story
         _triggerRevealAnimation();
+
+        // FIX Issue 2: Scroll to bottom after restoration
+        // Use SchedulerBinding to wait for ListView to be fully laid out
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          _scrollToBottom();
+        });
       } else {
         // New story - Reset with initial speaker in one atomic operation
         // This prevents portrait flash from previous character
@@ -137,17 +144,29 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
   }
 
   /// Scroll to bottom when new messages arrive
+  /// FIX Issue 1: Scroll immediately to the bottom after content is rendered
+  /// FIX Issue 2: Scroll continuously as typewriter animation expands content
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+    if (!_scrollController.hasClients || !mounted) return;
+
+    // Use SchedulerBinding to wait for the next frame after the ListView has updated
+    // This ensures maxScrollExtent is accurate for the new content
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients && mounted) {
+        // Jump immediately to bottom (no animation during typing looks smoother)
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
+  }
+
+  /// Scroll to bottom as typewriter animation expands content
+  /// Called repeatedly during typewriter animation via onProgress callback
+  void _scrollToBottomDuringAnimation() {
+    if (!_scrollController.hasClients || !mounted) return;
+
+    // Directly jump to max extent - called during animation so needs to be immediate
+    if (_scrollController.hasClients && mounted) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     }
   }
 
@@ -243,6 +262,10 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
                             return CharacterMessageCard(
                               message: message,
                               shouldAnimate: isNewMessage && isLastMessage,
+                              // Only last message gets scroll callback during animation
+                              onContentExpanding: (isNewMessage && isLastMessage)
+                                  ? _scrollToBottomDuringAnimation
+                                  : null,
                             );
                           },
                         )

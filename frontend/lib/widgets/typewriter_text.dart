@@ -9,12 +9,14 @@ import 'package:flutter/material.dart';
 /// Features:
 /// - Configurable typing speed (msPerCharacter)
 /// - onComplete callback for chaining animations
+/// - onProgress callback for tracking animation progress
 /// - Linear animation for consistent typing rhythm
 class TypewriterText extends StatefulWidget {
   final String text;
   final TextStyle style;
   final int msPerCharacter;
   final VoidCallback? onComplete;
+  final VoidCallback? onProgress;
 
   const TypewriterText({
     super.key,
@@ -22,6 +24,7 @@ class TypewriterText extends StatefulWidget {
     required this.style,
     this.msPerCharacter = 20, // ~50 chars/second
     this.onComplete,
+    this.onProgress,
   });
 
   @override
@@ -78,6 +81,13 @@ class _TypewriterTextState extends State<TypewriterText>
           0,
           _characterCount.value,
         );
+
+        // Call onProgress callback to notify parent of content expansion
+        if (widget.onProgress != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            widget.onProgress?.call();
+          });
+        }
 
         return Text(
           displayedText,
