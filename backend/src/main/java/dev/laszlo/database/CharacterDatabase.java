@@ -10,15 +10,35 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Manages character data in the SQLite database.
+ * Manages character data in the PostgreSQL database.
  * Handles creating, reading, and storing characters.
  * <p>
- * ⭐ SESSION 21: Added storyId support for multi-story system
+ * ⭐ SESSION 35: Migrated from SQLite to PostgreSQL
  */
 public class CharacterDatabase {
 
     private static final Logger logger = LoggerFactory.getLogger(CharacterDatabase.class);
-    private static final String DB_URL = "jdbc:sqlite:storyforge.db";
+
+    /**
+     * Get database connection URL.
+     * - Production (Railway): Uses DATABASE_URL environment variable
+     * - Local development: Uses localhost PostgreSQL
+     */
+    private String getDatabaseUrl() {
+        String railwayUrl = System.getenv("DATABASE_URL");
+        if (railwayUrl != null && !railwayUrl.isEmpty()) {
+            return railwayUrl;
+        }
+        // Local development fallback
+        return "jdbc:postgresql://localhost:5432/storyforge?user=postgres&password=postgres";
+    }
+
+    /**
+     * Get database connection.
+     */
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(getDatabaseUrl());
+    }
 
     /**
      * Initialize the character system.
@@ -32,25 +52,25 @@ public class CharacterDatabase {
 
     /**
      * Create the characters table if it doesn't exist.
-     * ⭐ UPDATED: Added story_id column
+     * ⭐ UPDATED: PostgreSQL syntax
      */
     private void createCharactersTable() {
         String sql = """
                 CREATE TABLE IF NOT EXISTS characters (
-                    id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    role TEXT,
+                    id VARCHAR(50) PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    role VARCHAR(255),
                     personality TEXT,
                     speech_style TEXT,
                     avatar_url TEXT,
-                    default_mood TEXT,
-                    relationship_to_user TEXT,
+                    default_mood VARCHAR(50),
+                    relationship_to_user VARCHAR(50),
                     description TEXT,
-                    story_id TEXT
+                    story_id VARCHAR(50)
                 )
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
             logger.debug("Characters table created/verified");
@@ -60,7 +80,7 @@ public class CharacterDatabase {
     }
 
     /**
-     * Add default characters to the database (Narrator, Ilyra, Illidan, Tyrande).
+     * Add default characters to the database (Narrator, Ilyra, Illidan, Tyrande, Blackwood, Isla).
      * Only adds them if they don't already exist.
      * <p>
      * ⭐ SESSION 21: Added Illidan and Tyrande characters with storyId
@@ -184,17 +204,27 @@ public class CharacterDatabase {
 
     /**
      * Save a character to the database.
-     * ⭐ UPDATED: Now saves story_id
+     * ⭐ UPDATED: PostgreSQL UPSERT syntax
      */
     private void saveCharacter(Character character) {
         String sql = """
-                INSERT OR REPLACE INTO characters 
+                INSERT INTO characters 
                 (id, name, role, personality, speech_style, avatar_url, 
                  default_mood, relationship_to_user, description, story_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (id) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    role = EXCLUDED.role,
+                    personality = EXCLUDED.personality,
+                    speech_style = EXCLUDED.speech_style,
+                    avatar_url = EXCLUDED.avatar_url,
+                    default_mood = EXCLUDED.default_mood,
+                    relationship_to_user = EXCLUDED.relationship_to_user,
+                    description = EXCLUDED.description,
+                    story_id = EXCLUDED.story_id
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, character.getId());
@@ -206,7 +236,7 @@ public class CharacterDatabase {
             pstmt.setString(7, character.getDefaultMood());
             pstmt.setString(8, character.getRelationshipToUser());
             pstmt.setString(9, character.getDescription());
-            pstmt.setString(10, character.getStoryId());  // ⭐ NEW
+            pstmt.setString(10, character.getStoryId());
 
             pstmt.executeUpdate();
             logger.debug("Saved character: {} (story: {})", character.getName(), character.getStoryId());
@@ -219,12 +249,11 @@ public class CharacterDatabase {
     /**
      * Get a character by ID.
      * Returns null if character doesn't exist.
-     * ⭐ UPDATED: Now loads story_id
      */
     public Character getCharacter(String id) {
         String sql = "SELECT * FROM characters WHERE id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, id);
@@ -245,7 +274,7 @@ public class CharacterDatabase {
                 character.setDefaultMood(rs.getString("default_mood"));
                 character.setRelationshipToUser(rs.getString("relationship_to_user"));
                 character.setDescription(rs.getString("description"));
-                character.setStoryId(rs.getString("story_id"));  // ⭐ NEW
+                character.setStoryId(rs.getString("story_id"));
 
                 return character;
             }
@@ -259,13 +288,12 @@ public class CharacterDatabase {
 
     /**
      * Get all available characters.
-     * ⭐ UPDATED: Now loads story_id
      */
     public List<Character> getAllCharacters() {
         List<Character> characters = new ArrayList<>();
         String sql = "SELECT * FROM characters ORDER BY id";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -284,7 +312,7 @@ public class CharacterDatabase {
                 character.setDefaultMood(rs.getString("default_mood"));
                 character.setRelationshipToUser(rs.getString("relationship_to_user"));
                 character.setDescription(rs.getString("description"));
-                character.setStoryId(rs.getString("story_id"));  // ⭐ NEW
+                character.setStoryId(rs.getString("story_id"));
 
                 characters.add(character);
             }
@@ -299,14 +327,14 @@ public class CharacterDatabase {
     }
 
     /**
-     * ⭐ NEW: Get characters filtered by story ID.
+     * Get characters filtered by story ID.
      * This is used to generate choices only from characters in the same story.
      */
     public List<Character> getCharactersByStory(String storyId) {
         List<Character> characters = new ArrayList<>();
         String sql = "SELECT * FROM characters WHERE story_id = ? ORDER BY id";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);

@@ -17,12 +17,41 @@ import java.time.LocalDateTime;
  * Handles persistence of conversation history across multiple stories.
  *
  * ⭐ SESSION 26: Multi-story save system
+ * ⭐ SESSION 35: Migrated from SQLite to PostgreSQL
  */
 @Service
 public class StorySaveService {
 
     private static final Logger logger = LoggerFactory.getLogger(StorySaveService.class);
-    private static final String DB_URL = "jdbc:sqlite:storyforge.db";
+
+    /**
+     * Get database connection URL.
+     * - Production (Railway): Uses DATABASE_URL environment variable
+     * - Local development: Uses localhost PostgreSQL
+     */
+    private String getDatabaseUrl() {
+        String railwayUrl = System.getenv("DATABASE_URL");
+        if (railwayUrl != null && !railwayUrl.isEmpty()) {
+            return railwayUrl;
+        }
+        return "jdbc:postgresql://localhost:5432/storyforge?user=postgres&password=postgres";
+    }
+
+    /**
+     * Get database connection.
+     */
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(getDatabaseUrl());
+    }
+
+    /**
+     * Safely read a timestamp column and convert to ISO string.
+     * Returns null if timestamp is null.
+     */
+    private String getTimestampAsString(ResultSet rs, String columnName) throws SQLException {
+        Timestamp ts = rs.getTimestamp(columnName);
+        return ts != null ? ts.toLocalDateTime().toString() : null;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // SAVE OPERATIONS
@@ -91,10 +120,10 @@ public class StorySaveService {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            String timestamp = LocalDateTime.now().toString();
+            Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
             pstmt.setString(1, storyId);
             pstmt.setInt(2, saveSlot);
@@ -103,8 +132,8 @@ public class StorySaveService {
             pstmt.setInt(5, messageCount);
             pstmt.setInt(6, 0);  // choice_count: will track later
             pstmt.setString(7, conversationJson);
-            pstmt.setString(8, timestamp);
-            pstmt.setString(9, timestamp);
+            pstmt.setTimestamp(8, now);
+            pstmt.setTimestamp(9, now);
 
             pstmt.executeUpdate();
             logger.info("💾 Created new save: {} (slot {}, {} messages)", storyId, saveSlot, messageCount);
@@ -136,13 +165,13 @@ public class StorySaveService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, conversationJson);
             pstmt.setInt(2, messageCount);
             pstmt.setString(3, currentSpeaker);
-            pstmt.setString(4, LocalDateTime.now().toString());
+            pstmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
             pstmt.setString(5, storyId);
             pstmt.setInt(6, saveSlot);
             pstmt.setString(7, userId);
@@ -187,7 +216,7 @@ public class StorySaveService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -254,7 +283,7 @@ public class StorySaveService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -290,7 +319,7 @@ public class StorySaveService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -303,14 +332,14 @@ public class StorySaveService {
                 return new SaveInfo(
                         rs.getString("story_id"),
                         rs.getInt("save_slot"),
-                        rs.getString("created_at"),
-                        rs.getString("last_played_at"),
+                        getTimestampAsString(rs, "created_at"),
+                        getTimestampAsString(rs, "last_played_at"),
                         rs.getString("current_speaker"),
                         rs.getInt("message_count"),
                         rs.getInt("choice_count"),
                         rs.getBoolean("is_completed"),
                         rs.getString("ending_id"),
-                        rs.getString("completed_at")
+                        getTimestampAsString(rs, "completed_at")
                 );
             }
 
@@ -336,7 +365,7 @@ public class StorySaveService {
         String userId = "default";
         String sql = "DELETE FROM story_saves WHERE story_id = ? AND save_slot = ? AND user_id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -370,22 +399,22 @@ public class StorySaveService {
      * @return true if successful
      */
     public boolean markStoryCompleted(String storyId, int saveSlot, String userId, String endingId) {
-        String timestamp = LocalDateTime.now().toString();
+        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
         String sql = """
             UPDATE story_saves
-            SET is_completed = 1,
+            SET is_completed = true,
                 ending_id = ?,
                 completed_at = ?,
                 last_played_at = ?
             WHERE story_id = ? AND save_slot = ? AND user_id = ?
             """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, endingId);
-            pstmt.setString(2, timestamp);
-            pstmt.setString(3, timestamp);
+            pstmt.setTimestamp(2, now);
+            pstmt.setTimestamp(3, now);
             pstmt.setString(4, storyId);
             pstmt.setInt(5, saveSlot);
             pstmt.setString(6, userId);
@@ -421,7 +450,7 @@ public class StorySaveService {
 
         List<SaveInfo> saves = new ArrayList<>();
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
@@ -431,14 +460,14 @@ public class StorySaveService {
                 saves.add(new SaveInfo(
                         rs.getString("story_id"),
                         rs.getInt("save_slot"),
-                        rs.getString("created_at"),
-                        rs.getString("last_played_at"),
+                        getTimestampAsString(rs, "created_at"),
+                        getTimestampAsString(rs, "last_played_at"),
                         rs.getString("current_speaker"),
                         rs.getInt("message_count"),
                         rs.getInt("choice_count"),
                         rs.getBoolean("is_completed"),
                         rs.getString("ending_id"),
-                        rs.getString("completed_at")
+                        getTimestampAsString(rs, "completed_at")
                 ));
             }
 
@@ -483,7 +512,7 @@ public class StorySaveService {
 
         List<SaveInfo> saves = new ArrayList<>();
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
@@ -494,14 +523,14 @@ public class StorySaveService {
                 saves.add(new SaveInfo(
                         rs.getString("story_id"),
                         rs.getInt("save_slot"),
-                        rs.getString("created_at"),
-                        rs.getString("last_played_at"),
+                        getTimestampAsString(rs, "created_at"),
+                        getTimestampAsString(rs, "last_played_at"),
                         rs.getString("current_speaker"),
                         rs.getInt("message_count"),
                         rs.getInt("choice_count"),
                         rs.getBoolean("is_completed"),
                         rs.getString("ending_id"),
-                        rs.getString("completed_at")
+                        getTimestampAsString(rs, "completed_at")
                 ));
             }
 

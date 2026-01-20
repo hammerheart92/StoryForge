@@ -11,10 +11,42 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service for managing user gem currency and transactions.
+ * ⭐ SESSION 35: Migrated from SQLite to PostgreSQL
+ */
 @Service
 public class CurrencyService {
     private static final Logger logger = LoggerFactory.getLogger(CurrencyService.class);
-    private static final String DB_URL = "jdbc:sqlite:storyforge.db";
+
+    /**
+     * Get database connection URL.
+     * - Production (Railway): Uses DATABASE_URL environment variable
+     * - Local development: Uses localhost PostgreSQL
+     */
+    private String getDatabaseUrl() {
+        String railwayUrl = System.getenv("DATABASE_URL");
+        if (railwayUrl != null && !railwayUrl.isEmpty()) {
+            return railwayUrl;
+        }
+        return "jdbc:postgresql://localhost:5432/storyforge?user=postgres&password=postgres";
+    }
+
+    /**
+     * Get database connection.
+     */
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(getDatabaseUrl());
+    }
+
+    /**
+     * Safely read a timestamp column and convert to ISO string.
+     * Returns null if timestamp is null.
+     */
+    private String getTimestampAsString(ResultSet rs, String columnName) throws SQLException {
+        Timestamp ts = rs.getTimestamp(columnName);
+        return ts != null ? ts.toLocalDateTime().toString() : null;
+    }
 
     /**
      * 💎 Award gems to a user for completing actions
@@ -39,14 +71,14 @@ public class CurrencyService {
                 VALUES (?, ?, 'earn', ?, ?)
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+        try (Connection conn = getConnection()) {
             conn.setAutoCommit(false); // Start transaction
 
             // Update user balance
             try (PreparedStatement pstmt = conn.prepareStatement(updateBalanceSql)) {
                 pstmt.setInt(1, amount);
                 pstmt.setInt(2, amount);
-                pstmt.setString(3, LocalDateTime.now().toString());
+                pstmt.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
                 pstmt.setString(4, userId);
 
                 int updated = pstmt.executeUpdate();
@@ -105,14 +137,14 @@ public class CurrencyService {
                 VALUES (?, ?, 'spend', 'unlock_content', ?)
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+        try (Connection conn = getConnection()) {
             conn.setAutoCommit(false); // Start transaction
 
             // Deduct gems from balance
             try (PreparedStatement pstmt = conn.prepareStatement(updateBalanceSql)) {
                 pstmt.setInt(1, amount);
                 pstmt.setInt(2, amount);
-                pstmt.setString(3, LocalDateTime.now().toString());
+                pstmt.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
                 pstmt.setString(4, userId);
                 pstmt.executeUpdate();
             }
@@ -144,7 +176,7 @@ public class CurrencyService {
     public int getGemBalance(String userId) {
         String sql = "SELECT gem_balance FROM user_currency WHERE user_id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
@@ -170,7 +202,7 @@ public class CurrencyService {
     public UserCurrency getUserCurrency(String userId) {
         String sql = "SELECT * FROM user_currency WHERE user_id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
@@ -182,8 +214,8 @@ public class CurrencyService {
                         rs.getInt("gem_balance"),
                         rs.getInt("total_earned"),
                         rs.getInt("total_spent"),
-                        rs.getString("last_updated"),
-                        rs.getString("created_at")
+                        getTimestampAsString(rs, "last_updated"),
+                        getTimestampAsString(rs, "created_at")
                 );
             }
 
@@ -210,7 +242,7 @@ public class CurrencyService {
                 LIMIT ?
                 """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
@@ -226,7 +258,7 @@ public class CurrencyService {
                         rs.getString("source"),
                         rs.getString("story_id"),
                         rs.getObject("content_id") != null ? rs.getInt("content_id") : null,
-                        rs.getString("timestamp")
+                        getTimestampAsString(rs, "timestamp")
                 );
                 transactions.add(transaction);
             }

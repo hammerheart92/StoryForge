@@ -9,10 +9,33 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service for managing story gallery content and unlocks.
+ * ⭐ SESSION 35: Migrated from SQLite to PostgreSQL
+ */
 @Service
 public class GalleryService {
     private static final Logger logger = LoggerFactory.getLogger(GalleryService.class);
-    private static final String DB_URL = "jdbc:sqlite:storyforge.db";
+
+    /**
+     * Get database connection URL.
+     * - Production (Railway): Uses DATABASE_URL environment variable
+     * - Local development: Uses localhost PostgreSQL
+     */
+    private String getDatabaseUrl() {
+        String railwayUrl = System.getenv("DATABASE_URL");
+        if (railwayUrl != null && !railwayUrl.isEmpty()) {
+            return railwayUrl;
+        }
+        return "jdbc:postgresql://localhost:5432/storyforge?user=postgres&password=postgres";
+    }
+
+    /**
+     * Get database connection.
+     */
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(getDatabaseUrl());
+    }
 
     private final CurrencyService currencyService;
 
@@ -35,7 +58,7 @@ public class GalleryService {
                 ? "SELECT * FROM story_content WHERE story_id = ? ORDER BY display_order, content_id"
                 : "SELECT * FROM story_content WHERE story_id = ? AND content_type = ? ORDER BY display_order, content_id";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -100,17 +123,18 @@ public class GalleryService {
             return false;
         }
 
-        // Add to user_unlocks
-        String sql = "INSERT INTO user_unlocks (user_id, content_id) VALUES (?, ?)";
+        // Add to user_unlocks (story_id is required by schema)
+        String sql = "INSERT INTO user_unlocks (user_id, story_id, content_id) VALUES (?, ?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
-            pstmt.setInt(2, contentId);
+            pstmt.setString(2, content.getStoryId());
+            pstmt.setInt(3, contentId);
             pstmt.executeUpdate();
 
-            logger.info("🔓 User {} unlocked content: {} ({})", userId, content.getTitle(), contentId);
+            logger.info("🔓 User {} unlocked content: {} ({}) for story {}", userId, content.getTitle(), contentId, content.getStoryId());
             return true;
 
         } catch (SQLException e) {
@@ -138,7 +162,7 @@ public class GalleryService {
                   WHERE u.user_id = ? AND c.story_id = ?
                   """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
@@ -171,7 +195,7 @@ public class GalleryService {
     public boolean isContentUnlocked(String userId, int contentId) {
         String sql = "SELECT 1 FROM user_unlocks WHERE user_id = ? AND content_id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
@@ -195,7 +219,7 @@ public class GalleryService {
     private StoryContent getContentById(int contentId) {
         String sql = "SELECT * FROM story_content WHERE content_id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, contentId);
