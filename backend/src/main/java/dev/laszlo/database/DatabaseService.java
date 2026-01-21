@@ -25,6 +25,10 @@ public class DatabaseService {
         String railwayUrl = System.getenv("DATABASE_URL");
         if (railwayUrl != null && !railwayUrl.isEmpty()) {
             logger.debug("🚂 Using Railway DATABASE_URL");
+            // Railway provides postgresql:// but JDBC needs jdbc:postgresql://
+            if (!railwayUrl.startsWith("jdbc:")) {
+                return "jdbc:" + railwayUrl;
+            }
             return railwayUrl;
         }
         // Local development fallback

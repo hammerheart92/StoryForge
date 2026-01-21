@@ -25,6 +25,10 @@ public class GalleryService {
     private String getDatabaseUrl() {
         String railwayUrl = System.getenv("DATABASE_URL");
         if (railwayUrl != null && !railwayUrl.isEmpty()) {
+            // Railway provides postgresql:// but JDBC needs jdbc:postgresql://
+            if (!railwayUrl.startsWith("jdbc:")) {
+                return "jdbc:" + railwayUrl;
+            }
             return railwayUrl;
         }
         return "jdbc:postgresql://localhost:5432/storyforge?user=postgres&password=postgres";
