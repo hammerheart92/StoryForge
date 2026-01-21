@@ -24,17 +24,62 @@ public class DatabaseService {
     private String getDatabaseUrl() {
         String railwayUrl = System.getenv("DATABASE_URL");
         if (railwayUrl != null && !railwayUrl.isEmpty()) {
-            logger.debug("🚂 Using Railway DATABASE_URL");
-            // Railway provides postgresql:// but JDBC needs jdbc:postgresql://
-            if (!railwayUrl.startsWith("jdbc:")) {
-                return "jdbc:" + railwayUrl;
-            }
-            return railwayUrl;
+            logger.info("🚂 Using Railway DATABASE_URL");
+            return convertToJdbcUrl(railwayUrl);
         }
         // Local development fallback
         String localUrl = "jdbc:postgresql://localhost:5432/storyforge?user=postgres&password=postgres";
         logger.debug("🏠 Using local PostgreSQL: localhost:5432/storyforge");
         return localUrl;
+    }
+
+    /**
+     * Convert DATABASE_URL to JDBC-compatible format.
+     * Railway provides: postgresql://user:password@host:port/database
+     * JDBC requires:    jdbc:postgresql://host:port/database?user=xxx&password=xxx
+     */
+    private String convertToJdbcUrl(String url) {
+        // Add jdbc: prefix if missing
+        if (!url.startsWith("jdbc:")) {
+            url = "jdbc:" + url;
+        }
+
+        // Check if URL contains credentials in the host part (user:pass@host format)
+        // Pattern: jdbc:postgresql://user:password@host:port/database
+        if (url.contains("@")) {
+            try {
+                // Extract parts: jdbc:postgresql://user:password@host:port/database
+                String withoutPrefix = url.substring("jdbc:postgresql://".length());
+                int atIndex = withoutPrefix.indexOf("@");
+
+                if (atIndex > 0) {
+                    String credentials = withoutPrefix.substring(0, atIndex);
+                    String hostAndDb = withoutPrefix.substring(atIndex + 1);
+
+                    // Parse user:password
+                    int colonIndex = credentials.indexOf(":");
+                    if (colonIndex > 0) {
+                        String user = credentials.substring(0, colonIndex);
+                        String password = credentials.substring(colonIndex + 1);
+
+                        // Build JDBC URL: jdbc:postgresql://host:port/database?user=xxx&password=xxx
+                        String jdbcUrl = "jdbc:postgresql://" + hostAndDb;
+                        if (jdbcUrl.contains("?")) {
+                            jdbcUrl += "&user=" + user + "&password=" + password;
+                        } else {
+                            jdbcUrl += "?user=" + user + "&password=" + password;
+                        }
+
+                        logger.info("🔧 Converted URL format for JDBC compatibility");
+                        return jdbcUrl;
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("⚠️ Could not parse DATABASE_URL, using as-is: {}", e.getMessage());
+            }
+        }
+
+        return url;
     }
 
     /**

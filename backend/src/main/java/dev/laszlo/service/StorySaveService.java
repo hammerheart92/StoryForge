@@ -32,13 +32,40 @@ public class StorySaveService {
     private String getDatabaseUrl() {
         String railwayUrl = System.getenv("DATABASE_URL");
         if (railwayUrl != null && !railwayUrl.isEmpty()) {
-            // Railway provides postgresql:// but JDBC needs jdbc:postgresql://
-            if (!railwayUrl.startsWith("jdbc:")) {
-                return "jdbc:" + railwayUrl;
-            }
-            return railwayUrl;
+            return convertToJdbcUrl(railwayUrl);
         }
         return "jdbc:postgresql://localhost:5432/storyforge?user=postgres&password=postgres";
+    }
+
+    /**
+     * Convert DATABASE_URL to JDBC-compatible format.
+     * Railway provides: postgresql://user:password@host:port/database
+     * JDBC requires:    jdbc:postgresql://host:port/database?user=xxx&password=xxx
+     */
+    private String convertToJdbcUrl(String url) {
+        if (!url.startsWith("jdbc:")) {
+            url = "jdbc:" + url;
+        }
+        if (url.contains("@")) {
+            try {
+                String withoutPrefix = url.substring("jdbc:postgresql://".length());
+                int atIndex = withoutPrefix.indexOf("@");
+                if (atIndex > 0) {
+                    String credentials = withoutPrefix.substring(0, atIndex);
+                    String hostAndDb = withoutPrefix.substring(atIndex + 1);
+                    int colonIndex = credentials.indexOf(":");
+                    if (colonIndex > 0) {
+                        String user = credentials.substring(0, colonIndex);
+                        String password = credentials.substring(colonIndex + 1);
+                        String jdbcUrl = "jdbc:postgresql://" + hostAndDb;
+                        return jdbcUrl + (jdbcUrl.contains("?") ? "&" : "?") + "user=" + user + "&password=" + password;
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Could not parse DATABASE_URL: {}", e.getMessage());
+            }
+        }
+        return url;
     }
 
     /**
