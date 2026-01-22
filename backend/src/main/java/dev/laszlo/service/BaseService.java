@@ -4,6 +4,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import java.sql.ResultSet;
+import java.sql.Timestamp;
+
 /**
  * Base service class providing shared database connection functionality.
  * Handles Railway DATABASE_URL to JDBC format conversion for all service classes.
@@ -60,5 +63,19 @@ public abstract class BaseService {
      */
     protected Connection getConnection() throws SQLException {
         return DriverManager.getConnection(getDatabaseUrl());
+    }
+
+    /**
+     * Safely read a timestamp column and convert to ISO string.
+     * Returns null if timestamp is null.
+     *
+     * @param rs         ResultSet to read from
+     * @param columnName Column name containing timestamp
+     * @return ISO-formatted timestamp string or null
+     * @throws SQLException if column access fails
+     */
+    protected String getTimestampAsString(ResultSet rs, String columnName) throws SQLException {
+        Timestamp ts = rs.getTimestamp(columnName);
+        return ts != null ? ts.toLocalDateTime().toString() : null;
     }
 }

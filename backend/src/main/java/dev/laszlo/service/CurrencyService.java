@@ -20,20 +20,11 @@ public class CurrencyService extends BaseService {
     private static final Logger logger = LoggerFactory.getLogger(CurrencyService.class);
 
     /**
-     * Safely read a timestamp column and convert to ISO string.
-     * Returns null if timestamp is null.
-     */
-    private String getTimestampAsString(ResultSet rs, String columnName) throws SQLException {
-        Timestamp ts = rs.getTimestamp(columnName);
-        return ts != null ? ts.toLocalDateTime().toString() : null;
-    }
-
-    /**
      * 💎 Award gems to a user for completing actions
      *
-     * @param userId User identifier
-     * @param amount Number of gems to award
-     * @param source Source of gems (e.g., "choice_made", "story_completed")
+     * @param userId  User identifier
+     * @param amount  Number of gems to award
+     * @param source  Source of gems (e.g., "choice_made", "story_completed")
      * @param storyId Story context for the transaction
      * @return true if successful, false otherwise
      */
@@ -91,8 +82,8 @@ public class CurrencyService extends BaseService {
     /**
      * 💰 Spend gems for unlocking content
      *
-     * @param userId User identifier
-     * @param amount Number of gems to spend
+     * @param userId    User identifier
+     * @param amount    Number of gems to spend
      * @param contentId Content being unlocked
      * @return true if successful, false if insufficient balance or error
      */
@@ -210,7 +201,7 @@ public class CurrencyService extends BaseService {
      * 📜 Get transaction history for a user
      *
      * @param userId User identifier
-     * @param limit Maximum number of transactions to return
+     * @param limit  Maximum number of transactions to return
      * @return List of recent transactions
      */
     public List<GemTransaction> getTransactionHistory(String userId, int limit) {

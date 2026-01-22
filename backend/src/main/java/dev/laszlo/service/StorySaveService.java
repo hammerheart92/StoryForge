@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
 /**
  * Service for managing story save/load operations.
  * Handles persistence of conversation history across multiple stories.
- *
+ * <p>
  * ⭐ SESSION 26: Multi-story save system
  * ⭐ SESSION 35: Migrated from SQLite to PostgreSQL
  */
@@ -24,15 +25,6 @@ public class StorySaveService extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(StorySaveService.class);
 
-    /**
-     * Safely read a timestamp column and convert to ISO string.
-     * Returns null if timestamp is null.
-     */
-    private String getTimestampAsString(ResultSet rs, String columnName) throws SQLException {
-        Timestamp ts = rs.getTimestamp(columnName);
-        return ts != null ? ts.toLocalDateTime().toString() : null;
-    }
-
     // ═══════════════════════════════════════════════════════════════════════════
     // SAVE OPERATIONS
     // ═══════════════════════════════════════════════════════════════════════════
@@ -40,9 +32,9 @@ public class StorySaveService extends BaseService {
     /**
      * Save or update story progress to database.
      *
-     * @param storyId Story identifier (e.g., "pirates", "observatory")
-     * @param saveSlot Save slot number (default: 1)
-     * @param history Complete conversation history
+     * @param storyId        Story identifier (e.g., "pirates", "observatory")
+     * @param saveSlot       Save slot number (default: 1)
+     * @param history        Complete conversation history
      * @param currentSpeaker Last active character
      * @return true if save successful, false otherwise
      */
@@ -179,7 +171,7 @@ public class StorySaveService extends BaseService {
     /**
      * Load story progress from database.
      *
-     * @param storyId Story identifier
+     * @param storyId  Story identifier
      * @param saveSlot Save slot number (default: 1)
      * @return ConversationHistory if found, null otherwise
      */
@@ -238,7 +230,7 @@ public class StorySaveService extends BaseService {
     /**
      * Check if a save exists for the given story and slot.
      *
-     * @param storyId Story identifier
+     * @param storyId  Story identifier
      * @param saveSlot Save slot number
      * @return true if save exists, false otherwise
      */
@@ -285,7 +277,7 @@ public class StorySaveService extends BaseService {
     /**
      * Get save information (metadata only, no conversation data).
      *
-     * @param storyId Story identifier
+     * @param storyId  Story identifier
      * @param saveSlot Save slot number
      * @return SaveInfo object with metadata, or null if not found
      */
@@ -337,7 +329,7 @@ public class StorySaveService extends BaseService {
     /**
      * Delete a story save.
      *
-     * @param storyId Story identifier
+     * @param storyId  Story identifier
      * @param saveSlot Save slot number
      * @return true if deleted, false otherwise
      */
@@ -372,22 +364,22 @@ public class StorySaveService extends BaseService {
      * 🏆 Mark a story as completed with ending information.
      * ⭐ SESSION 34: Updated to accept endingId and set completed_at timestamp.
      *
-     * @param storyId Story identifier
+     * @param storyId  Story identifier
      * @param saveSlot Slot number
-     * @param userId User identifier
+     * @param userId   User identifier
      * @param endingId The ending that was reached (e.g., "good_ending", "tragic_ending")
      * @return true if successful
      */
     public boolean markStoryCompleted(String storyId, int saveSlot, String userId, String endingId) {
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
         String sql = """
-            UPDATE story_saves
-            SET is_completed = true,
-                ending_id = ?,
-                completed_at = ?,
-                last_played_at = ?
-            WHERE story_id = ? AND save_slot = ? AND user_id = ?
-            """;
+                UPDATE story_saves
+                SET is_completed = true,
+                    ending_id = ?,
+                    completed_at = ?,
+                    last_played_at = ?
+                WHERE story_id = ? AND save_slot = ? AND user_id = ?
+                """;
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -420,13 +412,13 @@ public class StorySaveService extends BaseService {
      */
     public List<SaveInfo> getAllSavesForUser(String userId) {
         String sql = """
-            SELECT story_id, save_slot, created_at, last_played_at,
-                   current_speaker, message_count, choice_count, is_completed,
-                   ending_id, completed_at
-            FROM story_saves
-            WHERE user_id = ?
-            ORDER BY last_played_at DESC
-            """;
+                SELECT story_id, save_slot, created_at, last_played_at,
+                       current_speaker, message_count, choice_count, is_completed,
+                       ending_id, completed_at
+                FROM story_saves
+                WHERE user_id = ?
+                ORDER BY last_played_at DESC
+                """;
 
         List<SaveInfo> saves = new ArrayList<>();
 
@@ -482,13 +474,13 @@ public class StorySaveService extends BaseService {
      */
     public List<SaveInfo> getAllSavesForStory(String userId, String storyId) {
         String sql = """
-        SELECT story_id, save_slot, created_at, last_played_at,
-               current_speaker, message_count, choice_count, is_completed,
-               ending_id, completed_at
-        FROM story_saves
-        WHERE user_id = ? AND story_id = ?
-        ORDER BY save_slot ASC
-        """;
+                SELECT story_id, save_slot, created_at, last_played_at,
+                       current_speaker, message_count, choice_count, is_completed,
+                       ending_id, completed_at
+                FROM story_saves
+                WHERE user_id = ? AND story_id = ?
+                ORDER BY save_slot ASC
+                """;
 
         List<SaveInfo> saves = new ArrayList<>();
 
