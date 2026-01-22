@@ -137,12 +137,3 @@ CREATE TABLE IF NOT EXISTS user_achievements (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, achievement_id)
 );
-
-5. **Save the file**
-
-So your project structure will look like:
-
-StoryForge/
-├── backend/
-├── frontend/
-└── schema.sql    ← This new file

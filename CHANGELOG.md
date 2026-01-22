@@ -15,6 +15,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2026-01-21
+
+### Added
+- PostgreSQL database support for production deployment
+- JDBC URL format conversion for Railway compatibility
+- Persistent data storage across Railway container restarts
+- Database schema initialization with 10 production tables
+
+### Changed
+- **BREAKING**: Migrated from SQLite to PostgreSQL
+- Updated all database service classes to support environment-aware connections
+- Modified `DatabaseService.java`, `CharacterDatabase.java`, `StorySaveService.java`, `CurrencyService.java`, and `GalleryService.java`
+- Improved connection handling with automatic URL format detection
+
+### Fixed
+- Railway deployment connection failures (4-hour debugging session)
+- PostgreSQL JDBC driver URL format incompatibility
+- Timestamp data type handling for PostgreSQL
+- Gallery unlock constraint violations
+- Database connection string format conversion (libpq → JDBC)
+
+### Technical
+- Added `convertToJdbcUrl()` method to handle Railway's PostgreSQL connection string format
+- Implemented proper timestamp writes with `setTimestamp()` instead of `setString()`
+- Implemented proper timestamp reads with helper method using `getTimestamp()`
+- Added SSL configuration for Railway PostgreSQL connections
+- Fixed boolean handling (SQLite integer → PostgreSQL native boolean)
+
+### Infrastructure
+- Production deployment: https://storyforge-production.up.railway.app
+- Database: Railway PostgreSQL (persistent storage)
+- All data now survives container restarts and redeployments
+
 ## [0.8.0] - 2026-01-18
 
 ### Added
