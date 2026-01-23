@@ -71,6 +71,25 @@ class GalleryContentCard extends StatelessWidget {
     }
   }
 
+  String? _getSceneImagePath() {
+    // Map content IDs to image files (scenes only for now)
+    if (content.contentType.toLowerCase() != 'scene') {
+      return null; // Only scenes have images for now
+    }
+
+    // Map based on title (you can also use contentId if you prefer)
+    switch (content.title.toLowerCase()) {
+      case 'the storm':
+        return 'assets/images/gallery/scenes/scene_storm.png';
+      case 'the kraken attack':
+        return 'assets/images/gallery/scenes/scene_kraken_attack.png';
+      case 'treasure island discovery':
+        return 'assets/images/gallery/scenes/scene_treasure_island.png';
+      default:
+        return null; // Fallback to placeholder
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final rarityColor = _getRarityColor();
@@ -109,17 +128,37 @@ class GalleryContentCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Background with rarity tint
-        Container(
-          color: rarityColor.withOpacity(0.15),
-          child: Center(
-            child: Icon(
-              _getContentTypeIcon(),
-              size: 48,
-              color: rarityColor.withOpacity(0.5),
+        // Background image or placeholder
+        if (_getSceneImagePath() != null)
+          Image.asset(
+            _getSceneImagePath()!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              // Fallback to placeholder if image fails to load
+              return Container(
+                color: rarityColor.withOpacity(0.15),
+                child: Center(
+                  child: Icon(
+                    _getContentTypeIcon(),
+                    size: 48,
+                    color: rarityColor.withOpacity(0.5),
+                  ),
+                ),
+              );
+            },
+          )
+        else
+        // Placeholder for non-scene content
+          Container(
+            color: rarityColor.withOpacity(0.15),
+            child: Center(
+              child: Icon(
+                _getContentTypeIcon(),
+                size: 48,
+                color: rarityColor.withOpacity(0.5),
+              ),
             ),
           ),
-        ),
 
         // Blur overlay for locked content
         if (!isUnlocked) _buildLockedOverlay(),

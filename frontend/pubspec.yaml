@@ -68,21 +68,17 @@ flutter:
   #   - images/a_dot_ham.jpeg
 
   assets:
-    - assets/images/characters/narrator_portrait.webp
-    - assets/images/characters/ilyra_portrait.webp
-    - assets/images/characters/illidan.png
-    - assets/images/characters/tyrande.png
-    - assets/images/characters/blackwood_portrait.png
-    - assets/images/characters/isla_portrait.png
-    - assets/images/scenes/pirates/pirate_captains_cabin.png
-    - assets/images/scenes/pirates/pirate_ship_deck.png
-    - assets/images/scenes/pirates/pirate_ship_navigation_room.png
-    - assets/videos/isla_animation.mp4
-    - assets/videos/isla_storm_animation.mp4
-    - assets/videos/isla_sunset_animation.mp4
-    - assets/videos/blackwood_animation.mp4
-    - assets/videos/blackwood_cabin_animation.mp4
-    - assets/videos/blackwood_treasure_animation.mp4
+    # Character portraits
+    - assets/images/characters/
+
+    # Scene backgrounds
+    - assets/images/scenes/pirates/
+
+    # Gallery content
+    - assets/images/gallery/scenes/
+
+    # Video animations
+    - assets/videos/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
