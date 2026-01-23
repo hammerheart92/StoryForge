@@ -38,6 +38,7 @@ docs/
 # Assets/Images
 frontend/assets/images/characters/
 frontend/assets/videos/
+frontend/assets/images/gallery/scenes/
 
 # Design refrenece files
 frontend/docs/design_reference/
