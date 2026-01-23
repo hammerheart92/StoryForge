@@ -16,6 +16,7 @@ import '../widgets/gallery_content_card.dart';
 import '../widgets/gem_counter_widget.dart';
 import '../widgets/tasks_icon_button.dart';
 import '../widgets/unlock_confirmation_dialog.dart';
+import 'gallery_detail_screen.dart';
 
 /// Gallery screen displaying unlockable content for a story.
 ///
@@ -240,6 +241,23 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     );
   }
 
+  void _navigateToDetail(GalleryContent item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GalleryDetailScreen(
+          content: item,
+          isUnlocked: _unlockedIds.contains(item.contentId),
+          hasEnoughGems: _gemBalance >= item.unlockCost,
+          onUnlock: () {
+            Navigator.pop(context);
+            _handleUnlock(item);
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -371,6 +389,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
           isUnlocked: _unlockedIds.contains(item.contentId),
           hasEnoughGems: _gemBalance >= item.unlockCost,
           onUnlockTap: () => _handleUnlock(item),
+          onTap: () => _navigateToDetail(item),
         );
       },
     );

@@ -33,12 +33,14 @@ class GalleryContentCard extends StatelessWidget {
   final bool isUnlocked;
   final bool hasEnoughGems;
   final VoidCallback onUnlockTap;
+  final VoidCallback? onTap;
 
   const GalleryContentCard({
     required this.content,
     required this.isUnlocked,
     required this.hasEnoughGems,
     required this.onUnlockTap,
+    this.onTap,
     super.key,
   });
 
@@ -90,12 +92,32 @@ class GalleryContentCard extends StatelessWidget {
     }
   }
 
+  String? _getCharacterImagePath() {
+    // Map character titles to image files
+    if (content.contentType.toLowerCase() != 'character') {
+      return null; // Only characters have images for now
+    }
+
+    switch (content.title.toLowerCase()) {
+      case 'captain isla portrait':
+        return 'assets/images/gallery/characters/character_isla_portrait.png';
+      case 'first mate rodriguez':
+        return 'assets/images/gallery/characters/character_rodriguez_portrait.png';
+      case 'the sea witch':
+        return 'assets/images/gallery/characters/character_sea_witch_portrait.png';
+      default:
+        return null; // Fallback to placeholder
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final rarityColor = _getRarityColor();
 
-    return Container(
-      decoration: BoxDecoration(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
         border: Border.all(
           color: rarityColor,
@@ -121,6 +143,7 @@ class GalleryContentCard extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -129,38 +152,43 @@ class GalleryContentCard extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         // Background image or placeholder
-        if (_getSceneImagePath() != null)
-          Image.asset(
-            _getSceneImagePath()!,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              // Fallback to placeholder if image fails to load
-              return Container(
-                color: rarityColor.withOpacity(0.15),
-                child: Center(
-                  child: Icon(
-                    _getContentTypeIcon(),
-                    size: 48,
-                    color: rarityColor.withOpacity(0.5),
-                  ),
-                ),
-              );
-            },
-          )
-        else
-        // Placeholder for non-scene content
-          Container(
-            color: rarityColor.withOpacity(0.15),
-            child: Center(
-              child: Icon(
-                _getContentTypeIcon(),
-                size: 48,
-                color: rarityColor.withOpacity(0.5),
-              ),
-            ),
-          ),
+            () {
+          final imagePath = _getSceneImagePath() ?? _getCharacterImagePath();
 
-        // Blur overlay for locked content
+          if (imagePath != null) {
+            return Image.asset(
+              imagePath,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback to placeholder if image fails to load
+                return Container(
+                  color: rarityColor.withOpacity(0.15),
+                  child: Center(
+                    child: Icon(
+                      _getContentTypeIcon(),
+                      size: 48,
+                      color: rarityColor.withOpacity(0.5),
+                    ),
+                  ),
+                );
+              },
+            );
+          } else {
+            // Placeholder for content without images
+            return Container(
+              color: rarityColor.withOpacity(0.15),
+              child: Center(
+                child: Icon(
+                  _getContentTypeIcon(),
+                  size: 48,
+                  color: rarityColor.withOpacity(0.5),
+                ),
+              ),
+            );
+          }
+        }(),
+
+        // Blur overlay for locked content (rest stays the same)
         if (!isUnlocked) _buildLockedOverlay(),
 
         // Rarity badge (top-left, always visible)

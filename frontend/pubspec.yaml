@@ -76,6 +76,7 @@ flutter:
 
     # Gallery content
     - assets/images/gallery/scenes/
+    - assets/images/gallery/characters/
 
     # Video animations
     - assets/videos/
