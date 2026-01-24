@@ -15,6 +15,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] - 2026-01-23
+
+### Added
+
+#### Pirates Gallery Visual Upgrade
+- **3 Scene Images** with professional Midjourney-generated artwork:
+  - **The Storm** (RARE, 50 gems) - Dramatic lightning and turbulent seas (371 KB)
+  - **The Kraken Attack** (EPIC, 80 gems) - Epic sunset kraken battle (607 KB)
+  - **Treasure Island Discovery** (RARE, 50 gems) - Tropical paradise cove (671 KB)
+- **Gallery Detail Screen** with full-screen content view
+  - Tap-to-expand navigation from gallery cards
+  - Full-screen image display with blur for locked content
+  - Info overlay with gradient, rarity badge, title, description
+  - Unlock button integration with existing gem economy
+  - Support for both static images and animated video content
+- **3 Character Portrait Images** (infrastructure added):
+  - Captain Isla Portrait (EPIC, 75 gems) - Navigator with golden lighting
+  - First Mate Rodriguez (RARE, 60 gems) - Experienced officer portrait
+  - The Sea Witch (LEGENDARY, 120 gems) - Mystical sorceress with teal glow
+- **Sea Witch Animation** - Midjourney-generated video (.mp4)
+  - AnimatedCharacterBackground widget integration
+  - Video playback support for legendary gallery content
+  - Detail screen conditional video rendering
+
+### Changed
+- **Refactored Asset Management** to directory-based approach
+  - Migrated from individual file declarations to folder declarations in `pubspec.yaml`
+  - Scalable pattern supporting hundreds of assets
+  - Cleaner, more maintainable configuration
+- **Enhanced Gallery Card Widget** with conditional image loading
+  - Dynamic background rendering based on content type
+  - Image loading for scenes and characters via title mapping
+  - Graceful fallback to placeholder for missing images
+  - Preserved blur effects for locked content (sigmaX/Y: 4)
+
+### Technical
+- **Asset Organization**:
+```
+  frontend/assets/images/gallery/
+  ├── scenes/          (3 images, ~1.6 MB total)
+  ├── characters/      (3 images, ~2 MB total)
+  ├── lore/            (prepared for future content)
+  └── extras/          (prepared for future content)
+  
+  frontend/assets/videos/
+  └── character_sea_witch_portrait.mp4
+```
+- **Image Optimization**: All images compressed with TinyPNG (60-70% size reduction)
+- **Conditional Image Loading Pattern**:
+```dart
+  String? _getSceneImagePath() { ... }
+  String? _getCharacterImagePath() { ... }
+  final imagePath = _getSceneImagePath() ?? _getCharacterImagePath();
+```
+- **Video Detection Pattern** for Sea Witch:
+```dart
+  bool _isSeaWitch() {
+    return content.title.toLowerCase() == 'the sea witch' &&
+           content.contentType.toLowerCase() == 'character';
+  }
+```
+
+### Infrastructure
+- **Branch**: `feature/gallery-scene-images`
+- **Testing**: Chrome browser + Android physical device
+- **Performance**: 60fps maintained, smooth scrolling verified
+- **Memory Usage**: ~2-3 MB additional assets (acceptable for mobile)
+- **Production Ready**: Scenes category fully complete
+
+### Known Issues
+- Character images need cropping adjustment (full-body portraits don't fit card format)
+- Sea Witch animation not yet tested (insufficient gems for unlock)
+- Detail screen character image loading requires verification
+- Lore and Extras categories not yet started
+
+### Documentation
+- SESSION_37_SUMMARY.md created with full implementation details
+- SESSION_38_PLAN.md prepared for character polish completion
+
+---
+
 ## [0.9.0] - 2026-01-21
 
 ### Added
