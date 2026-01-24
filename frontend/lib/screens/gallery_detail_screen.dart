@@ -85,6 +85,23 @@ class GalleryDetailScreen extends StatelessWidget {
     }
   }
 
+  String? _getCharacterImagePath() {
+    if (content.contentType.toLowerCase() != 'character') {
+      return null;
+    }
+
+    switch (content.title.toLowerCase()) {
+      case 'captain isla portrait':
+        return 'assets/images/gallery/characters/character_isla_portrait.png';
+      case 'first mate rodriguez':
+        return 'assets/images/gallery/characters/character_rodriguez_portrait.png';
+      case 'the sea witch':
+        return 'assets/images/gallery/characters/character_sea_witch_portrait.png';
+      default:
+        return null;
+    }
+  }
+
   Widget _buildBackground() {
     final rarityColor = _getRarityColor();
 
@@ -96,7 +113,7 @@ class GalleryDetailScreen extends StatelessWidget {
     }
 
     // Scenes get static images
-    final imagePath = _getSceneImagePath();
+    final imagePath = _getSceneImagePath() ?? _getCharacterImagePath();
     if (imagePath != null) {
       return Image.asset(
         imagePath,
