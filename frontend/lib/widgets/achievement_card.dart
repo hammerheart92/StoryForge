@@ -1,6 +1,7 @@
 // lib/widgets/achievement_card.dart
 // Achievement card with progress bar, rarity styling, and claim button
 
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/achievement.dart';
 import '../models/achievement_progress.dart';
@@ -174,7 +175,7 @@ class AchievementCard extends StatelessWidget {
               ),
             ),
             Text(
-              '${progress.currentCount}/${achievement.targetCount}',
+              '${min(progress.currentCount, achievement.targetCount)}/${achievement.targetCount}',
               style: TextStyle(
                 fontSize: 12,
                 color: isClaimed ? DesignColors.lSuccess : _rarityColor,
