@@ -102,6 +102,48 @@ class GalleryDetailScreen extends StatelessWidget {
     }
   }
 
+  String? _getLoreImagePath() {
+    if (content.contentType.toLowerCase() != 'lore') {
+      return null;
+    }
+
+    switch (content.title.toLowerCase()) {
+      case 'the pirate code':
+        return 'assets/images/gallery/lore/lore_pirate_code.png';
+      case 'captain\'s logbook':
+        return 'assets/images/gallery/lore/lore_captains_logbook.png';
+      case 'the black pearl legend':
+        return 'assets/images/gallery/lore/lore_black_pearl_legend.png';
+      case 'ancient sea chart':
+        return 'assets/images/gallery/lore/lore_ancient_sea_chart.png';
+      case 'the kraken chronicle':
+        return 'assets/images/gallery/lore/lore_kraken_chronicle.png';
+      default:
+        return null;
+    }
+  }
+
+  String? _getExtrasImagePath() {
+    if (content.contentType.toLowerCase() != 'extra') {
+      return null;
+    }
+
+    switch (content.title.toLowerCase()) {
+      case 'ship\'s bell':
+        return 'assets/images/gallery/extras/extras_ships_bell.png';
+      case 'pirate\'s spyglass':
+        return 'assets/images/gallery/extras/extras_pirates_spyglass.png';
+      case 'rum bottles collection':
+        return 'assets/images/gallery/extras/extras_rum_bottles.png';
+      case 'treasure coins':
+        return 'assets/images/gallery/extras/extras_treasure_coins.png';
+      case 'captain\'s pistol':
+        return 'assets/images/gallery/extras/extras_captains_pistol.png';
+      default:
+        return null;
+    }
+  }
+
   Widget _buildBackground() {
     final rarityColor = _getRarityColor();
 
@@ -113,7 +155,10 @@ class GalleryDetailScreen extends StatelessWidget {
     }
 
     // Scenes get static images
-    final imagePath = _getSceneImagePath() ?? _getCharacterImagePath();
+    final imagePath = _getSceneImagePath() ??
+        _getCharacterImagePath() ??
+        _getLoreImagePath() ??
+        _getExtrasImagePath();
     if (imagePath != null) {
       return Image.asset(
         imagePath,
