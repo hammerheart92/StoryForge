@@ -1,23 +1,23 @@
 package dev.laszlo;
 
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
+
 import dev.laszlo.service.ConversationHistory;
 import dev.laszlo.service.StorySaveService;
 import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for StorySaveService.
  * Tests save/load functionality with real database.
- *
+ * <p>
  * ⭐ SESSION 26: Multi-story save system tests
  */
 @SpringBootTest
-@ActiveProfiles("test")  // ⭐ ADD THIS LINE
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class StorySaveServiceTest {
 

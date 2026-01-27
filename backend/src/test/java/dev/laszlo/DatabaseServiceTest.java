@@ -1,48 +1,31 @@
 package dev.laszlo;
 
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
 import dev.laszlo.database.DatabaseService;
 import dev.laszlo.model.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for DatabaseService - no Spring context needed!
+ * Unit tests for DatabaseService using H2 in-memory database
  */
+@SpringBootTest
+@ActiveProfiles("test")
 class DatabaseServiceTest {
 
+    @Autowired
     private DatabaseService databaseService;
-
-    @TempDir
-    Path tempDir;
 
     @BeforeEach
     void setUp() {
-        // Create a fresh DatabaseService for each test
-        // It will create its own storyforge.db in the working directory
-        databaseService = new DatabaseService();
-
-        // Clean up any existing test data
-        cleanDatabase();
-    }
-
-    private void cleanDatabase() {
-        // Clear all sessions and messages for clean tests
-        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:storyforge.db");
-             Statement stmt = conn.createStatement()) {
-            stmt.execute("DELETE FROM messages");
-            stmt.execute("DELETE FROM sessions");
-        } catch (Exception e) {
-            // Ignore errors in cleanup
-        }
+        // H2 with create-drop automatically cleans database between tests
+        // No manual cleanup needed!
     }
 
     /**

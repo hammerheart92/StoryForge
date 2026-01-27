@@ -1,5 +1,6 @@
 package dev.laszlo;
 
+import org.springframework.test.context.ActiveProfiles;
 import dev.laszlo.service.ChatService;
 import dev.laszlo.service.ConversationHistory;
 import dev.laszlo.service.StorySaveService;
@@ -18,6 +19,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 class NarrativeControllerSaveTest {
 
     @LocalServerPort
