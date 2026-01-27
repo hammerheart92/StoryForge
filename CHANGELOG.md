@@ -15,6 +15,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.11.0] - 2026-01-27
+
+### Added
+
+#### Pirates Gallery - Lore & Extras Categories
+- **5 Lore Items** - Historical pirate artifacts and documents:
+  - **The Pirate Code** (COMMON, 25 gems) - Ancient rules of pirate conduct
+  - **Captain's Logbook** (RARE, 50 gems) - Personal journal of legendary captain
+  - **The Black Pearl Legend** (RARE, 55 gems) - Mythical tale of feared ship
+  - **Ancient Sea Chart** (EPIC, 75 gems) - Navigation map with hidden routes
+  - **The Kraken Chronicle** (EPIC, 80 gems) - Historical account of sea monster
+- **5 Extras Items** - Museum-quality pirate artifacts:
+  - **Ship's Bell** (COMMON, 30 gems) - Brass bell from famous vessel
+  - **Pirate's Spyglass** (RARE, 50 gems) - Worn telescope for spotting prey
+  - **Rum Bottles Collection** (RARE, 55 gems) - Aged Caribbean rum assortment
+  - **Treasure Coins** (EPIC, 75 gems) - Gold doubloons and pieces of eight
+  - **Captain's Pistol** (EPIC, 85 gems) - Ornate flintlock pistol
+- **Gallery Progress**: 16/18 items complete (89%)
+
+### Fixed
+- **Achievement Progress Display Bug**: Progress text now capped at requirement value
+  - "First Steps" achievement now correctly shows "1/1" instead of "7/1"
+  - Added `dart:math` import and `min()` function to cap displayed progress
+  - All achievements now display proper progress ratios
+
+### Changed
+- **Gallery Content Card**: Extended image loading to support Lore and Extras categories
+- **Gallery Detail Screen**: Extended image loading to support Lore and Extras categories
+- **Database Schema**: Cleaned duplicate sample data and added production Lore/Extras items
+
+### Technical
+- **Branch**: `feature/gallery-lore-extras`
+- **Testing**: Chrome browser + Android physical device (production mode)
+- **Production Ready**: All code deployed and tested on Railway
+
+### Documentation
+- SESSION_39_SUMMARY.md created with comprehensive implementation details
+
+---
+
 ## [0.10.0] - 2026-01-23
 
 ### Added
