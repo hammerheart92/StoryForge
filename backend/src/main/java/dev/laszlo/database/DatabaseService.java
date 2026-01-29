@@ -27,10 +27,8 @@ public class DatabaseService extends BaseService {
     // ==================== INITIALIZATION ====================
 
     private void initializeDatabase() {
-        createSessionsTable();
-        createMessagesTable();
+        createTables();
         createUserChoicesTable();
-        createStorySavesTable();
 
         // Gallery system tables
         createUserCurrencyTable();
@@ -45,29 +43,114 @@ public class DatabaseService extends BaseService {
         logger.info("✅ Database initialized successfully");
     }
 
-    private void createSessionsTable() {
-        String sql = """
-                CREATE TABLE IF NOT EXISTS sessions (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-                """;
-        executeSQL(sql);
-    }
+    /**
+     * Creates core database tables with comprehensive logging for CI/CD debugging.
+     * Logs each step and throws RuntimeException if any table creation fails.
+     */
+    private void createTables() {
+        try (Connection conn = getConnection()) {
+            String databaseProductName = conn.getMetaData().getDatabaseProductName();
+            logger.info("=== CREATING TABLES - Database: {} ===", databaseProductName);
 
-    private void createMessagesTable() {
-        String sql = """
-                CREATE TABLE IF NOT EXISTS messages (
-                    id SERIAL PRIMARY KEY,
-                    session_id INTEGER NOT NULL,
-                    role VARCHAR(50) NOT NULL,
-                    content TEXT NOT NULL,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (session_id) REFERENCES sessions(id)
-                )
-                """;
-        executeSQL(sql);
+            // Sessions table
+            logger.info("Creating sessions table...");
+            String sessionsSql = """
+                    CREATE TABLE IF NOT EXISTS sessions (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(255) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(sessionsSql);
+                logger.info("✓ Sessions table created");
+            }
+
+            // Messages table
+            logger.info("Creating messages table...");
+            String messagesSql = """
+                    CREATE TABLE IF NOT EXISTS messages (
+                        id SERIAL PRIMARY KEY,
+                        session_id INTEGER NOT NULL,
+                        role VARCHAR(50) NOT NULL,
+                        content TEXT NOT NULL,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (session_id) REFERENCES sessions(id)
+                    )
+                    """;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(messagesSql);
+                logger.info("✓ Messages table created");
+            }
+
+            // Story saves table
+            logger.info("Creating story_saves table...");
+            String storySavesSql = """
+                    CREATE TABLE IF NOT EXISTS story_saves (
+                        id SERIAL PRIMARY KEY,
+                        story_id VARCHAR(50) NOT NULL,
+                        save_slot INTEGER DEFAULT 1,
+                        user_id VARCHAR(50) DEFAULT 'default',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        last_played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        current_speaker VARCHAR(50),
+                        message_count INTEGER DEFAULT 0,
+                        choice_count INTEGER DEFAULT 0,
+                        conversation_json TEXT NOT NULL,
+                        progress_metadata TEXT,
+                        is_completed BOOLEAN DEFAULT FALSE,
+                        ending_id VARCHAR(100),
+                        completed_at TIMESTAMP,
+                        UNIQUE(story_id, save_slot, user_id)
+                    )
+                    """;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(storySavesSql);
+                logger.info("✓ Story_saves table created");
+            }
+
+            // Create indexes for story_saves
+            String indexLookup = """
+                    CREATE INDEX IF NOT EXISTS idx_story_saves_lookup
+                    ON story_saves(story_id, save_slot, user_id)
+                    """;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(indexLookup);
+            }
+
+            String indexRecent = """
+                    CREATE INDEX IF NOT EXISTS idx_story_saves_recent
+                    ON story_saves(last_played_at DESC)
+                    """;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(indexRecent);
+            }
+
+            String indexUser = """
+                    CREATE INDEX IF NOT EXISTS idx_story_saves_user
+                    ON story_saves(user_id, last_played_at DESC)
+                    """;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(indexUser);
+            }
+
+            String indexCompleted = """
+                    CREATE INDEX IF NOT EXISTS idx_story_saves_completed
+                    ON story_saves(is_completed)
+                    """;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(indexCompleted);
+            }
+
+            logger.info("=== ALL TABLES CREATED SUCCESSFULLY ===");
+
+        } catch (SQLException e) {
+            String errorMessage = "❌ FATAL ERROR CREATING TABLES: " + e.getMessage();
+            logger.error(errorMessage);
+            System.err.println(errorMessage);
+            e.printStackTrace();
+            throw new RuntimeException("Failed to create database tables", e);
+        }
     }
 
     private void createUserChoicesTable() {
@@ -84,59 +167,6 @@ public class DatabaseService extends BaseService {
                 """;
         executeSQL(sql);
         logger.debug("📊 user_choices table ready");
-    }
-
-    /**
-     * ⭐ SESSION 34: Story saves with completion tracking
-     */
-    private void createStorySavesTable() {
-        String sql = """
-                CREATE TABLE IF NOT EXISTS story_saves (
-                    id SERIAL PRIMARY KEY,
-                    story_id VARCHAR(50) NOT NULL,
-                    save_slot INTEGER DEFAULT 1,
-                    user_id VARCHAR(50) DEFAULT 'default',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    current_speaker VARCHAR(50),
-                    message_count INTEGER DEFAULT 0,
-                    choice_count INTEGER DEFAULT 0,
-                    conversation_json TEXT NOT NULL,
-                    progress_metadata TEXT,
-                    is_completed BOOLEAN DEFAULT FALSE,
-                    ending_id VARCHAR(100),
-                    completed_at TIMESTAMP,
-                    UNIQUE(story_id, save_slot, user_id)
-                )
-                """;
-        executeSQL(sql);
-
-        // Create indexes for fast lookups
-        String indexLookup = """
-                CREATE INDEX IF NOT EXISTS idx_story_saves_lookup 
-                ON story_saves(story_id, save_slot, user_id)
-                """;
-        executeSQL(indexLookup);
-
-        String indexRecent = """
-                CREATE INDEX IF NOT EXISTS idx_story_saves_recent 
-                ON story_saves(last_played_at DESC)
-                """;
-        executeSQL(indexRecent);
-
-        String indexUser = """
-                CREATE INDEX IF NOT EXISTS idx_story_saves_user 
-                ON story_saves(user_id, last_played_at DESC)
-                """;
-        executeSQL(indexUser);
-
-        String indexCompleted = """
-                CREATE INDEX IF NOT EXISTS idx_story_saves_completed 
-                ON story_saves(is_completed)
-                """;
-        executeSQL(indexCompleted);
-
-        logger.debug("💾 story_saves table ready");
     }
 
     /**
