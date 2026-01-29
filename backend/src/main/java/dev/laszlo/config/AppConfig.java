@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
+import javax.sql.DataSource;
+
 @Configuration
 public class AppConfig {
 
@@ -35,8 +37,8 @@ public class AppConfig {
     }
 
     @Bean
-    public DatabaseService databaseService() {
-        return new DatabaseService();
+    public DatabaseService databaseService(DataSource dataSource) {
+        return new DatabaseService(dataSource);
     }
 
     @Bean

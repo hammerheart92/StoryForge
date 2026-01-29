@@ -37,6 +37,12 @@
             <version>2.10.1</version>
         </dependency>
 
+        <!-- Spring Boot JDBC (provides DataSource auto-configuration) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
         <!-- PostgreSQL Database -->
         <dependency>
             <groupId>org.postgresql</groupId>

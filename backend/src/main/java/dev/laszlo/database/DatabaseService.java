@@ -5,6 +5,7 @@ import dev.laszlo.service.BaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +17,13 @@ import java.util.List;
 public class DatabaseService extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseService.class);
+    private final DataSource dataSource;
 
     /**
      * Constructor - creates database tables if they don't exist.
      */
-    public DatabaseService() {
+    public DatabaseService(DataSource dataSource) {
+        this.dataSource = dataSource;
         initializeDatabase();
     }
 
@@ -48,7 +51,7 @@ public class DatabaseService extends BaseService {
      * Logs each step and throws RuntimeException if any table creation fails.
      */
     private void createTables() {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             String databaseProductName = conn.getMetaData().getDatabaseProductName();
             logger.info("=== CREATING TABLES - Database: {} ===", databaseProductName);
 
@@ -350,7 +353,7 @@ public class DatabaseService extends BaseService {
      * Execute SQL statement with error handling.
      */
     private void executeSQL(String sql) {
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
@@ -363,7 +366,7 @@ public class DatabaseService extends BaseService {
     public void saveMessage(int sessionId, String role, String content) {
         String insertSQL = "INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
 
             pstmt.setInt(1, sessionId);
@@ -382,7 +385,7 @@ public class DatabaseService extends BaseService {
         List<String[]> messages = new ArrayList<>();
         String selectSQL = "SELECT role, content FROM messages WHERE session_id = ? ORDER BY id ASC";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(selectSQL)) {
 
             pstmt.setInt(1, sessionId);
@@ -414,7 +417,7 @@ public class DatabaseService extends BaseService {
     public void clearMessages(int sessionId) {
         String deleteSQL = "DELETE FROM messages WHERE session_id = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(deleteSQL)) {
 
             pstmt.setInt(1, sessionId);
@@ -431,7 +434,7 @@ public class DatabaseService extends BaseService {
     public void saveUserChoice(int sessionId, String choiceId, String choiceLabel, String nextSpeaker) {
         String insertSQL = "INSERT INTO user_choices (session_id, choice_id, choice_label, next_speaker) VALUES (?, ?, ?, ?)";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
 
             pstmt.setInt(1, sessionId);
@@ -451,7 +454,7 @@ public class DatabaseService extends BaseService {
         List<String[]> choices = new ArrayList<>();
         String selectSQL = "SELECT choice_id, choice_label, next_speaker, chosen_at FROM user_choices WHERE session_id = ? ORDER BY id ASC";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(selectSQL)) {
 
             pstmt.setInt(1, sessionId);
@@ -477,7 +480,7 @@ public class DatabaseService extends BaseService {
     public int getChoiceCount(int sessionId) {
         String countSQL = "SELECT COUNT(*) as count FROM user_choices WHERE session_id = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(countSQL)) {
 
             pstmt.setInt(1, sessionId);
@@ -497,18 +500,20 @@ public class DatabaseService extends BaseService {
     // ==================== SESSION OPERATIONS ====================
 
     public int createSession(String name) {
-        String insertSQL = "INSERT INTO sessions (name) VALUES (?) RETURNING id";
+        String insertSQL = "INSERT INTO sessions (name) VALUES (?)";
 
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setString(1, name);
-            ResultSet rs = pstmt.executeQuery();
+            pstmt.executeUpdate();
 
-            if (rs.next()) {
-                int sessionId = rs.getInt(1);
-                logger.info("📝 Created session: {} (ID: {})", name, sessionId);
-                return sessionId;
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    int sessionId = rs.getInt(1);
+                    logger.info("📝 Created session: {} (ID: {})", name, sessionId);
+                    return sessionId;
+                }
             }
 
         } catch (SQLException e) {
@@ -528,7 +533,7 @@ public class DatabaseService extends BaseService {
                 ORDER BY s.id DESC
                 """;
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectSQL)) {
 
@@ -554,7 +559,7 @@ public class DatabaseService extends BaseService {
         String deleteChoicesSQL = "DELETE FROM user_choices WHERE session_id = ?";
         String deleteSessionSQL = "DELETE FROM sessions WHERE id = ?";
 
-        try (Connection conn = getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
 
             // Delete messages
             try (PreparedStatement pstmt = conn.prepareStatement(deleteMessagesSQL)) {
