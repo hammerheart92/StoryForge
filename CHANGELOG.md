@@ -15,6 +15,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.11.1] - 2026-01-29
+
+### Fixed
+- **CI/CD Test Failures**: All 48 backend tests now pass in GitHub Actions
+  - Implemented H2 in-memory database for automated testing with PostgreSQL compatibility mode
+  - Added Spring DataSource injection to `DatabaseService` and `StorySaveService`
+  - Replaced hardcoded PostgreSQL connections from `BaseService` with Spring-managed DataSource
+  - Fixed PostgreSQL-specific SQL (`RETURNING` clause) to use standard JDBC `getGeneratedKeys()`
+  - Added `spring-boot-starter-jdbc` dependency for proper DataSource auto-configuration
+  - Tests now use H2 in test profile while production continues using PostgreSQL
+
+### Technical
+- **Database Service Architecture**: Refactored database services to use Spring Boot's DataSource injection
+  - `DatabaseService`: Added DataSource constructor injection, replaced 11 hardcoded connection calls
+  - `StorySaveService`: Added DataSource constructor injection, replaced all hardcoded connection calls
+  - `AppConfig`: Updated bean definitions to inject DataSource
+  - Enhanced error logging in `createTables()` for better CI/CD debugging
+- **Test Configuration**: Updated `application-test.properties` with H2 PostgreSQL mode and auto-DDL
+- **Test Classes**: Added `@SpringBootTest` and `@ActiveProfiles("test")` annotations where missing
+
+### Performance
+- **Test Execution**: CI/CD test suite completes in ~26 seconds (down from failing indefinitely)
+- **Local Testing**: All tests pass with H2 in-memory database (2-3x faster than PostgreSQL)
+
+### Development Workflow
+- ✅ Green CI/CD pipeline enables confident merging and collaboration
+- ✅ Automated testing catches bugs before production deployment
+- ✅ Professional development workflow with passing status checks
+
 ## [0.11.0] - 2026-01-27
 
 ### Added
