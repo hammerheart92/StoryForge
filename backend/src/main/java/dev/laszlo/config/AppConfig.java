@@ -7,6 +7,7 @@ import dev.laszlo.service.NarrativeEngine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
@@ -37,6 +38,7 @@ public class AppConfig {
     }
 
     @Bean
+    @Profile("!test")  // Skip in test profile - let Spring auto-configure H2
     public DataSource dataSource() {
         String databaseUrl = System.getenv("DATABASE_URL");
 
