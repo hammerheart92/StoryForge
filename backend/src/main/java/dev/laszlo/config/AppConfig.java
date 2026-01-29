@@ -37,6 +37,66 @@ public class AppConfig {
     }
 
     @Bean
+    public DataSource dataSource() {
+        String databaseUrl = System.getenv("DATABASE_URL");
+
+        // If DATABASE_URL exists (Railway/production), parse it
+        if (databaseUrl != null && !databaseUrl.isEmpty()) {
+            return createDataSourceFromUrl(databaseUrl);
+        }
+
+        // Local development fallback
+        org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+                new org.springframework.jdbc.datasource.DriverManagerDataSource();
+        dataSource.setDriverClassName("org.postgresql.Driver");
+        dataSource.setUrl("jdbc:postgresql://localhost:5432/storyforge");
+        dataSource.setUsername("postgres");
+        dataSource.setPassword("postgres");
+        return dataSource;
+    }
+
+    private DataSource createDataSourceFromUrl(String url) {
+        // Convert Railway URL format to JDBC format
+        if (!url.startsWith("jdbc:")) {
+            url = "jdbc:" + url;
+        }
+
+        // Extract credentials from URL (format: jdbc:postgresql://user:password@host:port/database)
+        String username = "postgres";
+        String password = "";
+        String jdbcUrl = url;
+
+        if (url.contains("@")) {
+            try {
+                String withoutPrefix = url.substring("jdbc:postgresql://".length());
+                int atIndex = withoutPrefix.indexOf("@");
+                if (atIndex > 0) {
+                    String credentials = withoutPrefix.substring(0, atIndex);
+                    String hostAndDb = withoutPrefix.substring(atIndex + 1);
+
+                    int colonIndex = credentials.indexOf(":");
+                    if (colonIndex > 0) {
+                        username = credentials.substring(0, colonIndex);
+                        password = credentials.substring(colonIndex + 1);
+                    }
+
+                    jdbcUrl = "jdbc:postgresql://" + hostAndDb;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse DATABASE_URL: " + e.getMessage());
+            }
+        }
+
+        org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+                new org.springframework.jdbc.datasource.DriverManagerDataSource();
+        dataSource.setDriverClassName("org.postgresql.Driver");
+        dataSource.setUrl(jdbcUrl);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        return dataSource;
+    }
+
+    @Bean
     public DatabaseService databaseService(DataSource dataSource) {
         return new DatabaseService(dataSource);
     }
