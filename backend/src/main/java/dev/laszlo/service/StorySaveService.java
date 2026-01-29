@@ -2,12 +2,12 @@ package dev.laszlo.service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javax.sql.DataSource;
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
@@ -24,6 +24,14 @@ import java.time.LocalDateTime;
 public class StorySaveService extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(StorySaveService.class);
+    private final DataSource dataSource;
+
+    /**
+     * Constructor - creates database tables if they don't exist.
+     */
+    public StorySaveService(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // SAVE OPERATIONS
@@ -92,7 +100,7 @@ public class StorySaveService extends BaseService {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             Timestamp now = Timestamp.valueOf(LocalDateTime.now());
@@ -137,7 +145,7 @@ public class StorySaveService extends BaseService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, conversationJson);
@@ -188,7 +196,7 @@ public class StorySaveService extends BaseService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -255,7 +263,7 @@ public class StorySaveService extends BaseService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -291,7 +299,7 @@ public class StorySaveService extends BaseService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -337,7 +345,7 @@ public class StorySaveService extends BaseService {
         String userId = "default";
         String sql = "DELETE FROM story_saves WHERE story_id = ? AND save_slot = ? AND user_id = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, storyId);
@@ -381,7 +389,7 @@ public class StorySaveService extends BaseService {
                 WHERE story_id = ? AND save_slot = ? AND user_id = ?
                 """;
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, endingId);
@@ -422,7 +430,7 @@ public class StorySaveService extends BaseService {
 
         List<SaveInfo> saves = new ArrayList<>();
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
@@ -484,7 +492,7 @@ public class StorySaveService extends BaseService {
 
         List<SaveInfo> saves = new ArrayList<>();
 
-        try (Connection conn = getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
