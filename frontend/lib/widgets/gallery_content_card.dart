@@ -203,7 +203,7 @@ class GalleryContentCard extends StatelessWidget {
           if (imagePath != null) {
             return Image.asset(
               imagePath,
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
               alignment: Alignment.topCenter,  // Keep the top (face) visible
               errorBuilder: (context, error, stackTrace) {
                 // Fallback to placeholder if image fails to load

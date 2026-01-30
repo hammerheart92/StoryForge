@@ -162,7 +162,7 @@ class GalleryDetailScreen extends StatelessWidget {
     if (imagePath != null) {
       return Image.asset(
         imagePath,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         width: double.infinity,
         height: double.infinity,
         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(rarityColor),
