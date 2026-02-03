@@ -15,6 +15,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.0] - 2026-02-03
+
+### Added
+- **Theme System**: Complete Light/Dark/System mode support across entire app
+- **Settings Screen**: Dedicated settings screen with 4 sections (Appearance, Preferences, Data & Privacy, About)
+- Theme toggle dialog in Settings with Light/Dark/System options
+- Theme persistence via SharedPreferences
+- Theme provider (Riverpod) for runtime state management
+
+### Changed
+- **Profile Screen**: Refactored to show only user stats and achievements (removed settings)
+- Settings moved to dedicated screen accessible via Settings button
+- All 8 screens now theme-aware using design tokens (60+ color replacements)
+- "Clear All Data" now shows confirmation dialog with warning styling
+
+### Fixed
+- DialogTheme type error (changed to DialogThemeData)
+- Hardcoded dark colors across 8 screens and 4 widgets
+- Theme-aware color selection now consistent throughout app
+
+### Improved
+- Visual hierarchy in Settings with section headers
+- Dangerous actions styled with warning colors
+- Consistent Material 3 design across both themes
+- Professional UI with 100% design token compliance
+
 ## [0.11.1] - 2026-01-29
 
 ### Fixed
