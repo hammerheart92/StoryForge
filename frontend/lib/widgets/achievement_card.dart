@@ -14,11 +14,11 @@ import '../theme/storyforge_theme.dart';
 /// Achievement card with progress bar and rarity-based styling
 ///
 /// Design tokens used:
-/// - Card: DesignColors.dSurfaces, StoryForgeTheme.cardRadius (12)
+/// - Card: Theme-aware surfaces, StoryForgeTheme.cardRadius (12)
 /// - Rarity badge: DesignColors.rarity*, StoryForgeTheme.chipRadius (4)
 /// - Claimable glow: DesignShadows.glowIntense(rarityColor)
-/// - Title: DesignTypography.ctaBold, DesignColors.dPrimaryText
-/// - Description: DesignTypography.bodyRegular @ 14px, DesignColors.dSecondaryText
+/// - Title: DesignTypography.ctaBold, Theme-aware text
+/// - Description: DesignTypography.bodyRegular @ 14px, Theme-aware text
 /// - Progress bar: 6px height, StoryForgeTheme.chipRadius (4)
 /// - Gem badge: rarityColor @ 20%, StoryForgeTheme.badgeRadius (6)
 /// - Claim button: rarityColor, StoryForgeTheme.buttonRadius (12)
@@ -32,12 +32,14 @@ class AchievementCard extends StatelessWidget {
   final AchievementProgress progress;
   final VoidCallback onClaim;
   final bool isLoading;
+  final bool isDark;
 
   const AchievementCard({
     required this.achievement,
     required this.progress,
     required this.onClaim,
     this.isLoading = false,
+    required this.isDark,
     super.key,
   });
 
@@ -65,12 +67,15 @@ class AchievementCard extends StatelessWidget {
     final isClaimable = progress.status == AchievementStatus.claimable;
     final isClaimed = progress.status == AchievementStatus.claimed;
     final isLocked = progress.status == AchievementStatus.locked;
+    final surfaceColor = isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces;
+    final primaryText = isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
 
     return Container(
       decoration: BoxDecoration(
         color: isClaimed
-            ? DesignColors.dSurfaces.withValues(alpha: 0.6)
-            : DesignColors.dSurfaces,
+            ? surfaceColor.withValues(alpha: 0.6)
+            : surfaceColor,
         borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
         border: Border.all(
           color: isClaimable ? _rarityColor : _rarityColor.withValues(alpha: 0.3),
@@ -113,9 +118,7 @@ class AchievementCard extends StatelessWidget {
                 child: Text(
                   achievement.title,
                   style: DesignTypography.ctaBold.copyWith(
-                    color: isClaimed
-                        ? DesignColors.dSecondaryText
-                        : DesignColors.dPrimaryText,
+                    color: isClaimed ? secondaryText : primaryText,
                   ),
                 ),
               ),
@@ -129,7 +132,7 @@ class AchievementCard extends StatelessWidget {
             achievement.description,
             style: DesignTypography.bodyRegular.copyWith(
               fontSize: 14,
-              color: DesignColors.dSecondaryText,
+              color: secondaryText,
             ),
           ),
 
@@ -158,6 +161,8 @@ class AchievementCard extends StatelessWidget {
   Widget _buildProgressSection(bool isLocked, bool isClaimed) {
     final progressPercent = progress.currentCount / achievement.targetCount;
     final clampedProgress = progressPercent.clamp(0.0, 1.0);
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+    final disabledColor = isDark ? DesignColors.dDisabled : DesignColors.lDisabled;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +175,7 @@ class AchievementCard extends StatelessWidget {
               'Progress',
               style: TextStyle(
                 fontSize: 12,
-                color: DesignColors.dSecondaryText,
+                color: secondaryText,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -189,7 +194,7 @@ class AchievementCard extends StatelessWidget {
         Container(
           height: 6,
           decoration: BoxDecoration(
-            color: DesignColors.dDisabled.withValues(alpha: 0.3),
+            color: disabledColor.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(StoryForgeTheme.chipRadius),
           ),
           child: LayoutBuilder(
@@ -201,7 +206,7 @@ class AchievementCard extends StatelessWidget {
                     duration: const Duration(milliseconds: 300),
                     width: constraints.maxWidth * clampedProgress,
                     decoration: BoxDecoration(
-                      color: isLocked ? DesignColors.dDisabled : _rarityColor,
+                      color: isLocked ? disabledColor : _rarityColor,
                       borderRadius: BorderRadius.circular(StoryForgeTheme.chipRadius),
                       boxShadow: clampedProgress > 0 && !isLocked
                           ? DesignShadows.glowSoft(_rarityColor)
@@ -250,6 +255,9 @@ class AchievementCard extends StatelessWidget {
   }
 
   Widget _buildActionWidget(bool isClaimable, bool isClaimed, bool isLocked) {
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+    final disabledColor = isDark ? DesignColors.dDisabled : DesignColors.lDisabled;
+
     if (isClaimed) {
       // Completed badge
       return Container(
@@ -290,10 +298,10 @@ class AchievementCard extends StatelessWidget {
     return ElevatedButton(
       onPressed: isClaimable && !isLoading ? onClaim : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: isClaimable ? _rarityColor : DesignColors.dDisabled,
+        backgroundColor: isClaimable ? _rarityColor : disabledColor,
         foregroundColor: Colors.white,
-        disabledBackgroundColor: DesignColors.dDisabled,
-        disabledForegroundColor: DesignColors.dSecondaryText,
+        disabledBackgroundColor: disabledColor,
+        disabledForegroundColor: secondaryText,
         padding: EdgeInsets.symmetric(
           horizontal: DesignSpacing.md,
           vertical: DesignSpacing.sm,

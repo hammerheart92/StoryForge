@@ -13,7 +13,7 @@ import '../theme/storyforge_theme.dart';
 /// Daily check-in card with 7-day calendar row
 ///
 /// Design tokens used:
-/// - Card: DesignColors.dSurfaces, StoryForgeTheme.cardRadius (12), DesignShadows.md
+/// - Card: Theme-aware surfaces, StoryForgeTheme.cardRadius (12), DesignShadows.md
 /// - Streak icon: DesignColors.rarityEpic (amber)
 /// - Day card: StoryForgeTheme.inputRadius (8)
 /// - Claimed day: DesignColors.lSuccess + glowSoft
@@ -23,11 +23,13 @@ class CheckInCard extends StatelessWidget {
   final CheckInData data;
   final VoidCallback onCheckIn;
   final bool isLoading;
+  final bool isDark;
 
   const CheckInCard({
     required this.data,
     required this.onCheckIn,
     this.isLoading = false,
+    required this.isDark,
     super.key,
   });
 
@@ -36,10 +38,14 @@ class CheckInCard extends StatelessWidget {
     final canClaim = CheckInService.canClaimToday(data);
     final nextDay = _getNextClaimDay();
     final nextReward = CheckInData.getRewardForDay(nextDay);
+    final surfaceColor = isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces;
+    final primaryText = isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+    final disabledColor = isDark ? DesignColors.dDisabled : DesignColors.lDisabled;
 
     return Container(
       decoration: BoxDecoration(
-        color: DesignColors.dSurfaces,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
         boxShadow: DesignShadows.md,
       ),
@@ -54,7 +60,7 @@ class CheckInCard extends StatelessWidget {
               Text(
                 'Check in',
                 style: DesignTypography.ctaBold.copyWith(
-                  color: DesignColors.dPrimaryText,
+                  color: primaryText,
                   fontSize: 18,
                 ),
               ),
@@ -85,7 +91,7 @@ class CheckInCard extends StatelessWidget {
           Text(
             'Check in now to get gems!',
             style: DesignTypography.bodyRegular.copyWith(
-              color: DesignColors.dSecondaryText,
+              color: secondaryText,
               fontSize: 14,
             ),
           ),
@@ -107,6 +113,7 @@ class CheckInCard extends StatelessWidget {
                 isClaimed: isClaimed,
                 isCurrentDay: isCurrentDay && canClaim,
                 isPast: dayNum < nextDay && !isClaimed,
+                isDark: isDark,
               );
             }),
           ),
@@ -121,8 +128,8 @@ class CheckInCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: DesignColors.rarityEpic,
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: DesignColors.dDisabled,
-                disabledForegroundColor: DesignColors.dSecondaryText,
+                disabledBackgroundColor: disabledColor,
+                disabledForegroundColor: secondaryText,
                 padding: EdgeInsets.symmetric(vertical: DesignSpacing.md),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(StoryForgeTheme.buttonRadius),
@@ -195,6 +202,7 @@ class _DayCard extends StatelessWidget {
   final bool isClaimed;
   final bool isCurrentDay;
   final bool isPast;
+  final bool isDark;
 
   const _DayCard({
     required this.dayNumber,
@@ -202,10 +210,15 @@ class _DayCard extends StatelessWidget {
     required this.isClaimed,
     required this.isCurrentDay,
     required this.isPast,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    final surfaceColor = isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces;
+    final disabledColor = isDark ? DesignColors.dDisabled : DesignColors.lDisabled;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+
     // Determine colors and effects based on state
     Color backgroundColor;
     Color borderColor;
@@ -224,8 +237,8 @@ class _DayCard extends StatelessWidget {
       boxShadow = DesignShadows.glowIntense(DesignColors.rarityEpic);
     } else {
       // Future/unavailable days: dimmed
-      backgroundColor = DesignColors.dSurfaces;
-      borderColor = DesignColors.dDisabled;
+      backgroundColor = surfaceColor;
+      borderColor = disabledColor;
       opacity = isPast ? 0.5 : 0.7;
     }
 
@@ -259,7 +272,7 @@ class _DayCard extends StatelessWidget {
                     ? DesignColors.lSuccess
                     : isCurrentDay
                         ? DesignColors.rarityEpic
-                        : DesignColors.dSecondaryText,
+                        : secondaryText,
               ),
             ),
             SizedBox(height: DesignSpacing.xs),
@@ -283,7 +296,7 @@ class _DayCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: isCurrentDay
                           ? DesignColors.rarityEpic
-                          : DesignColors.dSecondaryText,
+                          : secondaryText,
                     ),
                   ),
                 ],

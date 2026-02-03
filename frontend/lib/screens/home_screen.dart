@@ -16,19 +16,20 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 600;
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
 
     return Scaffold(
       body: Stack(
         children: [
           // Main content with gradient background
           Container(
-            // Option B: Subtle vertical gradient (atmospheric depth)
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: DesignColors.appGradient,
-                stops: [0.0, 0.5, 1.0],
+                colors: StoryForgeTheme.getGradientColors(brightness),
+                stops: const [0.0, 0.5, 1.0],
               ),
             ),
             child: SafeArea(
@@ -51,12 +52,12 @@ class HomeScreen extends StatelessWidget {
                                 ? StoryForgeTheme.homeTitleSizeDesktop
                                 : StoryForgeTheme.homeTitleSizeMobile,
                             fontWeight: FontWeight.bold,
-                            color: DesignColors.dPrimaryText,
+                            color: StoryForgeTheme.getPrimaryTextColor(brightness),
                             letterSpacing: 2.0,
                             shadows: [
                               // Subtle text glow for drama
                               Shadow(
-                                color: DesignColors.dPrimaryText.withOpacity(0.3),
+                                color: StoryForgeTheme.getPrimaryTextColor(brightness).withOpacity(0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 0),
                               ),
@@ -76,7 +77,7 @@ class HomeScreen extends StatelessWidget {
                                 ? StoryForgeTheme.homeSubtitleSizeDesktop
                                 : StoryForgeTheme.homeSubtitleSizeMobile,
                             fontStyle: FontStyle.italic,
-                            color: DesignColors.dSecondaryText,
+                            color: StoryForgeTheme.getSecondaryTextColor(brightness),
                             letterSpacing: 1.2,
                             height: 1.5,
                           ),
@@ -90,6 +91,7 @@ class HomeScreen extends StatelessWidget {
 
                         // Story Library Button
                         _StoryLibraryButton(
+                          isDark: isDark,
                           onTap: () async {
                             if (!context.mounted) return;
 
@@ -165,9 +167,13 @@ class HomeScreen extends StatelessWidget {
 
 /// Story Library button with teal glow effect
 class _StoryLibraryButton extends StatelessWidget {
+  final bool isDark;
   final VoidCallback onTap;
 
-  const _StoryLibraryButton({required this.onTap});
+  const _StoryLibraryButton({
+    required this.isDark,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +185,7 @@ class _StoryLibraryButton extends StatelessWidget {
         width: StoryForgeTheme.homeButtonWidth,
         height: StoryForgeTheme.homeButtonHeight,
         decoration: BoxDecoration(
-          color: DesignColors.dSurfaces,
+          color: isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces,
           borderRadius: BorderRadius.circular(
             StoryForgeTheme.homeButtonRadius,
           ),
@@ -231,7 +237,7 @@ class _StoryLibraryButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18, // Button text size
                       fontWeight: FontWeight.w600,
-                      color: DesignColors.dPrimaryText,
+                      color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
                       letterSpacing: 0.5,
                     ),
                   ),

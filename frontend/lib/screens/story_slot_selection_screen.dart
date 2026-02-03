@@ -27,23 +27,27 @@ class StorySlotSelectionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final savesAsync = ref.watch(storySavesProvider(story.id));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: DesignColors.dBackground,
+      backgroundColor: isDark ? DesignColors.dBackground : DesignColors.lBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: DesignColors.dPrimaryText),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           story.title,
           style: TextStyle(
             fontFamily: 'Merriweather',
-            fontSize: 20.0, // Subheading size (between md 24 and bodyMedium 18)
+            fontSize: 20.0,
             fontWeight: FontWeight.bold,
-            color: DesignColors.dPrimaryText,
+            color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
           ),
         ),
         centerTitle: true,
@@ -57,38 +61,46 @@ class StorySlotSelectionScreen extends ConsumerWidget {
               SizedBox(height: DesignSpacing.md),
               Text(
                 'Loading save slots...',
-                style: TextStyle(color: DesignColors.dSecondaryText),
+                style: TextStyle(
+                  color: isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText,
+                ),
               ),
             ],
           ),
         ),
-        error: (error, stack) => _buildErrorState(context, ref, error),
-        data: (saves) => _buildSlotList(context, ref, saves),
+        error: (error, stack) => _buildErrorState(context, ref, error, isDark),
+        data: (saves) => _buildSlotList(context, ref, saves, isDark),
       ),
     );
   }
 
-  Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
+  Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error, bool isDark) {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(DesignSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_off, size: StoryForgeTheme.iconSizeXL, color: DesignColors.dSecondaryText),
+            Icon(
+              Icons.cloud_off,
+              size: StoryForgeTheme.iconSizeXL,
+              color: isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText,
+            ),
             SizedBox(height: DesignSpacing.md),
             Text(
               'Unable to load save slots',
               style: TextStyle(
-                fontSize: 18, // Body text size
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: DesignColors.dPrimaryText,
+                color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
               ),
             ),
             SizedBox(height: DesignSpacing.sm),
             Text(
               'Check your connection and try again',
-              style: TextStyle(color: DesignColors.dSecondaryText),
+              style: TextStyle(
+                color: isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText,
+              ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: DesignSpacing.lg),
@@ -107,7 +119,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSlotList(BuildContext context, WidgetRef ref, List<SaveInfo> saves) {
+  Widget _buildSlotList(BuildContext context, WidgetRef ref, List<SaveInfo> saves, bool isDark) {
     // Create map of slot -> save
     final Map<int, SaveInfo?> slotMap = {
       1: null, 2: null, 3: null, 4: null, 5: null,
@@ -128,8 +140,8 @@ class StorySlotSelectionScreen extends ConsumerWidget {
                 child: Text(
                   'Choose a save slot or start a new story',
                   style: TextStyle(
-                    color: DesignColors.dSecondaryText,
-                    fontSize: 14, // Helper text size
+                    color: isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText,
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -143,9 +155,10 @@ class StorySlotSelectionScreen extends ConsumerWidget {
                     story: story,
                     slotNumber: slot,
                     save: save,
-                    onContinue: () => _handleContinue(context, ref, slot, save),
+                    isDark: isDark,
+                    onContinue: () => _handleContinue(context, ref, slot, save, isDark),
                     onNewSave: () => _navigateToCharacterSelection(context, ref, slot),
-                    onDelete: () => _confirmDelete(context, ref, slot),
+                    onDelete: () => _confirmDelete(context, ref, slot, isDark),
                   ),
                 );
               }),
@@ -157,7 +170,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _handleContinue(BuildContext context, WidgetRef ref, int saveSlot, SaveInfo? save) async {
+  Future<void> _handleContinue(BuildContext context, WidgetRef ref, int saveSlot, SaveInfo? save, bool isDark) async {
     if (save == null) {
       // No save, start new game
       _navigateToCharacterSelection(context, ref, saveSlot);
@@ -173,7 +186,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Save data not found. Starting new game.'),
-            backgroundColor: DesignColors.dWarning,
+            backgroundColor: isDark ? DesignColors.dWarning : DesignColors.lWarning,
           ),
         );
         _navigateToCharacterSelection(context, ref, saveSlot);
@@ -191,7 +204,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
           restoredMessages: savedState['messages'] as List<NarrativeMessage>,
           lastCharacter: savedState['lastCharacter'] as String,
           storyId: story.id,
-          saveSlot: saveSlot,  // Session 29: Multi-slot support
+          saveSlot: saveSlot,
         ),
       ),
     );
@@ -220,7 +233,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
           restoredMessages: null,
           startingCharacter: selectedCharacterId,
           storyId: story.id,
-          saveSlot: saveSlot,  // Session 29: Multi-slot support
+          saveSlot: saveSlot,
         ),
       ),
     );
@@ -229,36 +242,41 @@ class StorySlotSelectionScreen extends ConsumerWidget {
     ref.invalidate(storySavesProvider(story.id));
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, int saveSlot) async {
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, int saveSlot, bool isDark) async {
+    final surfaceColor = isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces;
+    final primaryText = isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+    final dangerColor = isDark ? DesignColors.dDanger : DesignColors.lDanger;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: DesignColors.dSurfaces,
+        backgroundColor: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
         ),
         title: Text(
           'Delete Save Slot $saveSlot?',
           style: TextStyle(
-            color: DesignColors.dPrimaryText,
+            color: primaryText,
             fontFamily: 'Merriweather',
           ),
         ),
         content: Text(
           'This action cannot be undone. Your progress will be permanently deleted.',
-          style: TextStyle(color: DesignColors.dSecondaryText),
+          style: TextStyle(color: secondaryText),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               'Cancel',
-              style: TextStyle(color: DesignColors.dSecondaryText),
+              style: TextStyle(color: secondaryText),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: DesignColors.dDanger),
+            style: TextButton.styleFrom(foregroundColor: dangerColor),
             child: Text('Delete'),
           ),
         ],
@@ -274,7 +292,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Slot $saveSlot deleted'),
-              backgroundColor: DesignColors.dSurfaces,
+              backgroundColor: surfaceColor,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -284,7 +302,7 @@ class StorySlotSelectionScreen extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to delete slot: $e'),
-              backgroundColor: DesignColors.dDanger,
+              backgroundColor: dangerColor,
             ),
           );
         }

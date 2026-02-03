@@ -12,6 +12,7 @@ import '../theme/storyforge_theme.dart';
 class SavedStoryCard extends StatefulWidget {
   final StoryInfo story;
   final SaveInfo? save;
+  final bool isDark;
   final VoidCallback onContinue;
   final VoidCallback onNewGame;
   final VoidCallback? onDelete;
@@ -22,6 +23,7 @@ class SavedStoryCard extends StatefulWidget {
     super.key,
     required this.story,
     this.save,
+    required this.isDark,
     required this.onContinue,
     required this.onNewGame,
     this.onDelete,
@@ -35,6 +37,8 @@ class SavedStoryCard extends StatefulWidget {
 
 class _SavedStoryCardState extends State<SavedStoryCard> {
   bool _isHovered = false;
+
+  bool get isDark => widget.isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +60,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
           width: StoryForgeTheme.storyCardWidth,
           child: Container(
             decoration: BoxDecoration(
-              color: DesignColors.dSurfaces,
+              color: isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces,
               borderRadius: BorderRadius.circular(StoryForgeTheme.largeCardRadius),
               border: Border.all(
                 color: widget.story.accentColor.withValues(alpha: 0.4),
@@ -88,6 +92,8 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
   }
 
   Widget _buildHeader() {
+    final successColor = isDark ? DesignColors.dSuccess : DesignColors.lSuccess;
+
     return Row(
       children: [
         Container(
@@ -115,7 +121,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
                   fontFamily: 'Merriweather',
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: DesignColors.dPrimaryText,
+                  color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -159,7 +165,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             padding: EdgeInsets.only(right: DesignSpacing.xs),
             child: IconButton(
               icon: Icon(Icons.emoji_events, size: StoryForgeTheme.iconSizeRegular),
-              color: DesignColors.dSuccess.withValues(alpha: 0.7),
+              color: successColor.withValues(alpha: 0.7),
               tooltip: 'View Endings',
               onPressed: widget.onViewEndings,
               constraints: BoxConstraints(minWidth: 36, minHeight: 36),
@@ -171,12 +177,12 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             padding: EdgeInsets.all(6), // Non-standard badge padding
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: DesignColors.dSuccess.withValues(alpha: 0.2),
+              color: successColor.withValues(alpha: 0.2),
             ),
             child: Icon(
               Icons.check_circle,
               size: StoryForgeTheme.iconSizeRegular,
-              color: DesignColors.dSuccess,
+              color: successColor,
             ),
           ),
       ],
@@ -190,7 +196,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
         fontFamily: 'Roboto',
         fontSize: 13,
         fontStyle: FontStyle.italic,
-        color: DesignColors.dSecondaryText,
+        color: isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText,
         height: 1.4,
       ),
       textAlign: TextAlign.center,
@@ -200,6 +206,9 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
   Widget _buildProgress() {
     final save = widget.save!;
     final isCompleted = save.isCompleted;
+    final successColor = isDark ? DesignColors.dSuccess : DesignColors.lSuccess;
+    final primaryText = isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
 
     // Character info row (same for both states)
     final characterRow = Row(
@@ -217,7 +226,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
               fontFamily: 'Roboto',
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: DesignColors.dPrimaryText,
+              color: primaryText,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -227,7 +236,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
           style: TextStyle(
             fontFamily: 'Roboto',
             fontSize: 11,
-            color: DesignColors.dSecondaryText,
+            color: secondaryText,
           ),
         ),
       ],
@@ -242,19 +251,19 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm + 4, vertical: DesignSpacing.xs + 2), // 12, 6
             decoration: BoxDecoration(
-              color: DesignColors.dSuccess.withValues(alpha: 0.2),
+              color: successColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
-              border: Border.all(color: DesignColors.dSuccess),
+              border: Border.all(color: successColor),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.check_circle, color: DesignColors.dSuccess, size: 16), // Non-standard icon size
+                Icon(Icons.check_circle, color: successColor, size: 16), // Non-standard icon size
                 SizedBox(width: DesignSpacing.xs),
                 Text(
                   'Completed',
                   style: TextStyle(
-                    color: DesignColors.dSuccess,
+                    color: successColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -268,7 +277,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             style: TextStyle(
               fontFamily: 'Roboto',
               fontSize: 10,
-              color: DesignColors.dSecondaryText,
+              color: secondaryText,
             ),
           ),
         ],
@@ -285,7 +294,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
           borderRadius: BorderRadius.circular(StoryForgeTheme.chipRadius),
           child: LinearProgressIndicator(
             value: progress,
-            backgroundColor: DesignColors.dBackground,
+            backgroundColor: isDark ? DesignColors.dBackground : DesignColors.lBackground,
             valueColor: AlwaysStoppedAnimation<Color>(widget.story.accentColor),
             minHeight: 6,
           ),
@@ -299,7 +308,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
               style: TextStyle(
                 fontFamily: 'Roboto',
                 fontSize: 10,
-                color: DesignColors.dSecondaryText,
+                color: secondaryText,
               ),
             ),
             Text(
@@ -320,6 +329,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
   Widget _buildButtons() {
     final hasSave = widget.save != null;
     final isCompleted = widget.save?.isCompleted == true;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
 
     if (!hasSave) {
       // No save - only show "Start Story" button
@@ -382,10 +392,10 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             child: OutlinedButton(
               onPressed: widget.onNewGame,
               style: OutlinedButton.styleFrom(
-                foregroundColor: DesignColors.dSecondaryText,
+                foregroundColor: secondaryText,
                 padding: EdgeInsets.symmetric(horizontal: DesignSpacing.sm + 4, vertical: DesignSpacing.sm + 4), // 12, 12
                 side: BorderSide(
-                  color: DesignColors.dSecondaryText.withValues(alpha: 0.5),
+                  color: secondaryText.withValues(alpha: 0.5),
                   width: 1.5,
                 ),
                 shape: RoundedRectangleBorder(
@@ -421,24 +431,29 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
   }
 
   void _showDeleteDialog(BuildContext context) {
+    final surfaceColor = isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces;
+    final primaryText = isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+    final dangerColor = isDark ? DesignColors.dDanger : DesignColors.lDanger;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: DesignColors.dSurfaces,
+        backgroundColor: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
         ),
         title: Text(
           'Delete Save?',
           style: TextStyle(
-            color: DesignColors.dPrimaryText,
+            color: primaryText,
             fontFamily: 'Merriweather',
           ),
         ),
         content: Text(
           'Your progress in "${widget.story.title}" will be permanently deleted.',
           style: TextStyle(
-            color: DesignColors.dSecondaryText,
+            color: secondaryText,
           ),
         ),
         actions: [
@@ -446,7 +461,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
-              style: TextStyle(color: DesignColors.dSecondaryText),
+              style: TextStyle(color: secondaryText),
             ),
           ),
           TextButton(
@@ -456,7 +471,7 @@ class _SavedStoryCardState extends State<SavedStoryCard> {
             },
             child: Text(
               'Delete',
-              style: TextStyle(color: DesignColors.dDanger),
+              style: TextStyle(color: dangerColor),
             ),
           ),
         ],

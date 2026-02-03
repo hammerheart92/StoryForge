@@ -60,14 +60,18 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
   @override
   Widget build(BuildContext context) {
     final storyInfo = _getStoryInfo();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: DesignColors.dBackground,
+      backgroundColor: isDark ? DesignColors.dBackground : DesignColors.lBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: DesignColors.dPrimaryText),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -76,16 +80,16 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
             fontFamily: 'Merriweather',
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: DesignColors.dPrimaryText,
+            color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
           ),
         ),
         centerTitle: true,
       ),
-      body: _buildBody(storyInfo),
+      body: _buildBody(storyInfo, isDark),
     );
   }
 
-  Widget _buildBody(StoryInfo? storyInfo) {
+  Widget _buildBody(StoryInfo? storyInfo, bool isDark) {
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(color: DesignColors.highlightTeal),
@@ -93,26 +97,33 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
     }
 
     if (_error != null) {
-      return _buildError();
+      return _buildError(isDark);
     }
 
     if (_endings == null || _endings!.isEmpty) {
-      return _buildEmpty();
+      return _buildEmpty(isDark);
     }
 
-    return _buildEndingsList(storyInfo);
+    return _buildEndingsList(storyInfo, isDark);
   }
 
-  Widget _buildError() {
+  Widget _buildError(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48, color: DesignColors.dDanger),
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: isDark ? DesignColors.dDanger : DesignColors.lDanger,
+          ),
           SizedBox(height: DesignSpacing.md),
           Text(
             'Failed to load endings',
-            style: TextStyle(color: DesignColors.dPrimaryText, fontSize: 16),
+            style: TextStyle(
+              color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
+              fontSize: 16,
+            ),
           ),
           SizedBox(height: DesignSpacing.sm),
           ElevatedButton(
@@ -134,7 +145,9 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(bool isDark) {
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -142,13 +155,13 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
           Icon(
             Icons.explore_off,
             size: StoryForgeTheme.iconSizeXL,
-            color: DesignColors.dSecondaryText,
+            color: secondaryText,
           ),
           SizedBox(height: DesignSpacing.md),
           Text(
             'No endings available yet',
             style: TextStyle(
-              color: DesignColors.dSecondaryText,
+              color: secondaryText,
               fontSize: 16,
             ),
           ),
@@ -156,7 +169,7 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
           Text(
             'Play the story to discover endings!',
             style: TextStyle(
-              color: DesignColors.dSecondaryText.withValues(alpha: 0.7),
+              color: secondaryText.withValues(alpha: 0.7),
               fontSize: 14,
             ),
           ),
@@ -165,7 +178,7 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
     );
   }
 
-  Widget _buildEndingsList(StoryInfo? storyInfo) {
+  Widget _buildEndingsList(StoryInfo? storyInfo, bool isDark) {
     final discovered = _endings!.where((e) => e.discovered).length;
     final total = _endings!.length;
 
@@ -174,12 +187,12 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProgressBanner(discovered, total, storyInfo),
+          _buildProgressBanner(discovered, total, storyInfo, isDark),
           SizedBox(height: DesignSpacing.lg),
           ..._endings!.map(
             (ending) => Padding(
               padding: EdgeInsets.only(bottom: DesignSpacing.md),
-              child: _EndingCard(ending: ending),
+              child: _EndingCard(ending: ending, isDark: isDark),
             ),
           ),
         ],
@@ -187,14 +200,18 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
     );
   }
 
-  Widget _buildProgressBanner(int discovered, int total, StoryInfo? storyInfo) {
+  Widget _buildProgressBanner(int discovered, int total, StoryInfo? storyInfo, bool isDark) {
     final progress = total > 0 ? discovered / total : 0.0;
     final accentColor = storyInfo?.accentColor ?? DesignColors.highlightTeal;
+    final surfaceColor = isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces;
+    final primaryText = isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText;
+    final backgroundColor = isDark ? DesignColors.dBackground : DesignColors.lBackground;
+    final successColor = isDark ? DesignColors.dSuccess : DesignColors.lSuccess;
 
     return Container(
       padding: EdgeInsets.all(DesignSpacing.md),
       decoration: BoxDecoration(
-        color: DesignColors.dSurfaces,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
         boxShadow: DesignShadows.glowSoft(accentColor),
       ),
@@ -207,7 +224,7 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
                 'Endings Discovered',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: DesignColors.dPrimaryText,
+                  color: primaryText,
                 ),
               ),
               Text(
@@ -224,7 +241,7 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
             borderRadius: BorderRadius.circular(StoryForgeTheme.chipRadius),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: DesignColors.dBackground,
+              backgroundColor: backgroundColor,
               valueColor: AlwaysStoppedAnimation<Color>(accentColor),
               minHeight: 8,
             ),
@@ -234,12 +251,12 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.check_circle, size: 16, color: DesignColors.dSuccess),
+                Icon(Icons.check_circle, size: 16, color: successColor),
                 SizedBox(width: DesignSpacing.xs),
                 Text(
                   'All endings discovered!',
                   style: TextStyle(
-                    color: DesignColors.dSuccess,
+                    color: successColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -255,8 +272,9 @@ class _StoryEndingsScreenState extends State<StoryEndingsScreen> {
 /// Individual ending card widget
 class _EndingCard extends StatelessWidget {
   final StoryEnding ending;
+  final bool isDark;
 
-  const _EndingCard({required this.ending});
+  const _EndingCard({required this.ending, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -268,13 +286,18 @@ class _EndingCard extends StatelessWidget {
   }
 
   Widget _buildDiscoveredCard() {
+    final surfaceColor = isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces;
+    final primaryText = isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+    final successColor = isDark ? DesignColors.dSuccess : DesignColors.lSuccess;
+
     return Container(
       padding: EdgeInsets.all(DesignSpacing.md),
       decoration: BoxDecoration(
-        color: DesignColors.dSurfaces,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
         border: Border.all(
-          color: DesignColors.dSuccess.withValues(alpha: 0.3),
+          color: successColor.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -282,7 +305,7 @@ class _EndingCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.check_circle, size: 20, color: DesignColors.dSuccess),
+              Icon(Icons.check_circle, size: 20, color: successColor),
               SizedBox(width: DesignSpacing.sm),
               Expanded(
                 child: Text(
@@ -290,7 +313,7 @@ class _EndingCard extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: DesignColors.dPrimaryText,
+                    color: primaryText,
                   ),
                 ),
               ),
@@ -300,7 +323,7 @@ class _EndingCard extends StatelessWidget {
           Text(
             ending.description,
             style: TextStyle(
-              color: DesignColors.dSecondaryText,
+              color: secondaryText,
               fontSize: 14,
               height: 1.4,
             ),
@@ -310,7 +333,7 @@ class _EndingCard extends StatelessWidget {
             Text(
               'Discovered: ${_formatDate(ending.discoveredAt!)}',
               style: TextStyle(
-                color: DesignColors.dSecondaryText.withValues(alpha: 0.7),
+                color: secondaryText.withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
@@ -321,13 +344,16 @@ class _EndingCard extends StatelessWidget {
   }
 
   Widget _buildUndiscoveredCard() {
+    final surfaceColor = isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces;
+    final secondaryText = isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText;
+
     return Container(
       padding: EdgeInsets.all(DesignSpacing.md),
       decoration: BoxDecoration(
-        color: DesignColors.dSurfaces.withValues(alpha: 0.5),
+        color: surfaceColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(StoryForgeTheme.cardRadius),
         border: Border.all(
-          color: DesignColors.dSecondaryText.withValues(alpha: 0.2),
+          color: secondaryText.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -335,7 +361,7 @@ class _EndingCard extends StatelessWidget {
           Icon(
             Icons.lock,
             size: StoryForgeTheme.iconSizeMedium,
-            color: DesignColors.dSecondaryText,
+            color: secondaryText,
           ),
           SizedBox(width: DesignSpacing.md),
           Expanded(
@@ -347,14 +373,14 @@ class _EndingCard extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: DesignColors.dSecondaryText,
+                    color: secondaryText,
                   ),
                 ),
                 SizedBox(height: DesignSpacing.xs),
                 Text(
                   'Continue playing to discover this ending',
                   style: TextStyle(
-                    color: DesignColors.dSecondaryText.withValues(alpha: 0.7),
+                    color: secondaryText.withValues(alpha: 0.7),
                     fontSize: 13,
                     fontStyle: FontStyle.italic,
                   ),

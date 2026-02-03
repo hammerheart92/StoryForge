@@ -17,8 +17,8 @@ import 'package:http/http.dart' as http;
 /// Tasks screen displaying daily check-in and achievements
 ///
 /// Design tokens used:
-/// - Background: DesignColors.dBackground
-/// - Heading: DesignTypography.headingMedium, DesignColors.dPrimaryText
+/// - Background: Theme-aware (dBackground/lBackground)
+/// - Heading: DesignTypography.headingMedium, Theme-aware text
 /// - Section padding: DesignSpacing.md (16)
 /// - Section spacing: DesignSpacing.lg (24)
 /// - Card spacing: DesignSpacing.md (16)
@@ -135,14 +135,15 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(tasksProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: DesignColors.dBackground,
+      backgroundColor: isDark ? DesignColors.dBackground : DesignColors.lBackground,
       appBar: AppBar(
         title: Text(
           'Tasks',
           style: DesignTypography.headingMedium.copyWith(
-            color: Colors.white,
+            color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
           ),
         ),
         actions: [
@@ -156,17 +157,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         ],
       ),
       body: tasksState.isLoading
-          ? _buildLoadingState()
+          ? _buildLoadingState(isDark)
           : tasksState.error != null
-              ? _buildErrorState(tasksState.error!)
+              ? _buildErrorState(tasksState.error!, isDark)
               : RefreshIndicator(
                   onRefresh: _handleRefresh,
-                  child: _buildContent(tasksState),
+                  child: _buildContent(tasksState, isDark),
                 ),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -176,7 +177,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           Text(
             'Loading tasks...',
             style: DesignTypography.bodyRegular.copyWith(
-              color: DesignColors.dSecondaryText,
+              color: isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText,
             ),
           ),
         ],
@@ -184,7 +185,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     );
   }
 
-  Widget _buildErrorState(String error) {
+  Widget _buildErrorState(String error, bool isDark) {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(DesignSpacing.lg),
@@ -194,13 +195,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             Icon(
               Icons.error_outline,
               size: StoryForgeTheme.iconSizeXL,
-              color: DesignColors.lDanger,
+              color: isDark ? DesignColors.dDanger : DesignColors.lDanger,
             ),
             SizedBox(height: DesignSpacing.md),
             Text(
               'Failed to load tasks',
               style: DesignTypography.ctaBold.copyWith(
-                color: DesignColors.dPrimaryText,
+                color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
               ),
             ),
             SizedBox(height: DesignSpacing.sm),
@@ -208,7 +209,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               error,
               textAlign: TextAlign.center,
               style: DesignTypography.bodyRegular.copyWith(
-                color: DesignColors.dSecondaryText,
+                color: isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText,
                 fontSize: 14,
               ),
             ),
@@ -228,7 +229,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     );
   }
 
-  Widget _buildContent(TasksState tasksState) {
+  Widget _buildContent(TasksState tasksState, bool isDark) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.all(DesignSpacing.md),
@@ -240,6 +241,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             data: tasksState.checkInData,
             onCheckIn: _handleCheckIn,
             isLoading: _isCheckInLoading,
+            isDark: isDark,
           ),
 
           SizedBox(height: DesignSpacing.lg),
@@ -248,7 +250,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           Text(
             'Achievements',
             style: DesignTypography.headingMedium.copyWith(
-              color: DesignColors.dPrimaryText,
+              color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
               fontSize: 20,
             ),
           ),
@@ -267,6 +269,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                 progress: progress,
                 onClaim: () => _handleClaimAchievement(achievement.id),
                 isLoading: _claimingAchievementId == achievement.id,
+                isDark: isDark,
               ),
             );
           }),
