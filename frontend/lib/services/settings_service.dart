@@ -30,11 +30,13 @@ class AppSettings {
   final int animationSpeed;   // milliseconds per character (0-100)
   final TextSize textSize;    // small/medium/large
   final String language;      // 'en' or 'ro'
+  final String themeMode;     // 'light', 'dark', or 'system'
 
   const AppSettings({
     this.animationSpeed = 20,
     this.textSize = TextSize.medium,
     this.language = 'en',
+    this.themeMode = 'system',
   });
 
   /// Convert settings to JSON for storage
@@ -43,6 +45,7 @@ class AppSettings {
       'animationSpeed': animationSpeed,
       'textSize': textSize.name,
       'language': language,
+      'themeMode': themeMode,
     };
   }
 
@@ -55,6 +58,7 @@ class AppSettings {
         orElse: () => TextSize.medium,
       ),
       language: json['language'] ?? 'en',
+      themeMode: json['themeMode'] ?? 'system',
     );
   }
 
@@ -63,17 +67,19 @@ class AppSettings {
     int? animationSpeed,
     TextSize? textSize,
     String? language,
+    String? themeMode,
   }) {
     return AppSettings(
       animationSpeed: animationSpeed ?? this.animationSpeed,
       textSize: textSize ?? this.textSize,
       language: language ?? this.language,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 
   @override
   String toString() {
-    return 'AppSettings(animationSpeed: $animationSpeed, textSize: ${textSize.name}, language: $language)';
+    return 'AppSettings(animationSpeed: $animationSpeed, textSize: ${textSize.name}, language: $language, themeMode: $themeMode)';
   }
 }
 

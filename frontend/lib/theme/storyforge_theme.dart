@@ -267,4 +267,134 @@ class StoryForgeTheme {
       ),
     );
   }
+
+  /// Complete Material dark theme for StoryForge
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+
+      // Color scheme
+      colorScheme: ColorScheme.dark(
+        primary: primaryColor,
+        secondary: DesignColors.highlightPurple,
+        surface: DesignColors.dSurfaces,
+        error: DesignColors.dDanger,
+        onPrimary: DesignColors.dPrimaryText,
+        onSurface: DesignColors.dPrimaryText,
+      ),
+
+      // Scaffold
+      scaffoldBackgroundColor: DesignColors.dBackground,
+
+      // App bar
+      appBarTheme: AppBarTheme(
+        backgroundColor: DesignColors.dSurfaces,
+        foregroundColor: DesignColors.dPrimaryText,
+        elevation: 0,
+        titleTextStyle: appBarTitle.copyWith(color: DesignColors.dPrimaryText),
+      ),
+
+      // Card
+      cardTheme: CardThemeData(
+        color: DesignColors.dSurfaces,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+        ),
+        shadowColor: Colors.black.withOpacity(0.3),
+      ),
+
+      // Elevated button (for choice buttons)
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          padding: choiceButtonPadding,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(buttonRadius),
+          ),
+          textStyle: choiceButtonText,
+          elevation: 2,
+        ),
+      ),
+
+      // Text theme
+      textTheme: TextTheme(
+        headlineMedium: appBarTitle.copyWith(color: DesignColors.dPrimaryText),
+        bodyLarge: dialogueText.copyWith(color: DesignColors.dPrimaryText),
+        bodyMedium: dialogueText.copyWith(fontSize: 14, color: DesignColors.dPrimaryText),
+        labelLarge: choiceButtonText,
+      ),
+
+      // Dialog theme
+      dialogTheme: DialogThemeData(
+        backgroundColor: DesignColors.dSurfaces,
+        titleTextStyle: TextStyle(
+          color: DesignColors.dPrimaryText,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        contentTextStyle: TextStyle(
+          color: DesignColors.dSecondaryText,
+          fontSize: 14,
+        ),
+      ),
+
+      // Snackbar theme
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: DesignColors.dSurfaces,
+        contentTextStyle: TextStyle(color: DesignColors.dPrimaryText),
+      ),
+    );
+  }
+
+  // ==================== THEME-AWARE HELPERS ====================
+
+  /// Get background color based on brightness
+  static Color getBackgroundColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? DesignColors.dBackground
+        : DesignColors.lBackground;
+  }
+
+  /// Get surface color based on brightness
+  static Color getSurfaceColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? DesignColors.dSurfaces
+        : DesignColors.lSurfaces;
+  }
+
+  /// Get primary text color based on brightness
+  static Color getPrimaryTextColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? DesignColors.dPrimaryText
+        : DesignColors.lPrimaryText;
+  }
+
+  /// Get secondary text color based on brightness
+  static Color getSecondaryTextColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? DesignColors.dSecondaryText
+        : DesignColors.lSecondaryText;
+  }
+
+  /// Get danger color based on brightness
+  static Color getDangerColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? DesignColors.dDanger
+        : DesignColors.lDanger;
+  }
+
+  /// Get appropriate shadow for current theme
+  static List<BoxShadow> getCardShadow(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? DesignShadows.darkMd
+        : DesignShadows.md;
+  }
+
+  /// Get gradient colors based on brightness
+  static List<Color> getGradientColors(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? DesignColors.appGradient
+        : [DesignColors.lBackground, DesignColors.lSurfaces, DesignColors.lBackground];
+  }
 }
