@@ -11,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = "*")
 public class TasksController {
     private static final Logger logger = LoggerFactory.getLogger(TasksController.class);
     private final Map<String, Integer> userGems = new HashMap<>();

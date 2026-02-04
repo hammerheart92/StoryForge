@@ -43,6 +43,9 @@ public class DatabaseService extends BaseService {
         createUserTasksTable();
         createUserAchievementsTable();
 
+        // Session 43 JWT Authentication & Role-Based Security
+        createUsersTable();
+
         logger.info("✅ Database initialized successfully");
     }
 
@@ -347,6 +350,30 @@ public class DatabaseService extends BaseService {
                 """;
         executeSQL(sql);
         logger.debug("🏆 user_achievements table ready");
+    }
+
+    /**
+     * SESSION_43: Authentication - User accounts table
+     */
+    private void createUsersTable() {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(50) UNIQUE NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role VARCHAR(20) DEFAULT 'USER' CHECK (role IN ('USER', 'CREATOR')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+        executeSQL(sql);
+
+        // Create indexes for login lookups
+        executeSQL("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
+        executeSQL("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
+
+        logger.info("🔐 users table ready");
     }
 
     /**

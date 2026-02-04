@@ -34,7 +34,6 @@ import java.util.Set;
  */
 @RestController
 @RequestMapping("/api/narrative")
-@CrossOrigin(origins = "*")
 public class NarrativeController {
 
     private static final Logger logger = LoggerFactory.getLogger(NarrativeController.class);

@@ -15,7 +15,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/gallery")
-@CrossOrigin(origins = "*")
 public class GalleryController {
     private static final Logger logger = LoggerFactory.getLogger(GalleryController.class);
 
