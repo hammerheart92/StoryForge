@@ -75,3 +75,14 @@ Thumbs.db
 
 # Session database dumps
 session_*_db.sql
+
+# Flutter generated files
+**/generated_plugin_registrant.dart
+**/generated_plugin_registrant.cc
+**/generated_plugin_registrant.h
+**/generated_plugins.cmake
+**/GeneratedPluginRegistrant.swift
+**/GeneratedPluginRegistrant.m
+
+# Pubspec lock (some projects ignore, some don't - your choice)
+pubspec.lock

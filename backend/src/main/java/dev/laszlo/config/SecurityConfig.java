@@ -67,12 +67,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // DEVELOPMENT: Allow localhost
-        // PRODUCTION: Replace with actual domains
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",           // Flutter web dev
-                "http://localhost:8080",           // Backend dev
-                "http://localhost:51234"           // Flutter mobile debug (random port)
+        // Allow ALL localhost ports
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "http://127.0.0.1:*"
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
