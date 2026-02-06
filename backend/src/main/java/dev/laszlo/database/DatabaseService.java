@@ -46,6 +46,10 @@ public class DatabaseService extends BaseService {
         // Session 43 JWT Authentication & Role-Based Security
         createUsersTable();
 
+        // Session 44: Admin Panel - Stories registry & creator ownership
+        createStoriesTable();
+        migrateCreatorOwnership();
+
         logger.info("✅ Database initialized successfully");
     }
 
@@ -374,6 +378,97 @@ public class DatabaseService extends BaseService {
         executeSQL("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
 
         logger.info("🔐 users table ready");
+    }
+
+    /**
+     * SESSION_44: Admin Panel - Stories registry table
+     * Central catalog of all stories with creator ownership.
+     */
+    private void createStoriesTable() {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS stories (
+                id SERIAL PRIMARY KEY,
+                story_id VARCHAR(50) UNIQUE NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                cover_image_url TEXT,
+                is_published BOOLEAN DEFAULT FALSE,
+                created_by_user_id INTEGER REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+        executeSQL(sql);
+
+        // Create indexes for lookups
+        executeSQL("CREATE INDEX IF NOT EXISTS idx_stories_story_id ON stories(story_id)");
+        executeSQL("CREATE INDEX IF NOT EXISTS idx_stories_creator ON stories(created_by_user_id)");
+        executeSQL("CREATE INDEX IF NOT EXISTS idx_stories_published ON stories(is_published)");
+
+        // Seed existing stories (idempotent with ON CONFLICT)
+        String seedSql = """
+            INSERT INTO stories (story_id, title, description, is_published, created_by_user_id)
+            VALUES
+                ('pirates', 'Pirates of the Cursed Seas', 'A high-seas adventure of treasure and betrayal', TRUE, NULL),
+                ('observatory', 'The Observatory', 'A mystical journey through celestial mysteries', TRUE, NULL)
+            ON CONFLICT (story_id) DO NOTHING
+            """;
+        executeSQL(seedSql);
+
+        logger.info("📚 stories table ready (with seed data)");
+    }
+
+    /**
+     * SESSION_44: Migration - Add creator ownership columns to existing tables.
+     * Idempotent: checks if columns exist before adding.
+     */
+    private void migrateCreatorOwnership() {
+        // Check and add created_by_user_id to story_content
+        if (!columnExists("story_content", "created_by_user_id")) {
+            executeSQL("ALTER TABLE story_content ADD COLUMN created_by_user_id INTEGER REFERENCES users(id)");
+            executeSQL("CREATE INDEX IF NOT EXISTS idx_story_content_creator ON story_content(created_by_user_id)");
+            logger.info("📦 Added created_by_user_id to story_content table");
+        } else {
+            logger.debug("📦 story_content.created_by_user_id already exists, skipping");
+        }
+
+        // Check and add created_by_user_id to characters
+        if (!columnExists("characters", "created_by_user_id")) {
+            executeSQL("ALTER TABLE characters ADD COLUMN created_by_user_id INTEGER REFERENCES users(id)");
+            executeSQL("CREATE INDEX IF NOT EXISTS idx_characters_creator ON characters(created_by_user_id)");
+            logger.info("👤 Added created_by_user_id to characters table");
+        } else {
+            logger.debug("👤 characters.created_by_user_id already exists, skipping");
+        }
+
+        logger.info("✅ Creator ownership migration complete");
+    }
+
+    /**
+     * Check if a column exists in a table (for idempotent migrations).
+     */
+    private boolean columnExists(String tableName, String columnName) {
+        String sql = """
+            SELECT COUNT(*) FROM information_schema.columns
+            WHERE table_name = ? AND column_name = ?
+            """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, tableName);
+            pstmt.setString(2, columnName);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            logger.error("❌ Failed to check column existence: {}", e.getMessage());
+        }
+
+        return false;
     }
 
     /**
