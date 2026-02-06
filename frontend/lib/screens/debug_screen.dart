@@ -77,8 +77,8 @@ class _DebugScreenState extends State<DebugScreen> {
               'API Configuration',
               [
                 _buildInfoRow('Base URL', ApiConfig.baseUrl, copyable: true),
-                _buildInfoRow('Production URL', ApiConfig.productionUrl, copyable: true),
-                _buildInfoRow('Development URL', ApiConfig.developmentUrl, copyable: true),
+                _buildInfoRow('Production URL', ApiConfig.productionNarrativeUrl, copyable: true),
+                _buildInfoRow('Development URL', ApiConfig.developmentNarrativeUrl, copyable: true),
               ],
             ),
             const SizedBox(height: 24),

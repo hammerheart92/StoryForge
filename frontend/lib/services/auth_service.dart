@@ -3,10 +3,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../models/auth_user.dart';
 import '../models/auth_response.dart';
+import '../config/api_config.dart';
 
 class AuthService {
-  // TODO: Update this with your Railway backend URL after deployment
-  static const String baseUrl = 'http://localhost:8080';
+  final String baseUrl;
+
+  // Constructor accepts optional baseUrl, defaults to ApiConfig.baseUrl
+  AuthService({String? baseUrl}) : baseUrl = baseUrl ?? ApiConfig.authBaseUrl;
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 

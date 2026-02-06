@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_user.dart';
 import '../services/auth_service.dart';
+import '../config/api_config.dart';
 
 /// Auth state
 class AuthState {
@@ -99,7 +100,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-/// Auth provider
+/// Auth provider - now uses ApiConfig.authBaseUrl
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(AuthService());
+  return AuthNotifier(AuthService(baseUrl: ApiConfig.authBaseUrl));
 });
