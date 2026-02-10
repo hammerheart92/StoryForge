@@ -3,20 +3,23 @@
 // Settings moved to dedicated SettingsScreen
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
 import '../services/stats_service.dart';
 import '../theme/tokens/colors.dart';
 import '../theme/tokens/spacing.dart';
 import '../theme/storyforge_theme.dart';
+import 'admin/admin_layout_screen.dart';
 import 'settings_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   UserStats _stats = UserStats.empty();
 
   @override
@@ -95,7 +98,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: DesignSpacing.xl),
 
-                    // Section 3: Settings Navigation Button
+                    // Section 3: Admin Panel (CREATOR only)
+                    if (ref.watch(authProvider).isCreator) ...[
+                      _AdminPanelNavigationButton(isDark: isDark),
+                      SizedBox(height: DesignSpacing.md),
+                    ],
+
+                    // Section 4: Settings Navigation Button
                     _SettingsNavigationButton(
                       isDark: isDark,
                       onDataCleared: () {
@@ -103,6 +112,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _loadStats();
                       },
                     ),
+
+                    SizedBox(height: DesignSpacing.xl),
+
+                    // Section 5: Log Out
+                    const _LogOutButton(),
 
                     SizedBox(height: DesignSpacing.xl),
                   ],
@@ -391,6 +405,159 @@ class _SettingsNavigationButton extends StatelessWidget {
                   color: isDark
                       ? DesignColors.dSecondaryText
                       : DesignColors.lSecondaryText,
+                  size: StoryForgeTheme.iconSizeRegular,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Navigation button to Admin Panel (CREATOR only)
+class _AdminPanelNavigationButton extends StatelessWidget {
+  final bool isDark;
+
+  const _AdminPanelNavigationButton({
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? DesignColors.dSurfaces : DesignColors.lSurfaces,
+        borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
+        border: Border.all(
+          color: DesignColors.highlightTeal.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminLayoutScreen(),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: DesignSpacing.md,
+              vertical: DesignSpacing.md,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.admin_panel_settings,
+                  color: DesignColors.highlightTeal,
+                  size: StoryForgeTheme.iconSizeMedium,
+                ),
+                SizedBox(width: DesignSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Creator Tools',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? DesignColors.dPrimaryText
+                              : DesignColors.lPrimaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Manage stories & gallery',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? DesignColors.dSecondaryText
+                              : DesignColors.lSecondaryText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: isDark
+                      ? DesignColors.dSecondaryText
+                      : DesignColors.lSecondaryText,
+                  size: StoryForgeTheme.iconSizeRegular,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Log out button with destructive styling
+class _LogOutButton extends ConsumerWidget {
+  const _LogOutButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      decoration: BoxDecoration(
+        color: DesignColors.lDanger.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
+        border: Border.all(
+          color: DesignColors.lDanger.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () async {
+            await ref.read(authProvider.notifier).logout();
+            if (context.mounted) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(StoryForgeTheme.pillRadius),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: DesignSpacing.md,
+              vertical: DesignSpacing.md,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.logout,
+                  color: DesignColors.lDanger,
+                  size: StoryForgeTheme.iconSizeMedium,
+                ),
+                SizedBox(width: DesignSpacing.md),
+                Expanded(
+                  child: Text(
+                    'Log Out',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: DesignColors.lDanger,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: DesignColors.lDanger.withOpacity(0.6),
                   size: StoryForgeTheme.iconSizeRegular,
                 ),
               ],

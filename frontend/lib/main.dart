@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:storyforge_frontend/providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
+import 'screens/admin/admin_layout_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/settings_screen.dart';
@@ -45,6 +46,7 @@ class MyApp extends ConsumerWidget {
         '/register': (context) => const RegisterScreen(),
         '/tasks': (context) => const TasksScreen(),
         '/settings': (context) => const SettingsScreen(),
+        '/admin': (context) => const AdminLayoutScreen(),
       },
     );
   }
