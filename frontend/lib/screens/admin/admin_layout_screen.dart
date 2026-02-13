@@ -6,6 +6,8 @@ import '../../theme/tokens/colors.dart';
 import '../../theme/tokens/spacing.dart';
 import '../../theme/storyforge_theme.dart';
 import '../../widgets/admin_navigation_drawer.dart';
+import 'stories_list_screen.dart';
+import 'story_form_screen.dart';
 
 class AdminLayoutScreen extends ConsumerStatefulWidget {
   const AdminLayoutScreen({super.key});
@@ -66,6 +68,20 @@ class _AdminLayoutScreenState extends ConsumerState<AdminLayoutScreen> {
         centerTitle: true,
       ),
       drawer: const AdminNavigationDrawer(),
+      floatingActionButton: selectedSection == AdminSection.stories
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StoryFormScreen(),
+                  ),
+                );
+              },
+              backgroundColor: DesignColors.highlightTeal,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -85,12 +101,7 @@ class _AdminLayoutScreenState extends ConsumerState<AdminLayoutScreen> {
   Widget _buildSectionContent(AdminSection section, bool isDark) {
     switch (section) {
       case AdminSection.stories:
-        return _PlaceholderContent(
-          icon: Icons.book,
-          title: 'Stories Management',
-          subtitle: 'CRUD interface coming in Phase 5',
-          isDark: isDark,
-        );
+        return const StoriesListScreen();
       case AdminSection.gallery:
         return _PlaceholderContent(
           icon: Icons.photo_library,
