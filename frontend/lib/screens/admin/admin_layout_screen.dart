@@ -6,6 +6,8 @@ import '../../theme/tokens/colors.dart';
 import '../../theme/tokens/spacing.dart';
 import '../../theme/storyforge_theme.dart';
 import '../../widgets/admin_navigation_drawer.dart';
+import 'gallery_item_form_screen.dart';
+import 'gallery_items_list_screen.dart';
 import 'stories_list_screen.dart';
 import 'story_form_screen.dart';
 
@@ -68,20 +70,7 @@ class _AdminLayoutScreenState extends ConsumerState<AdminLayoutScreen> {
         centerTitle: true,
       ),
       drawer: const AdminNavigationDrawer(),
-      floatingActionButton: selectedSection == AdminSection.stories
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const StoryFormScreen(),
-                  ),
-                );
-              },
-              backgroundColor: DesignColors.highlightTeal,
-              child: const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
+      floatingActionButton: _buildFab(selectedSection, context),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -98,67 +87,44 @@ class _AdminLayoutScreenState extends ConsumerState<AdminLayoutScreen> {
     );
   }
 
+  Widget? _buildFab(AdminSection section, BuildContext context) {
+    switch (section) {
+      case AdminSection.stories:
+        return FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const StoryFormScreen(),
+              ),
+            );
+          },
+          backgroundColor: DesignColors.highlightTeal,
+          child: const Icon(Icons.add, color: Colors.white),
+        );
+      case AdminSection.gallery:
+        return FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const GalleryItemFormScreen(),
+              ),
+            );
+          },
+          backgroundColor: DesignColors.highlightTeal,
+          child: const Icon(Icons.add, color: Colors.white),
+        );
+    }
+  }
+
   Widget _buildSectionContent(AdminSection section, bool isDark) {
     switch (section) {
       case AdminSection.stories:
         return const StoriesListScreen();
       case AdminSection.gallery:
-        return _PlaceholderContent(
-          icon: Icons.photo_library,
-          title: 'Gallery Items',
-          subtitle: 'CRUD interface coming in Phase 6',
-          isDark: isDark,
-        );
+        return const GalleryItemsListScreen();
     }
-  }
-}
-
-/// Placeholder content for sections not yet implemented
-class _PlaceholderContent extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool isDark;
-
-  const _PlaceholderContent({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: StoryForgeTheme.iconSizeXL,
-            color: DesignColors.highlightTeal.withOpacity(0.5),
-          ),
-          const SizedBox(height: DesignSpacing.md),
-          Text(
-            title,
-            style: TextStyle(
-              fontFamily: 'Merriweather',
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: isDark ? DesignColors.dPrimaryText : DesignColors.lPrimaryText,
-            ),
-          ),
-          const SizedBox(height: DesignSpacing.sm),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark ? DesignColors.dSecondaryText : DesignColors.lSecondaryText,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
