@@ -3,12 +3,15 @@ package dev.laszlo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.laszlo.controller.ChatController;
 import dev.laszlo.database.DatabaseService;
+import dev.laszlo.database.UserDatabaseService;
 import dev.laszlo.model.Session;
+import dev.laszlo.security.JwtService;
 import dev.laszlo.service.ChatService;
 import dev.laszlo.service.ConversationHistory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -29,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Uses MockMvc to test HTTP requests/responses without starting full server.
  */
 @WebMvcTest(ChatController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class ChatControllerTest {
 
     @Autowired
@@ -42,6 +46,12 @@ class ChatControllerTest {
 
     @MockBean
     private DatabaseService databaseService;
+
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private UserDatabaseService userDatabaseService;
 
     @BeforeEach
     void setUp() {
