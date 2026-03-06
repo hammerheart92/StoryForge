@@ -1,6 +1,7 @@
 package dev.laszlo.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,6 +18,7 @@ public class NarrativeResponse {
     private String avatarUrl;           // URL to character avatar image (optional)
     private String actionText;          // Action/gesture description (NEW for Phase 2.3)
     private List<Choice> choices;       // Available choices for the user
+    private List<String> suggestions = new ArrayList<>();  // ⭐ SESSION 45: AI-generated suggestions
     private boolean isEnding = false;   // ⭐ SESSION 34: True if story has ended
     private String endingId;            // ⭐ SESSION 34: Ending identifier (e.g., "good_ending")
 
@@ -110,6 +112,15 @@ public class NarrativeResponse {
         this.endingId = endingId;
     }
 
+    // ⭐ SESSION 45: Suggestions getter/setter
+    public List<String> getSuggestions() {
+        return suggestions;
+    }
+
+    public void setSuggestions(List<String> suggestions) {
+        this.suggestions = suggestions != null ? suggestions : new ArrayList<>();
+    }
+
     // Convenience method to add a single choice
     public void addChoice(Choice choice) {
         this.choices.add(choice);
@@ -123,6 +134,7 @@ public class NarrativeResponse {
                 ", choiceCount=" + (choices != null ? choices.size() : 0) +
                 ", dialogueLength=" + (dialogue != null ? dialogue.length() : 0) +
                 ", actionTextLength=" + (actionText != null ? actionText.length() : 0) +
+                ", suggestionsCount=" + (suggestions != null ? suggestions.size() : 0) +
                 ", isEnding=" + isEnding +
                 ", endingId='" + endingId + '\'' +
                 '}';

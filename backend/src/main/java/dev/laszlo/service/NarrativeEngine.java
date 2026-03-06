@@ -4,11 +4,15 @@ import dev.laszlo.database.CharacterDatabase;
 import dev.laszlo.model.Character;
 import dev.laszlo.model.Choice;
 import dev.laszlo.model.NarrativeResponse;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -662,5 +666,301 @@ public class NarrativeEngine {
 
         // Default to character's default mood
         return character.getDefaultMood();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ⭐ SESSION 45: CONVERSATIONAL NARRATIVE SYSTEM
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * SESSION 45: Generate a conversational response with AI suggestions.
+     * Single Claude call returns dialogue + 2 suggestions (no separate choice call).
+     */
+    public NarrativeResponse generateConversationalResponse(
+            String userInput,
+            String activeCharacterId,
+            String storyId,
+            ConversationHistory history
+    ) {
+        logger.info("📤 Generating conversational response for character: {}, story: {}, historySize: {}",
+                activeCharacterId, storyId, history.getMessageCount());
+
+        // 1. Get character from database
+        Character character = characterDb.getCharacter(activeCharacterId);
+        if (character == null) {
+            logger.error("❌ Character not found: {}", activeCharacterId);
+            NarrativeResponse error = new NarrativeResponse();
+            error.setDialogue("Error: Character not found");
+            error.setSuggestions(getFallbackSuggestions());
+            return error;
+        }
+
+        // 2. Build layered prompt WITH suggestion instructions
+        String layeredPrompt = buildConversationalPrompt(character);
+
+        // 3. Set the system prompt with character context
+        history.setSystemPrompt(layeredPrompt);
+
+        // 4. Add user's free-text message to history
+        history.addUserMessage(userInput);
+
+        // 5. Call Claude API (SINGLE call - no separate choice generation)
+        logger.info("🤖 Calling Claude API for character: {}, context length: {}",
+                activeCharacterId, history.getMessageCount());
+        String rawResponse = chatService.sendMessage(history);
+
+        // 6. Handle API failure
+        if (rawResponse == null || rawResponse.isBlank()) {
+            logger.error("❌ Claude API returned null/empty response for character: {}", activeCharacterId);
+            NarrativeResponse error = new NarrativeResponse();
+            error.setDialogue("The character seems lost in thought... (AI service temporarily unavailable)");
+            error.setSpeaker(activeCharacterId);
+            error.setSpeakerName(character.getName());
+            error.setMood(character.getDefaultMood());
+            error.setSuggestions(getFallbackSuggestions());
+            return error;
+        }
+
+        // 7. Add raw response to conversation history
+        history.addAssistantMessage(rawResponse);
+
+        logger.info("🔍 [{}] Raw response length: {}", activeCharacterId, rawResponse.length());
+
+        // 8. Parse JSON response: dialogue, actionText, mood, suggestions
+        String dialogue = rawResponse;
+        String actionText = null;
+        String extractedMood = null;
+        List<String> suggestions = getFallbackSuggestions();
+
+        try {
+            int jsonStart = rawResponse.indexOf('{');
+            if (jsonStart >= 0) {
+                ObjectMapper mapper = new ObjectMapper();
+                boolean parsed = false;
+
+                for (int i = jsonStart; i < rawResponse.length() && !parsed; i++) {
+                    if (rawResponse.charAt(i) == '{') {
+                        try {
+                            JsonNode json = mapper.readTree(rawResponse.substring(i));
+                            if (json.has("dialogue")) {
+                                dialogue = json.get("dialogue").asText();
+
+                                if (json.has("actionText")) {
+                                    actionText = json.get("actionText").asText();
+                                }
+                                if (json.has("mood")) {
+                                    extractedMood = json.get("mood").asText().trim();
+                                    logger.info("✅ [{}] Extracted mood: {}", activeCharacterId, extractedMood);
+                                }
+
+                                // SESSION 45: Parse suggestions from JSON
+                                suggestions = parseSuggestions(json);
+
+                                parsed = true;
+                                logger.info("✅ [{}] Parsed JSON successfully", activeCharacterId);
+                            }
+                        } catch (JsonParseException jpe) {
+                            continue;
+                        }
+                    }
+                }
+
+                if (!parsed) {
+                    dialogue = rawResponse;
+                    logger.warn("⚠️ [{}] No valid JSON found, using raw text + fallback suggestions",
+                            activeCharacterId);
+                }
+            } else {
+                dialogue = rawResponse;
+                logger.warn("⚠️ [{}] No JSON braces found, using raw text + fallback suggestions",
+                        activeCharacterId);
+            }
+        } catch (Exception e) {
+            dialogue = rawResponse;
+            logger.error("❌ [{}] Failed to parse response: {}", activeCharacterId, e.getMessage());
+        }
+
+        // 9. Determine mood (use extracted or fallback to keyword detection)
+        String mood;
+        if (extractedMood != null && !extractedMood.isEmpty()) {
+            mood = extractedMood;
+        } else {
+            mood = determineMood(dialogue, character);
+            logger.info("🔍 [{}] Determined mood from text: {}", activeCharacterId, mood);
+        }
+
+        // 10. Build response
+        NarrativeResponse response = new NarrativeResponse();
+        response.setDialogue(dialogue);
+        response.setActionText(actionText);
+        response.setSpeaker(activeCharacterId);
+        response.setSpeakerName(character.getName());
+        response.setMood(mood);
+        response.setAvatarUrl(character.getAvatarUrl());
+        response.setSuggestions(suggestions);
+        response.setChoices(new ArrayList<>());
+
+        // 11. Check for story ending
+        String endingId = detectEnding(dialogue, actionText);
+        if (endingId != null) {
+            response.setEnding(true);
+            response.setEndingId(endingId);
+            response.setSuggestions(new ArrayList<>());
+            logger.info("🏆 Story ending detected: {} (ending: {})", activeCharacterId, endingId);
+        }
+
+        logger.info("📥 Generated conversational response: speaker={}, mood={}, suggestionsCount={}",
+                response.getSpeakerName(), response.getMood(), response.getSuggestions().size());
+
+        return response;
+    }
+
+    /**
+     * SESSION 45: Build prompt that includes suggestion generation instructions.
+     * Reuses existing character personality layer + adds suggestion format to JSON.
+     */
+    private String buildConversationalPrompt(Character character) {
+        // For narrator
+        if ("narrator".equals(character.getId())) {
+            return BASE_PROMPT + """
+
+                    ## Current Character: Narrator
+                    You are the omniscient narrator. Describe scenes in third-person with rich detail.
+                    Set atmosphere, describe environments, and guide the story forward.
+                    Your voice is neutral, observant, and immersive.
+
+                    CRITICAL: You MUST respond with valid JSON in this EXACT format:
+                    {
+                      "dialogue": "Your spoken narration here",
+                      "actionText": "Brief scene description (1-2 sentences)",
+                      "suggestions": [
+                        "A natural thing the player might say or do next (10-20 words)",
+                        "An alternative response or action for the player (10-20 words)"
+                      ]
+                    }
+
+                    Guidelines:
+                    - dialogue: Your narrative description (what you observe and describe)
+                    - actionText: Physical scene details, atmosphere, movements (1-2 sentences max)
+                    - suggestions: Two distinct, contextually appropriate things the player might say or do
+                      - Each suggestion should be 10-20 words
+                      - Write as if the player is speaking/acting (e.g., "Tell me more about..." or "Walk closer to...")
+                      - Make them distinct: one could be dialogue, one could be an action
+                      - They should progress the narrative naturally
+                    - ALWAYS include ALL FOUR fields
+
+                    IMPORTANT REMINDER: Every response you send MUST be ONLY valid JSON in the format above.
+                    Do NOT include any text before or after the JSON object.
+                    Do NOT wrap JSON in markdown code blocks.
+                    This applies to EVERY message, not just the first one.
+                    Even if you see previous JSON responses in the conversation history, continue responding with clean JSON only.
+                    """;
+        }
+
+        // For other characters: reuse existing personality layer + add suggestions
+        String moodInstructions = getMoodInstructionsForCharacter(character.getId());
+
+        String characterLayer = "\n\n" +
+                "## Current Character\n" +
+                "You are currently embodying: **" + character.getName() + "**\n\n" +
+                "**Role:** " + character.getRole() + "\n" +
+                "**Personality Traits:** " + String.join(", ", character.getPersonality()) + "\n" +
+                "**Speech Style:** " + character.getSpeechStyle() + "\n" +
+                "**Current Mood:** " + character.getDefaultMood() + "\n" +
+                "**Relationship to User:** " + character.getRelationshipToUser() + "\n\n" +
+                "**Background:** " + character.getDescription() + "\n\n" +
+                "Respond in character. Maintain " + character.getName() + "'s distinct voice, " +
+                "personality, and speaking patterns. Show their current mood through subtle cues.\n\n" +
+
+                "CRITICAL: You MUST respond with valid JSON in this EXACT format:\n" +
+                "{\n" +
+                "  \"dialogue\": \"Your spoken words here\",\n" +
+                "  \"actionText\": \"Brief action/gesture description (1-2 sentences)\",\n" +
+                "  \"mood\": \"current_emotional_state\",\n" +
+                "  \"suggestions\": [\n" +
+                "    \"A natural thing the player might say or do next (10-20 words)\",\n" +
+                "    \"An alternative response or action for the player (10-20 words)\"\n" +
+                "  ]\n" +
+                "}\n\n" +
+
+                "Guidelines for JSON response:\n" +
+                "- dialogue: What " + character.getName() + " says (in their voice)\n" +
+                "- actionText: What " + character.getName() + " does - gestures, expressions, movements (1-2 sentences max)\n" +
+                "- mood: Your current emotional state (see mood options below)\n" +
+                "- suggestions: Two distinct things the player might say or do next\n" +
+                "  - Each 10-20 words, written as player speech/action\n" +
+                "  - Example: \"Ask about the ancient instruments\" or \"Step closer to examine the map\"\n" +
+                "  - Make them contextually relevant and narratively interesting\n" +
+                "- ALWAYS include ALL FOUR fields\n" +
+                "- actionText shows emotion through body language\n" +
+                "- Use present tense for actionText\n\n" +
+
+                moodInstructions +
+
+                "Example response:\n" +
+                "{\n" +
+                "  \"dialogue\": \"The stars tell ancient stories, if you know how to listen.\",\n" +
+                "  \"actionText\": \"She traces constellation patterns in the air, her eyes distant and contemplative.\",\n" +
+                "  \"mood\": \"wary\",\n" +
+                "  \"suggestions\": [\n" +
+                "    \"Can you teach me how to read the star patterns and their meanings?\",\n" +
+                "    \"Look up at the sky and try to identify a constellation on your own\"\n" +
+                "  ]\n" +
+                "}\n\n" +
+
+                "IMPORTANT REMINDER: Every response you send MUST be ONLY valid JSON in the format above.\n" +
+                "Do NOT include any text before or after the JSON object.\n" +
+                "Do NOT wrap JSON in markdown code blocks.\n" +
+                "This applies to EVERY message, not just the first one.\n" +
+                "Even if you see previous JSON responses in the conversation history, continue responding with clean JSON only.";
+
+        return BASE_PROMPT + characterLayer;
+    }
+
+    /**
+     * SESSION 45: Parse suggestions from Claude's JSON response.
+     * Validates each suggestion length. Falls back to defaults if parsing fails.
+     */
+    private List<String> parseSuggestions(JsonNode json) {
+        List<String> suggestions = new ArrayList<>();
+
+        if (json.has("suggestions") && json.get("suggestions").isArray()) {
+            for (JsonNode s : json.get("suggestions")) {
+                String text = s.asText().trim();
+                if (!text.isEmpty()) {
+                    int wordCount = text.split("\\s+").length;
+                    if (wordCount < 5) {
+                        logger.warn("⚠️ Suggestion too short ({} words): '{}'", wordCount, text);
+                    } else if (wordCount > 25) {
+                        logger.warn("⚠️ Suggestion too long ({} words), trimming: '{}'", wordCount, text);
+                        String[] words = text.split("\\s+");
+                        text = String.join(" ", Arrays.copyOf(words, Math.min(20, words.length)));
+                    }
+                    suggestions.add(text);
+                }
+            }
+        }
+
+        // Ensure exactly 2 suggestions
+        if (suggestions.size() < 2) {
+            logger.warn("⚠️ Only {} suggestions parsed, using fallbacks", suggestions.size());
+            return getFallbackSuggestions();
+        }
+        if (suggestions.size() > 2) {
+            suggestions = suggestions.subList(0, 2);
+        }
+
+        logger.info("✅ Parsed {} suggestions successfully", suggestions.size());
+        return suggestions;
+    }
+
+    /**
+     * SESSION 45: Fallback suggestions when AI parsing fails.
+     */
+    private List<String> getFallbackSuggestions() {
+        return List.of(
+            "Tell me more about what you just mentioned, I'm curious to know more",
+            "That's interesting. What do you think we should do next?"
+        );
     }
 }

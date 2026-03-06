@@ -2,6 +2,10 @@ package dev.laszlo.controller;
 
 import dev.laszlo.database.CharacterDatabase;
 import dev.laszlo.database.DatabaseService;
+import dev.laszlo.dto.CompletionStats;
+import dev.laszlo.dto.ConversationalRequest;
+import dev.laszlo.dto.EndingSummary;
+import dev.laszlo.dto.SaveInfoDTO;
 import dev.laszlo.model.Character;
 import dev.laszlo.model.NarrativeResponse;
 import dev.laszlo.model.Session;
@@ -9,16 +13,16 @@ import dev.laszlo.service.ConversationHistory;
 import dev.laszlo.service.CurrencyService;
 import dev.laszlo.service.NarrativeEngine;
 import dev.laszlo.service.StorySaveService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import dev.laszlo.dto.SaveInfoDTO;
-import dev.laszlo.dto.EndingSummary;
-import dev.laszlo.dto.CompletionStats;
-import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.google.gson.JsonObject;
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -294,25 +298,167 @@ public class NarrativeController {
         // ⭐ SESSION 26: Auto-save progress to database
         saveHistoryForStory(storyId, saveSlot, history, response.getSpeaker());
 
-        // ⭐ SESSION 34: Handle story completion and gem awards using ending detection
-        String userId = "default";
-
-        if (response.isEnding() && response.getEndingId() != null) {
-            // Story completed with specific ending - award completion bonus
-            storySaveService.markStoryCompleted(storyId, saveSlot, userId, response.getEndingId());
-            currencyService.awardGems(userId, 100, "story_completed", storyId);
-            logger.info("🏆 Story {} completed with ending '{}' ! +100 gem bonus", storyId, response.getEndingId());
-        } else {
-            // Story continues - award per-choice gems
-            currencyService.awardGems(userId, 5, "choice_made", storyId);
-            logger.debug("💎 +5 gems for choice in {}", storyId);
-        }
+        // ⭐ SESSION 45: Use shared method for completion/gem handling
+        handleCompletionAndGems(storyId, saveSlot, response, "choice_made");
 
         logger.info("✅ {} responded after choice with {} new choices (progress auto-saved)",
                 response.getSpeakerName(),
                 response.getChoices().size());
 
         return ResponseEntity.ok(response);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ⭐ SESSION 45: CONVERSATIONAL NARRATIVE ENDPOINT
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * SESSION 45: Send a free-text message and get a conversational response with suggestions.
+     * POST /api/narrative/send
+     *
+     * Request body:
+     * {
+     *   "userMessage": "Tell me about these ancient instruments",
+     *   "storyId": "pirates",
+     *   "saveSlot": 1
+     * }
+     *
+     * Response: NarrativeResponse with dialogue, mood, actionText, AND suggestions[]
+     */
+    @PostMapping("/send")
+    public ResponseEntity<?> sendMessage(@Valid @RequestBody ConversationalRequest request) {
+        logger.info("📤 Received message request: storyId={}, saveSlot={}, messageLength={}",
+                request.getStoryId(), request.getSaveSlot(), request.getUserMessage().length());
+
+        try {
+            // 1. Load conversation history from database save
+            ConversationHistory history = getHistoryForStory(
+                    request.getStoryId(), request.getSaveSlot());
+
+            // 1b. Limit to recent messages for context window management
+            history = limitToRecentMessages(history, 10);
+
+            // 2. Get current speaker from save state
+            StorySaveService.SaveInfo saveInfo = storySaveService.getSaveInfo(
+                    request.getStoryId(), request.getSaveSlot());
+            String currentSpeaker = (saveInfo != null && saveInfo.currentSpeaker != null)
+                    ? saveInfo.currentSpeaker
+                    : getStartingCharacterForStory(request.getStoryId());
+            logger.info("🎭 Current speaker for story {}: {}", request.getStoryId(), currentSpeaker);
+
+            // 3. Load character context from CharacterDatabase
+            Character character = characterDb.getCharacter(currentSpeaker);
+            if (character == null) {
+                logger.error("❌ Character not found: {}, falling back to narrator", currentSpeaker);
+                currentSpeaker = "narrator";
+            }
+
+            // 4. Generate conversational response with suggestions (SINGLE Claude call)
+            NarrativeResponse response = narrativeEngine.generateConversationalResponse(
+                    request.getUserMessage(),
+                    currentSpeaker,
+                    request.getStoryId(),
+                    history
+            );
+
+            // 5. Store user + AI messages in old session database (backward compatibility)
+            databaseService.saveMessage(currentSessionId, "user", request.getUserMessage());
+            databaseService.saveMessage(currentSessionId, response.getSpeaker(), response.getDialogue());
+
+            // 6. Auto-save conversation progress to story saves database
+            saveHistoryForStory(
+                    request.getStoryId(),
+                    request.getSaveSlot(),
+                    history,
+                    response.getSpeaker()
+            );
+
+            // 7. Handle story completion + gem awards
+            handleCompletionAndGems(
+                    request.getStoryId(),
+                    request.getSaveSlot(),
+                    response,
+                    "message_sent"
+            );
+
+            logger.info("📥 Response sent: speaker={}, mood={}, suggestions={}",
+                    response.getSpeakerName(), response.getMood(), response.getSuggestions().size());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("❌ Failed to process message: storyId={}, error={}",
+                    request.getStoryId(), e.getMessage(), e);
+            Map<String, String> errorBody = new HashMap<>();
+            errorBody.put("error", "Failed to process message");
+            errorBody.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorBody);
+        }
+    }
+
+    /**
+     * SESSION 45: Shared method for handling story completion and gem awards.
+     * Used by both /choose and /send endpoints.
+     */
+    private void handleCompletionAndGems(
+            String storyId, int saveSlot, NarrativeResponse response, String gemSource
+    ) {
+        String userId = "default";
+
+        if (response.isEnding() && response.getEndingId() != null) {
+            storySaveService.markStoryCompleted(storyId, saveSlot, userId, response.getEndingId());
+            currencyService.awardGems(userId, 100, "story_completed", storyId);
+            logger.info("🏆 Story {} completed with ending '{}' ! +100 gem bonus",
+                    storyId, response.getEndingId());
+        } else {
+            currencyService.awardGems(userId, 5, gemSource, storyId);
+            logger.debug("💎 +5 gems for {} in {}", gemSource, storyId);
+        }
+    }
+
+    /**
+     * SESSION 45: Limit conversation history to the last N messages for context window management.
+     * Preserves system prompt but trims older messages to keep API calls efficient.
+     */
+    private ConversationHistory limitToRecentMessages(ConversationHistory history, int maxMessages) {
+        if (history.getMessageCount() <= maxMessages) {
+            return history;
+        }
+
+        logger.info("📏 Limiting conversation history from {} to {} messages",
+                history.getMessageCount(), maxMessages);
+
+        ConversationHistory limited = new ConversationHistory();
+        limited.setSystemPrompt(history.getSystemPrompt());
+
+        List<JsonObject> allMessages = history.getMessages();
+        List<JsonObject> recentMessages = allMessages.subList(
+                allMessages.size() - maxMessages, allMessages.size());
+
+        for (JsonObject msg : recentMessages) {
+            String role = msg.get("role").getAsString();
+            String content = msg.get("content").getAsString();
+            if ("user".equals(role)) {
+                limited.addUserMessage(content);
+            } else {
+                limited.addAssistantMessage(content);
+            }
+        }
+
+        return limited;
+    }
+
+    /**
+     * SESSION 45: Get the designated starting character for a story.
+     * Used when no save exists yet (first message in a new save slot).
+     */
+    private String getStartingCharacterForStory(String storyId) {
+        return switch (storyId) {
+            case "pirates" -> "isla";
+            case "observatory" -> "ilyra";
+            case "illidan" -> "illidan";
+            default -> "narrator";
+        };
     }
 
     /**

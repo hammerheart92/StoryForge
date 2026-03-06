@@ -85,4 +85,3 @@ session_*_db.sql
 **/GeneratedPluginRegistrant.m
 
 # Pubspec lock (some projects ignore, some don't - your choice)
-pubspec.lock
