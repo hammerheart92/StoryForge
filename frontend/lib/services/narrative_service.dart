@@ -84,6 +84,47 @@ class NarrativeService {
     }
   }
 
+  /// SESSION_45: Send free-text message to conversational endpoint
+  Future<NarrativeResponse> sendConversationalMessage(String userMessage, String storyId, int saveSlot) async {
+    try {
+      final url = Uri.parse('$baseUrl/send');
+
+      print('🌐 POST $url');
+      print('📤 Request: userMessage="$userMessage", storyId="$storyId", saveSlot=$saveSlot');
+
+      final response = await client.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'userMessage': userMessage,
+          'storyId': storyId,
+          'saveSlot': saveSlot.toString(),
+        }),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final narrativeResponse = NarrativeResponse.fromJson(json);
+
+        print('✅ Success: ${narrativeResponse.speakerName} with ${narrativeResponse.suggestions.length} suggestions');
+
+        return narrativeResponse;
+      } else {
+        throw NarrativeApiException(
+          'Failed to send message: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+    } catch (e) {
+      print('❌ Error in sendConversationalMessage(): $e');
+      rethrow;
+    }
+  }
+
   /// Select a choice and get the next narrative response
   ///
   /// Example:

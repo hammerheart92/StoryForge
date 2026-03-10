@@ -34,6 +34,17 @@ class NarrativeMessage {
     );
   }
 
+  /// Create a user free-text message (for conversational history)
+  factory NarrativeMessage.userMessage(String text) {
+    return NarrativeMessage(
+      speakerName: 'You',
+      speaker: 'user',
+      dialogue: text,
+      mood: 'neutral',
+      timestamp: DateTime.now(),
+    );
+  }
+
   /// Create a character response message (from NarrativeResponse)
   factory NarrativeMessage.fromResponse(NarrativeResponse response) {
     return NarrativeMessage(

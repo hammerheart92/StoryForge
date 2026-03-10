@@ -7,6 +7,7 @@ class NarrativeResponse {
   final String? actionText;  // Action description
   final String mood;
   final List<Choice> choices;
+  final List<String> suggestions; // SESSION_45: AI-generated suggestions
   final bool? isEnding;      // True when story reaches an ending
   final String? endingId;    // ID of the ending reached
 
@@ -17,6 +18,7 @@ class NarrativeResponse {
     this.actionText,
     required this.mood,
     required this.choices,
+    this.suggestions = const [],
     this.isEnding,
     this.endingId,
   });
@@ -31,6 +33,9 @@ class NarrativeResponse {
       choices: (json['choices'] as List<dynamic>)
           .map((e) => Choice.fromJson(e as Map<String, dynamic>))
           .toList(),
+      suggestions: (json['suggestions'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList() ?? [],
       isEnding: json['ending'] as bool?,
       endingId: json['endingId'] as String?,
     );

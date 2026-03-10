@@ -10,6 +10,7 @@ class NarrativeState {
   final bool isLoading;                      // Loading indicator
   final String? error;                       // Error message
   final String currentSpeaker;               // Active character ID
+  final List<String> suggestions;            // SESSION_45: AI-generated suggestions
 
   const NarrativeState({
     this.history = const [],
@@ -17,6 +18,7 @@ class NarrativeState {
     this.isLoading = false,
     this.error,
     this.currentSpeaker = 'narrator',
+    this.suggestions = const [],
   });
 
   /// Create initial state
@@ -31,6 +33,7 @@ class NarrativeState {
     bool? isLoading,
     String? error,
     String? currentSpeaker,
+    List<String>? suggestions,
     bool clearError = false,
     bool clearCurrentResponse = false,
   }) {
@@ -40,6 +43,7 @@ class NarrativeState {
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       currentSpeaker: currentSpeaker ?? this.currentSpeaker,
+      suggestions: suggestions ?? this.suggestions,
     );
   }
 
@@ -52,12 +56,16 @@ class NarrativeState {
   /// Check if there's an error
   bool get hasError => error != null;
 
+  /// Check if we have suggestions
+  bool get hasSuggestions => suggestions.isNotEmpty;
+
   @override
   String toString() {
     return 'NarrativeState('
         'history: ${history.length}, '
         'currentSpeaker: $currentSpeaker, '
         'isLoading: $isLoading, '
+        'suggestions: ${suggestions.length}, '
         'hasError: $hasError'
         ')';
   }

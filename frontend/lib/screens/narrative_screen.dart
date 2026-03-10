@@ -12,8 +12,10 @@ import '../services/story_completion_service.dart';
 import '../services/unlock_tracker_service.dart';
 import '../widgets/character_background.dart';
 import '../widgets/character_message_card.dart';
+import '../widgets/chat_input_section.dart';
 import '../widgets/choices_section.dart';
 import '../widgets/loading_overlay.dart';
+import '../widgets/typing_indicator.dart';
 import '../widgets/story_completion_dialog.dart';
 import '../theme/storyforge_theme.dart';
 import '../theme/tokens/colors.dart';
@@ -197,6 +199,7 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
     });
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('StoryForge'),
         backgroundColor: StoryForgeTheme.primaryColor,
@@ -253,8 +256,15 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
                       ? ListView.builder(
                           controller: _scrollController,
                           padding: EdgeInsets.symmetric(vertical: DesignSpacing.md),
-                          itemCount: state.history.length,
+                          itemCount: state.history.length + (state.isLoading ? 1 : 0),
                           itemBuilder: (context, index) {
+                            // Typing indicator as last item during loading
+                            if (index == state.history.length) {
+                              return TypingIndicator(
+                                speakerName: state.currentResponse?.speakerName ?? 'Character',
+                              );
+                            }
+
                             final message = state.history[index];
                             // Restored messages don't animate, only new messages do
                             final isNewMessage = index >= _restoredCount;
@@ -273,18 +283,24 @@ class _NarrativeScreenState extends ConsumerState<NarrativeScreen> {
                 ),
               ),
 
-              // Choices section (fixed at bottom) with slide-up animation
-              if (state.hasCurrentResponse && !state.isLoading)
-                AnimatedSlide(
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeOutCubic,
-                  offset: _isRevealActive ? const Offset(0, 1) : Offset.zero,
-                  child: ChoicesSection(
-                    choices: state.currentResponse!.choices,
-                    storyId: widget.storyId,
-                    saveSlot: widget.saveSlot,  // Session 29: Multi-slot support
-                  ),
+              // SESSION_45: Chat input section (fixed at bottom) with slide-up animation
+              AnimatedSlide(
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
+                offset: _isRevealActive ? const Offset(0, 1) : Offset.zero,
+                child: ChatInputSection(
+                  suggestions: state.suggestions,
+                  isLoading: state.isLoading,
+                  characterName: state.currentResponse?.speakerName ?? 'Character',
+                  onSendMessage: (message) {
+                    ref.read(narrativeStateProvider.notifier).sendConversationalMessage(
+                      message,
+                      widget.storyId,
+                      widget.saveSlot,
+                    );
+                  },
                 ),
+              ),
             ],
           ),
 

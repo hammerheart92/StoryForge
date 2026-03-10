@@ -124,6 +124,59 @@ class NarrativeNotifier extends StateNotifier<NarrativeState> {
     }
   }
 
+  /// SESSION_45: Send free-text message to conversational endpoint
+  Future<void> sendConversationalMessage(String userMessage, String storyId, int saveSlot) async {
+    if (userMessage.trim().isEmpty) return;
+
+    state = state.copyWith(isLoading: true, clearError: true, suggestions: []);
+
+    try {
+      print('📤 Sending conversational message: "$userMessage" (slot $saveSlot)');
+
+      // Add user message to history
+      final userMsg = NarrativeMessage.userMessage(userMessage);
+
+      // Call conversational API
+      final response = await _service.sendConversationalMessage(userMessage, storyId, saveSlot);
+
+      // Create history message from response
+      final responseMsg = NarrativeMessage.fromResponse(response);
+
+      // Update state with both messages
+      final newHistory = [...state.history, userMsg, responseMsg];
+      state = state.copyWith(
+        currentResponse: response,
+        history: newHistory,
+        currentSpeaker: response.speaker,
+        suggestions: response.suggestions,
+        isLoading: false,
+      );
+
+      print('✅ Conversational message sent. Speaker: ${response.speakerName}, Suggestions: ${response.suggestions.length}');
+
+      // Auto-save state in background
+      await StoryStateService.saveStateForStory(
+        storyId: storyId,
+        messages: newHistory,
+        lastCharacter: response.speaker,
+        saveSlot: saveSlot,
+      );
+      await SaveService.updateSave(
+        storyId: storyId,
+        saveSlot: saveSlot,
+        characterId: response.speaker,
+        messageCount: newHistory.length,
+      );
+    } catch (e) {
+      print('❌ Error sending conversational message: $e');
+
+      state = state.copyWith(
+        error: _getErrorMessage(e),
+        isLoading: false,
+      );
+    }
+  }
+
   /// Clear error message
   void clearError() {
     state = state.copyWith(clearError: true);
