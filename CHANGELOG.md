@@ -15,6 +15,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-03-10
+
+### 🎉 Major Feature: Conversational Narrative System (SESSION_45)
+
+**Summary:** Replaced the fixed 3-choice branching system with a free-text conversational interface, making StoryForge feel like a real chat with AI characters. Users can now type freely, use AI-suggested replies as a starting point, and have natural back-and-forth conversations with characters like Isla and Ilyra.
+
+### Added
+
+#### Backend - Conversational Endpoint (Phase 1)
+- 💬 **New Conversational Endpoint**: `POST /api/narrative/send` — accepts free-text user messages and returns character dialogue + 2 AI-generated suggestion chips
+  - Request: `{ userMessage, storyId, saveSlot }`
+  - Response: full `NarrativeResponse` with `suggestions[]` array (2 items, 10-20 words each)
+  - Character personalities fully maintained across free-text conversation (Isla, Ilyra, etc.)
+  - Context memory across last 10 messages per session
+  - Consistent JSON parsing across multiple follow-up messages
+  - Auto-save after every conversational message
+  - Gem reward (`+5 gems`) on every successful `/send` call (matching existing choice system)
+- 🎭 **Conversational Narrative Engine**: New `generateConversationalResponse()` method in `NarrativeEngine`
+  - Separate AI prompt pipeline for suggestion generation
+  - Mood tracking maintained across conversational turns (wary → defensive → melancholic → vulnerable)
+  - 2 contextual suggestions generated per response, scoped to current conversation context
+
+#### Frontend - Conversational UI (Phase 2)
+- 💬 **`ChatInputSection` Widget**: Main input component replacing `ChoicesSection`
+  - Fixed at bottom of screen — never scrolls away
+  - Appears above keyboard automatically (`resizeToAvoidBottomInset: true`)
+  - `characterName` prop drives hint text: `'Message Isla...'` / `'Message Ilyra...'`
+  - Send button disabled when input is empty or whitespace — enabled only with real text
+  - `TextInputAction.send` support — keyboard Send button triggers message
+  - Auto-expanding `TextField` (`maxLines: null`) for long messages
+  - Both `TextEditingController` and `FocusNode` properly disposed
+- ✏️ **`NarrativeSuggestionChip` Widget**: Tappable AI suggestion chips
+  - Full-width outlined style with teal border (`DesignColors.highlightTeal`)
+  - Pencil icon (`Icons.edit_rounded`) + multi-line text (up to 3 lines)
+  - Tap fills input field for editing — does **not** auto-send (user reviews before sending)
+  - Hidden during loading state
+  - Named `NarrativeSuggestionChip` to avoid conflict with Flutter built-in `SuggestionChip`
+- ⏳ **`TypingIndicator` Widget**: Loading feedback inside the scrollable chat area
+  - Shows `'$characterName is thinking...'` with teal `CircularProgressIndicator`
+  - Character-aware: reads "Ilyra is thinking..." or "Isla is thinking..." based on active story
+  - Appears inside `ListView` as the last item during API call
+- 🔄 **`NarrativeMessage.userMessage()` Factory**: New factory constructor for user-typed messages
+  - Parallel to existing `userChoice()` factory
+  - No `"You chose:"` prefix — raw user text displayed directly
+
+#### Services & State
+- 📡 **`NarrativeService.sendConversationalMessage()`**: HTTP client method for `/send` endpoint
+  - Mirrors `speak()` method pattern exactly (same headers, error handling, debug logging)
+- 🗂️ **`NarrativeState.suggestions`**: New `List<String>` field with `hasSuggestions` getter
+  - Cleared during loading, populated from each `/send` response
+  - Defaults to empty — graceful degradation when no suggestions available
+- ⚡ **`NarrativeNotifier.sendConversationalMessage()`**: State management for conversational flow
+  - Optimistic user message appended immediately to history
+  - Clears suggestions during loading, updates with new suggestions on response
+  - Auto-saves after every successful message (same pattern as `selectChoice()`)
+  - Error state shown via error banner; user message stays in history on failure
+
+### Changed
+- 🖥️ **`NarrativeScreen` Layout**: Restructured from single-scroll to fixed header + scrollable content + fixed input
+  - `Expanded(SingleChildScrollView)` for chat history (scrollable)
+  - `ChatInputSection` outside scroll area (always fixed at bottom)
+  - `TypingIndicator` inside `ListView` as last item during loading
+  - `ref.listen` triggers `_scrollToBottom()` when loading transitions `true → false`
+  - Existing `_scrollToBottom()` and `_scrollToBottomDuringAnimation()` methods unchanged
+- 📦 **`NarrativeResponse` Model**: Added `suggestions` field with `fromJson` parsing
+  - `(json['suggestions'] as List?)?.map((s) => s.toString()).toList() ?? []`
+
+### Backward Compatibility
+- ✅ `ChoicesSection` widget file preserved — not deleted, just no longer rendered
+- ✅ `selectChoice()` method in `NarrativeNotifier` untouched
+- ✅ `choices` field kept in `NarrativeResponse` and `NarrativeState`
+- ✅ Old save slots with choice-based history load and display correctly
+- ✅ Initial story load still uses existing `speak()` → `/api/narrative/speak` flow
+- ✅ First screen after load shows input field only (no chips) until first `/send` populates suggestions
+
+### Testing
+- ✅ **Conversational Flow (Ilyra - Observatory)**: Mood progression wary → defensive → melancholic → vulnerable across 4 messages, context memory verified (10 messages saved)
+- ✅ **Conversational Flow (Isla - Pirates)**: Character personality and suggestions verified across multiple messages
+- ✅ **Suggestion Tap**: Chip fills input field, user edits text, sends — works correctly
+- ✅ **Free Text Input**: Custom messages ignored suggestions, AI response contextual to free-text — verified
+- ✅ **Loading State**: Input disabled, chips hidden, typing indicator visible during API call
+- ✅ **Empty Input Validation**: Send button stays disabled for empty and whitespace-only input
+- ✅ **Keyboard Interaction**: Input visible above keyboard, keyboard Send action triggers message
+- ✅ **Gem Rewards**: `+5 gems` awarded per `/send` call — verified in backend logs
+- ✅ **Auto-Save**: Save slot message count grows correctly after every conversational exchange
+- ✅ **Development Environment**: Tested on localhost with local Spring Boot backend
+- ✅ **Production Environment**: Tested on Railway deployment — all features working in production
+
+### Technical Details
+- **New Endpoint**: `POST /api/narrative/send` (1 new backend endpoint)
+- **New Widgets**: `ChatInputSection`, `NarrativeSuggestionChip`, `TypingIndicator` (3 new Flutter widgets)
+- **Design System**: 100% design token compliance — zero hardcoded values in new widgets
+- **Scroll Architecture**: Scroll logic stays on screen side only (`_scrollToBottom()` via `ref.listen`) — not in notifier
+- **Branch**: `feature/session-45-conversational-narrative` (kept open for extended scenario testing)
+
+### Notes
+- 🎯 **Partner Vision Delivered**: Free-text conversational interface experience requested in partner feedback
+- 🧠 **AI Quality**: Suggestions are contextual and character-specific — verified across wary/defensive/melancholic/vulnerable mood arcs
+- 💎 **Economy Integration**: Gem rewards work seamlessly with new conversational endpoint — no changes needed to currency system
+- 🔮 **Phase 3 Preview**: Future polish includes message timestamps, suggestion regeneration, and swipe gestures
+
+---
+
 ## [1.0.0] - 2026-02-12
 
 ### 🎉 Major Milestone: Complete Admin Panel (SESSION_44)
@@ -725,7 +828,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Controller | Endpoints | Purpose |
 |------------|-----------|---------|
-| NarrativeController | 12 endpoints | Main storytelling API |
+| NarrativeController | 13 endpoints | Main storytelling API (includes POST /send v1.1.0) |
 | ChatController | 6 endpoints | Legacy chat API |
 | TasksController | 3 endpoints | Achievements system |
 | GalleryController | 5 endpoints | Content unlock system |
@@ -752,18 +855,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Development Statistics
 
-- **Development Period**: December 19, 2025 - February 12, 2026 (55 days)
-- **Development Sessions**: 44+ documented sessions
-- **Total Commits**: 150+ commits
+- **Development Period**: December 19, 2025 - March 10, 2026 (81 days)
+- **Development Sessions**: 45+ documented sessions
+- **Total Commits**: 160+ commits
 - **Test Coverage**: 48+ tests, 85%+ coverage
 - **Frontend Screens**: 17 screens (11 original + 6 admin)
-- **Frontend Widgets**: 25+ reusable components
+- **Frontend Widgets**: 28+ reusable components (added ChatInputSection, NarrativeSuggestionChip, TypingIndicator)
 - **Backend Services**: 8 services
-- **API Endpoints**: 37+ endpoints (25 original + 11 admin + 1 auth)
+- **API Endpoints**: 38+ endpoints (26 narrative + 11 admin + 1 auth)
 - **Stories**: 3 (Observatory, Illidan, Pirates)
 - **Characters**: 6 unique characters
 - **Achievements**: 7 trackable achievements
 - **Admin Features**: Complete CRUD for stories and gallery items
+- **Conversational UI**: Free-text chat with AI-generated suggestion chips (v1.1.0)
 
 ---
 
